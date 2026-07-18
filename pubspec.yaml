@@ -1,0 +1,47 @@
+name: kivoo
+description: A classifieds marketplace mobile app
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  google_fonts: ^6.1.0
+  cached_network_image: ^3.3.1
+  provider: ^6.1.1
+  flutter_native_splash: ^2.4.6
+  font_awesome_flutter: ^10.9.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
+
+flutter_native_splash:
+  color: "#ef7d7f"
+  image: assets/logo-1152.png
+  android_12: 
+    image: assets/logo-1152.png
+    color: "#ef7d7f"
+  android: true
+  ios: true
+  web: false
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  web:
+    generate: true
+  image_path: "assets/logo-1152.png"
+  adaptive_icon_background: "#ef7d7f"
+  adaptive_icon_foreground: "assets/logo-2048.png"
