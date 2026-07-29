@@ -8,8 +8,9 @@ export const getUserProfile = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    const userId = req.params.id as string;
     const user = await prisma.user.findUnique({
-      where: { id: req.params.id },
+      where: { id: userId },
       select: {
         id: true,
         name: true,
@@ -27,8 +28,8 @@ export const getUserProfile = async (
     }
 
     const [itemsListed, itemsSold] = await Promise.all([
-      prisma.item.count({ where: { sellerId: req.params.id } }),
-      prisma.item.count({ where: { sellerId: req.params.id, status: 'sold' } }),
+      prisma.item.count({ where: { sellerId: userId } }),
+      prisma.item.count({ where: { sellerId: userId, status: 'sold' } }),
     ]);
 
     res.status(200).json({
@@ -58,8 +59,9 @@ export const getUserItems = async (
     const limit = parseInt(req.query.limit as string, 10) || 20;
     const status = req.query.status || 'all';
     const skip = (page - 1) * limit;
+    const userId = req.params.id as string;
 
-    const where: any = { sellerId: req.params.id };
+    const where: any = { sellerId: userId };
     if (status !== 'all') where.status = status;
 
     const [items, totalItems] = await Promise.all([
@@ -104,10 +106,11 @@ export const getUserReviews = async (
     const page = parseInt(req.query.page as string, 10) || 1;
     const limit = parseInt(req.query.limit as string, 10) || 20;
     const skip = (page - 1) * limit;
+    const userId = req.params.id as string;
 
     const [reviews, totalItems, aggregation] = await Promise.all([
       prisma.review.findMany({
-        where: { reviewedId: req.params.id },
+        where: { reviewedId: userId },
         include: {
           reviewer: { select: { id: true, name: true, photo: true } },
           item: { select: { id: true, title: true } },
@@ -116,9 +119,9 @@ export const getUserReviews = async (
         skip,
         take: limit,
       }),
-      prisma.review.count({ where: { reviewedId: req.params.id } }),
+      prisma.review.count({ where: { reviewedId: userId } }),
       prisma.review.aggregate({
-        where: { reviewedId: req.params.id },
+        where: { reviewedId: userId },
         _avg: { rating: true },
         _count: { rating: true },
       }),
@@ -133,7 +136,7 @@ export const getUserReviews = async (
         averageRating: aggregation._avg.rating
           ? Math.round(aggregation._avg.rating * 10) / 10
           : 0,
-        totalReviews: aggregation._count.rating,
+        totalReviews: aggregation._count.rating || 0,
       },
     });
   } catch (error) {

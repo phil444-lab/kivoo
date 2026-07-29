@@ -39,7 +39,7 @@ export const getMessages = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const page = parseInt(req.query.page as string, 10) || 1;
     const limit = parseInt(req.query.limit as string, 10) || 50;
     const skip = (page - 1) * limit;
@@ -103,32 +103,39 @@ export const createConversation = async (
     const { participantId, itemId, message } = req.body;
 
     // Check if conversation already exists
-    let conversation = await prisma.conversation.findFirst({
+    const existing = await prisma.conversation.findFirst({
       where: {
         itemId,
-        participants: {
-          every: {
-            userId: { in: [req.user.id, participantId] },
+        AND: [
+          {
+            participants: {
+              some: { userId: req.user.id },
+            },
           },
-        },
+          {
+            participants: {
+              some: { userId: participantId },
+            },
+          },
+        ],
       },
       include: { participants: true },
     });
 
-    if (conversation) {
+    if (existing) {
       const newMessage = await prisma.message.create({
         data: {
-          conversationId: conversation.id,
+          conversationId: existing.id,
           senderId: req.user.id,
           content: message,
         },
       });
 
-      const unreadCount = (conversation.unreadCount as any) || {};
+      const unreadCount: any = (existing.unreadCount as any) || {};
       unreadCount[participantId] = (unreadCount[participantId] || 0) + 1;
 
-      await prisma.conversation.update({
-        where: { id: conversation.id },
+      const conversation = await prisma.conversation.update({
+        where: { id: existing.id },
         data: {
           lastMessageContent: message,
           lastMessageSenderId: req.user.id,
@@ -145,7 +152,7 @@ export const createConversation = async (
     }
 
     // Create new conversation
-    conversation = await prisma.conversation.create({
+    const conversation = await prisma.conversation.create({
       data: {
         itemId,
         lastMessageContent: message,
@@ -184,7 +191,7 @@ export const sendMessage = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { content, type = 'text' } = req.body;
 
     const conversation = await prisma.conversation.findUnique({
@@ -214,14 +221,14 @@ export const sendMessage = async (
       include: { sender: { select: { id: true, name: true, photo: true } } },
     });
 
-    const unreadCount = (conversation.unreadCount as any) || {};
+    const unreadCount: any = (conversation.unreadCount as any) || {};
     conversation.participants.forEach((p: any) => {
       if (p.userId !== req.user.id) {
         unreadCount[p.userId] = (unreadCount[p.userId] || 0) + 1;
       }
     });
 
-    await prisma.conversation.update({
+    const updatedConversation = await prisma.conversation.update({
       where: { id },
       data: {
         lastMessageContent: content,
@@ -246,7 +253,7 @@ export const markAsRead = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const conversation = await prisma.conversation.findUnique({
       where: { id },
@@ -256,7 +263,7 @@ export const markAsRead = async (
       throw new NotFoundError('Conversation');
     }
 
-    const unreadCount = (conversation.unreadCount as any) || {};
+    const unreadCount: any = (conversation.unreadCount as any) || {};
     unreadCount[req.user.id] = 0;
 
     await prisma.conversation.update({

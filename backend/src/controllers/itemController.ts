@@ -24,18 +24,18 @@ export const getItems = async (
 
     const where: any = { status: 'active' };
 
-    if (category) where.categoryId = category;
-    if (location) where.location = { path: '$.city', string_contains: location };
+    if (category) where.categoryId = category as string;
+    if (location) where.location = { path: '$.city', string_contains: location as string };
     if (minPrice || maxPrice) {
       where.price = {};
       if (minPrice) where.price.gte = Number(minPrice);
       if (maxPrice) where.price.lte = Number(maxPrice);
     }
-    if (condition) where.condition = condition;
+    if (condition) where.condition = condition as any;
     if (search) {
       where.OR = [
-        { title: { contains: search } },
-        { description: { contains: search } },
+        { title: { contains: search as string } },
+        { description: { contains: search as string } },
       ];
     }
     if (featured === 'true') where.featured = true;
@@ -159,7 +159,7 @@ export const getItem = async (
 ): Promise<void> => {
   try {
     const item = await prisma.item.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: { views: { increment: 1 } },
       include: {
         category: { select: { id: true, name: true, icon: true, color: true } },
@@ -209,7 +209,7 @@ export const updateItem = async (
 ): Promise<void> => {
   try {
     const item = await prisma.item.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
 
     if (!item) {
@@ -221,7 +221,7 @@ export const updateItem = async (
     }
 
     const updated = await prisma.item.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: req.body,
     });
 
@@ -241,7 +241,7 @@ export const deleteItem = async (
 ): Promise<void> => {
   try {
     const item = await prisma.item.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
 
     if (!item) {
@@ -253,7 +253,7 @@ export const deleteItem = async (
     }
 
     await prisma.item.delete({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
 
     res.status(200).json({
@@ -273,7 +273,7 @@ export const boostItem = async (
   try {
     const { duration } = req.body;
     const item = await prisma.item.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
 
     if (!item) {
@@ -287,7 +287,7 @@ export const boostItem = async (
     const boostUntil = new Date(Date.now() + duration * 24 * 60 * 60 * 1000);
 
     const updated = await prisma.item.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: {
         boostLevel: { increment: 1 },
         boostUntil,

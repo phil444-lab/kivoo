@@ -11,7 +11,7 @@ import {
 } from '../controllers/authController.js';
 import { protect } from '../middleware/auth.js';
 
-const router = Router();
+const router: Router = Router();
 
 router.post('/register', register);
 router.post('/login', login);

@@ -5,7 +5,7 @@ import {
   getUserReviews,
 } from '../controllers/userController.js';
 
-const router = Router();
+const router: Router = Router();
 
 router.get('/:id', getUserProfile);
 router.get('/:id/items', getUserItems);

@@ -12,7 +12,7 @@ import {
 import { protect } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 
-const router = Router();
+const router: Router = Router();
 
 router.get('/', getItems);
 router.get('/trending', getTrending);

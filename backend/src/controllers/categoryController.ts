@@ -35,7 +35,7 @@ export const getCategory = async (
 ): Promise<void> => {
   try {
     const category = await prisma.category.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: {
         parentCategory: { select: { id: true, name: true, icon: true } },
         subcategories: {

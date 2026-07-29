@@ -7,7 +7,7 @@ import {
 } from '../controllers/favoriteController.js';
 import { protect } from '../middleware/auth.js';
 
-const router = Router();
+const router: Router = Router();
 
 router.get('/', protect, getFavorites);
 router.post('/:itemId', protect, addFavorite);

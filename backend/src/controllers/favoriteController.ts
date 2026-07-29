@@ -62,7 +62,7 @@ export const addFavorite = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { itemId } = req.params;
+    const itemId = req.params.itemId as string;
 
     const item = await prisma.item.findUnique({ where: { id: itemId } });
     if (!item) {
@@ -101,7 +101,7 @@ export const removeFavorite = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { itemId } = req.params;
+    const itemId = req.params.itemId as string;
 
     const favorite = await prisma.favorite.findUnique({
       where: { userId_itemId: { userId: req.user.id, itemId } },
@@ -135,7 +135,7 @@ export const checkFavorite = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { itemId } = req.params;
+    const itemId = req.params.itemId as string;
 
     const favorite = await prisma.favorite.findUnique({
       where: { userId_itemId: { userId: req.user.id, itemId } },

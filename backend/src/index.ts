@@ -15,7 +15,7 @@ import favoriteRoutes from './routes/favoriteRoutes.js';
 import conversationRoutes from './routes/conversationRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 
-const app = express();
+const app: express.Express = express();
 const httpServer = createServer(app);
 
 // Socket.io
@@ -91,7 +91,7 @@ prisma
       console.log(`Environment: ${config.nodeEnv}`);
     });
   })
-  .catch((error) => {
+  .catch((error: any) => {
     console.error('Database connection error:', error);
     process.exit(1);
   });
