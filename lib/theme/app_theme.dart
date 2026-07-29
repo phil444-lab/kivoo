@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color primaryRed = Color(0xFFe42226);
-  static const Color darkRed = Color(0xFFbc171a);
-  static const Color lightRed = Color(0xFFef7d7f);
+  static const Color primaryBlue = Color(0xFF2563EB);
+  static const Color darkBlue = Color(0xFF1D4ED8);
+  static const Color lightBlue = Color(0xFF60A5FA);
 
   static const Color darkBackground = Color(0xFF12161a);
   static const Color darkCard = Color(0xFF1d232a);
@@ -26,16 +26,16 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      primaryColor: primaryRed,
+      primaryColor: primaryBlue,
       scaffoldBackgroundColor: darkBackground,
       fontFamily: fontFamily,
       colorScheme: const ColorScheme.dark(
-        primary: primaryRed,
-        primaryContainer: darkRed,
+        primary: primaryBlue,
+        primaryContainer: darkBlue,
         secondary: darkSurface,
         surface: darkCard,
         background: darkBackground,
-        error: primaryRed,
+        error: primaryBlue,
         onPrimary: Colors.white,
         onSecondary: darkText,
         onSurface: darkText,
@@ -44,7 +44,7 @@ class AppTheme {
         outline: Color(0xFF3d4752),
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: darkRed,
+        backgroundColor: darkBlue,
         elevation: 0,
         centerTitle: false,
       ),
@@ -58,7 +58,7 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryRed,
+          backgroundColor: primaryBlue,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -80,7 +80,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(12)),
-          borderSide: const BorderSide(color: primaryRed, width: 1.5),
+          borderSide: const BorderSide(color: primaryBlue, width: 1.5),
         ),
       ),
     );
@@ -90,16 +90,16 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      primaryColor: primaryRed,
+      primaryColor: primaryBlue,
       scaffoldBackgroundColor: lightBackground,
       fontFamily: fontFamily,
       colorScheme: const ColorScheme.light(
-        primary: primaryRed,
-        primaryContainer: darkRed,
+        primary: primaryBlue,
+        primaryContainer: darkBlue,
         secondary: lightSurface,
         surface: lightCard,
         background: lightBackground,
-        error: primaryRed,
+        error: primaryBlue,
         onPrimary: Colors.white,
         onSecondary: lightText,
         onSurface: lightText,
@@ -108,7 +108,7 @@ class AppTheme {
         outline: Color(0xFFe5e7eb),
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: darkRed,
+        backgroundColor: darkBlue,
         elevation: 0,
         centerTitle: false,
       ),
@@ -122,7 +122,7 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryRed,
+          backgroundColor: primaryBlue,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -144,7 +144,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(12)),
-          borderSide: const BorderSide(color: primaryRed, width: 1.5),
+          borderSide: const BorderSide(color: primaryBlue, width: 1.5),
         ),
       ),
     );

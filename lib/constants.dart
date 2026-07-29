@@ -6,8 +6,8 @@ class AppConstants {
   static const String appVersion = '1.0.0';
 
   // Colors
-  static const int primaryRed = 0xFFe42226;
-  static const int darkRed = 0xFFbc171a;
+  static const int primaryBlue = 0xFF2563EB;
+  static const int darkBlue = 0xFF1D4ED8;
 
   // Status Bar
   static const String statusBarTime = '9:41';

@@ -63,7 +63,7 @@ class PlaceholderScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.darkRed,
+        backgroundColor: AppTheme.darkBlue,
         title: Text(
           title,
           style: TextStyle(

@@ -115,7 +115,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.primaryRed, width: 2),
+                    borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
                   ),
                 ),
               ),
@@ -142,7 +142,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.primaryRed, width: 2),
+                    borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
                   ),
                 ),
               ),
@@ -169,7 +169,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.primaryRed, width: 2),
+                    borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
                   ),
                 ),
               ),
@@ -208,7 +208,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.primaryRed, width: 2),
+                    borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
                   ),
                 ),
               ),
@@ -247,7 +247,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.primaryRed, width: 2),
+                    borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
                   ),
                 ),
               ),
@@ -261,7 +261,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFFe42226), Color(0xFFbc171a)],
+                    colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -435,7 +435,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: const Text(
                       'Se connecter',
                       style: TextStyle(
-                        color: AppTheme.primaryRed,
+                        color: AppTheme.primaryBlue,
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),

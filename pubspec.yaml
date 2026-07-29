@@ -28,11 +28,11 @@ flutter:
     - assets/
 
 flutter_native_splash:
-  color: "#ef7d7f"
+  color: "#7FA1EF"
   image: assets/logo-1152.png
   android_12: 
     image: assets/logo-1152.png
-    color: "#ef7d7f"
+    color: "#7FA1EF"
   android: true
   ios: true
   web: false
@@ -42,6 +42,6 @@ flutter_launcher_icons:
   ios: true
   web:
     generate: true
-  image_path: "assets/logo-1152.png"
-  adaptive_icon_background: "#ef7d7f"
-  adaptive_icon_foreground: "assets/logo-2048.png"
+  image_path: "assets/logo-icon.png"
+  adaptive_icon_background: "#2563EB"
+  adaptive_icon_foreground: "assets/logo-icon.png"

@@ -216,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: const Text(
                               'Voir tout',
                               style: TextStyle(
-                                color: AppTheme.primaryRed,
+                                color: AppTheme.primaryBlue,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -270,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: const Text(
                               'Tout',
                               style: TextStyle(
-                                color: AppTheme.primaryRed,
+                                color: AppTheme.primaryBlue,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -342,7 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryRed,
+                                  color: AppTheme.primaryBlue,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
@@ -402,7 +402,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                   style: IconButton.styleFrom(
                                     backgroundColor: isListView
-                                        ? AppTheme.primaryRed
+                                        ? AppTheme.primaryBlue
                                         : Colors.transparent,
                                   ),
                                 ),
@@ -423,7 +423,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   style: IconButton.styleFrom(
                                     backgroundColor: !isListView
-                                        ? AppTheme.primaryRed
+                                        ? AppTheme.primaryBlue
                                         : Colors.transparent,
                                   ),
                                 ),
@@ -460,7 +460,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               backgroundColor: isDark
                                   ? AppTheme.darkCard
                                   : AppTheme.lightCard,
-                              selectedColor: AppTheme.primaryRed,
+                              selectedColor: AppTheme.primaryBlue,
                               labelStyle: TextStyle(
                                 color: isActive
                                     ? Colors.white
@@ -557,11 +557,11 @@ class _HomeScreenState extends State<HomeScreen> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFe42226), Color(0xFFbc171a)],
+          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFbc171a).withOpacity(0.4),
+            color: const Color(0xFF1D4ED8).withOpacity(0.4),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -721,13 +721,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [Color(0xFFe42226), Color(0xFFbc171a)],
+                          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
                         ),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
                             color:
-                                const Color(0xFFbc171a).withValues(alpha: 0.35),
+                                const Color(0xFF1D4ED8).withValues(alpha: 0.35),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -796,7 +796,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(
                     item.icon,
                     color: isSelected
-                        ? AppTheme.primaryRed
+                        ? AppTheme.primaryBlue
                         : (isDark
                             ? AppTheme.darkTextMuted
                             : AppTheme.lightTextMuted),
@@ -807,7 +807,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     item.label,
                     style: TextStyle(
                       color: isSelected
-                          ? AppTheme.primaryRed
+                          ? AppTheme.primaryBlue
                           : (isDark
                               ? AppTheme.darkTextMuted
                               : AppTheme.lightTextMuted),
@@ -822,7 +822,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       height: 4,
                       margin: const EdgeInsets.only(top: 2),
                       decoration: const BoxDecoration(
-                        color: AppTheme.primaryRed,
+                        color: AppTheme.primaryBlue,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -843,7 +843,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Icon(
                   item.icon,
                   color: isSelected
-                      ? AppTheme.primaryRed
+                      ? AppTheme.primaryBlue
                       : (isDark
                           ? AppTheme.darkTextMuted
                           : AppTheme.lightTextMuted),
@@ -854,7 +854,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   item.label,
                   style: TextStyle(
                     color: isSelected
-                        ? AppTheme.primaryRed
+                        ? AppTheme.primaryBlue
                         : (isDark
                             ? AppTheme.darkTextMuted
                             : AppTheme.lightTextMuted),
@@ -868,7 +868,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 4,
                     margin: const EdgeInsets.only(top: 2),
                     decoration: const BoxDecoration(
-                      color: AppTheme.primaryRed,
+                      color: AppTheme.primaryBlue,
                       shape: BoxShape.circle,
                     ),
                   ),

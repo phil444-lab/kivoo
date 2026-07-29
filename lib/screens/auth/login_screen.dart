@@ -20,7 +20,8 @@ class _LoginScreenState extends State<LoginScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
+      backgroundColor:
+          isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.only(
@@ -83,7 +84,8 @@ class _LoginScreenState extends State<LoginScreen> {
               Text(
                 'Content de vous revoir !',
                 style: TextStyle(
-                  color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                  color:
+                      isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                   fontSize: 14,
                 ),
                 textAlign: TextAlign.center,
@@ -100,18 +102,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: InputDecoration(
                   labelText: 'Email',
                   labelStyle: TextStyle(
-                    color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                    color: isDark
+                        ? AppTheme.darkTextMuted
+                        : AppTheme.lightTextMuted,
                   ),
                   prefixIcon: Icon(
                     FontAwesomeIcons.envelope,
-                    color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                    color: isDark
+                        ? AppTheme.darkTextMuted
+                        : AppTheme.lightTextMuted,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.primaryRed, width: 2),
+                    borderSide:
+                        const BorderSide(color: AppTheme.primaryBlue, width: 2),
                   ),
                 ),
               ),
@@ -128,16 +135,24 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: InputDecoration(
                   labelText: 'Mot de passe',
                   labelStyle: TextStyle(
-                    color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                    color: isDark
+                        ? AppTheme.darkTextMuted
+                        : AppTheme.lightTextMuted,
                   ),
                   prefixIcon: Icon(
                     FontAwesomeIcons.lock,
-                    color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                    color: isDark
+                        ? AppTheme.darkTextMuted
+                        : AppTheme.lightTextMuted,
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? FontAwesomeIcons.eyeSlash : FontAwesomeIcons.eye,
-                      color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                      _obscurePassword
+                          ? FontAwesomeIcons.eyeSlash
+                          : FontAwesomeIcons.eye,
+                      color: isDark
+                          ? AppTheme.darkTextMuted
+                          : AppTheme.lightTextMuted,
                     ),
                     onPressed: () {
                       setState(() {
@@ -150,7 +165,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.primaryRed, width: 2),
+                    borderSide:
+                        const BorderSide(color: AppTheme.primaryBlue, width: 2),
                   ),
                 ),
               ),
@@ -165,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Text(
                     'Mot de passe oublié ?',
                     style: TextStyle(
-                      color: AppTheme.primaryRed,
+                      color: AppTheme.primaryBlue,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
@@ -182,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFFe42226), Color(0xFFbc171a)],
+                    colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -223,7 +239,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Text(
                       'ou',
                       style: TextStyle(
-                        color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                        color: isDark
+                            ? AppTheme.darkTextMuted
+                            : AppTheme.lightTextMuted,
                         fontSize: 13,
                       ),
                     ),
@@ -322,7 +340,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(
                     'Pas encore de compte ? ',
                     style: TextStyle(
-                      color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                      color: isDark
+                          ? AppTheme.darkTextMuted
+                          : AppTheme.lightTextMuted,
                       fontSize: 14,
                     ),
                   ),
@@ -338,7 +358,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text(
                       'S\'inscrire',
                       style: TextStyle(
-                        color: AppTheme.primaryRed,
+                        color: AppTheme.primaryBlue,
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
