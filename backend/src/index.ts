@@ -1,9 +1,9 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import prisma from './lib/prisma.js';
 import config from './config/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -81,18 +81,18 @@ io.on('connection', (socket) => {
   });
 });
 
-// Connect to MongoDB and start server
-mongoose
-  .connect(config.mongodb.uri)
+// Connect to database and start server
+prisma
+  .$connect()
   .then(() => {
-    console.log('Connected to MongoDB');
+    console.log('Connected to MySQL database');
     httpServer.listen(config.port, () => {
       console.log(`Server running on port ${config.port}`);
       console.log(`Environment: ${config.nodeEnv}`);
     });
   })
   .catch((error) => {
-    console.error('MongoDB connection error:', error);
+    console.error('Database connection error:', error);
     process.exit(1);
   });
 

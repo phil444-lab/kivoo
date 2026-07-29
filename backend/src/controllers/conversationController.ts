@@ -1,6 +1,5 @@
 import { Response, NextFunction } from 'express';
-import Conversation from '../models/Conversation.js';
-import Message from '../models/Message.js';
+import prisma from '../lib/prisma.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { NotFoundError, ForbiddenError } from '../utils/ApiError.js';
 
@@ -10,13 +9,20 @@ export const getConversations = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const conversations = await Conversation.find({
-      participants: req.user._id,
-    })
-      .populate('participants', 'name photo')
-      .populate('item', 'title price images')
-      .sort({ 'lastMessage.sentAt': -1, updatedAt: -1 })
-      .lean();
+    const conversations = await prisma.conversation.findMany({
+      where: {
+        participants: {
+          some: { userId: req.user.id },
+        },
+      },
+      include: {
+        participants: {
+          include: { user: { select: { id: true, name: true, photo: true } } },
+        },
+        item: { select: { id: true, title: true, price: true, images: true } },
+      },
+      orderBy: { lastMessageSentAt: 'desc' },
+    });
 
     res.status(200).json({
       success: true,
@@ -38,28 +44,34 @@ export const getMessages = async (
     const limit = parseInt(req.query.limit as string, 10) || 50;
     const skip = (page - 1) * limit;
 
-    const conversation = await Conversation.findById(id);
+    const conversation = await prisma.conversation.findUnique({
+      where: { id },
+      include: {
+        participants: { select: { userId: true } },
+      },
+    });
 
     if (!conversation) {
       throw new NotFoundError('Conversation');
     }
 
-    if (
-      !conversation.participants.some(
-        (p: any) => p.toString() === req.user._id.toString()
-      )
-    ) {
+    const isParticipant = conversation.participants.some(
+      (p: any) => p.userId === req.user.id
+    );
+
+    if (!isParticipant) {
       throw new ForbiddenError('Not a participant of this conversation');
     }
 
     const [messages, totalItems] = await Promise.all([
-      Message.find({ conversation: id })
-        .populate('sender', 'name photo')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      Message.countDocuments({ conversation: id }),
+      prisma.message.findMany({
+        where: { conversationId: id },
+        include: { sender: { select: { id: true, name: true, photo: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.message.count({ where: { conversationId: id } }),
     ]);
 
     const totalPages = Math.ceil(totalItems / limit);
@@ -91,66 +103,75 @@ export const createConversation = async (
     const { participantId, itemId, message } = req.body;
 
     // Check if conversation already exists
-    let conversation = await Conversation.findOne({
-      participants: { $all: [req.user._id, participantId] },
-      item: itemId,
+    let conversation = await prisma.conversation.findFirst({
+      where: {
+        itemId,
+        participants: {
+          every: {
+            userId: { in: [req.user.id, participantId] },
+          },
+        },
+      },
+      include: { participants: true },
     });
 
     if (conversation) {
-      // Add message to existing conversation
-      const newMessage = await Message.create({
-        conversation: conversation._id,
-        sender: req.user._id,
-        content: message,
+      const newMessage = await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          senderId: req.user.id,
+          content: message,
+        },
       });
 
-      conversation.lastMessage = {
-        content: message,
-        sender: req.user._id,
-        sentAt: new Date(),
-      };
-      conversation.unreadCount.set(
-        participantId,
-        (conversation.unreadCount.get(participantId) || 0) + 1
-      );
-      await conversation.save();
+      const unreadCount = (conversation.unreadCount as any) || {};
+      unreadCount[participantId] = (unreadCount[participantId] || 0) + 1;
+
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: {
+          lastMessageContent: message,
+          lastMessageSenderId: req.user.id,
+          lastMessageSentAt: new Date(),
+          unreadCount,
+        },
+      });
 
       res.status(200).json({
         success: true,
-        data: {
-          conversation,
-          message: newMessage,
-        },
+        data: { conversation, message: newMessage },
       });
       return;
     }
 
     // Create new conversation
-    conversation = await Conversation.create({
-      participants: [req.user._id, participantId],
-      item: itemId,
+    conversation = await prisma.conversation.create({
+      data: {
+        itemId,
+        lastMessageContent: message,
+        lastMessageSenderId: req.user.id,
+        lastMessageSentAt: new Date(),
+        unreadCount: { [participantId]: 1 },
+        participants: {
+          create: [
+            { userId: req.user.id },
+            { userId: participantId },
+          ],
+        },
+      },
     });
 
-    const newMessage = await Message.create({
-      conversation: conversation._id,
-      sender: req.user._id,
-      content: message,
+    const newMessage = await prisma.message.create({
+      data: {
+        conversationId: conversation.id,
+        senderId: req.user.id,
+        content: message,
+      },
     });
-
-    conversation.lastMessage = {
-      content: message,
-      sender: req.user._id,
-      sentAt: new Date(),
-    };
-    conversation.unreadCount.set(participantId, 1);
-    await conversation.save();
 
     res.status(201).json({
       success: true,
-      data: {
-        conversation,
-        message: newMessage,
-      },
+      data: { conversation, message: newMessage },
     });
   } catch (error) {
     next(error);
@@ -166,53 +187,53 @@ export const sendMessage = async (
     const { id } = req.params;
     const { content, type = 'text' } = req.body;
 
-    const conversation = await Conversation.findById(id);
+    const conversation = await prisma.conversation.findUnique({
+      where: { id },
+      include: { participants: { select: { userId: true } } },
+    });
 
     if (!conversation) {
       throw new NotFoundError('Conversation');
     }
 
-    if (
-      !conversation.participants.some(
-        (p: any) => p.toString() === req.user._id.toString()
-      )
-    ) {
+    const isParticipant = conversation.participants.some(
+      (p: any) => p.userId === req.user.id
+    );
+
+    if (!isParticipant) {
       throw new ForbiddenError('Not a participant of this conversation');
     }
 
-    const message = await Message.create({
-      conversation: id,
-      sender: req.user._id,
-      content,
-      type,
+    const message = await prisma.message.create({
+      data: {
+        conversationId: id,
+        senderId: req.user.id,
+        content,
+        type: type as any,
+      },
+      include: { sender: { select: { id: true, name: true, photo: true } } },
     });
 
-    conversation.lastMessage = {
-      content,
-      sender: req.user._id,
-      sentAt: new Date(),
-    };
-
-    // Increment unread count for other participants
-    conversation.participants.forEach((participant: any) => {
-      if (participant.toString() !== req.user._id.toString()) {
-        const userId = participant.toString();
-        conversation.unreadCount.set(
-          userId,
-          (conversation.unreadCount.get(userId) || 0) + 1
-        );
+    const unreadCount = (conversation.unreadCount as any) || {};
+    conversation.participants.forEach((p: any) => {
+      if (p.userId !== req.user.id) {
+        unreadCount[p.userId] = (unreadCount[p.userId] || 0) + 1;
       }
     });
 
-    await conversation.save();
-
-    const populatedMessage = await Message.findById(message._id)
-      .populate('sender', 'name photo')
-      .lean();
+    await prisma.conversation.update({
+      where: { id },
+      data: {
+        lastMessageContent: content,
+        lastMessageSenderId: req.user.id,
+        lastMessageSentAt: new Date(),
+        unreadCount,
+      },
+    });
 
     res.status(201).json({
       success: true,
-      data: populatedMessage,
+      data: message,
     });
   } catch (error) {
     next(error);
@@ -227,28 +248,33 @@ export const markAsRead = async (
   try {
     const { id } = req.params;
 
-    const conversation = await Conversation.findById(id);
+    const conversation = await prisma.conversation.findUnique({
+      where: { id },
+    });
 
     if (!conversation) {
       throw new NotFoundError('Conversation');
     }
 
-    // Reset unread count for current user
-    conversation.unreadCount.set(req.user._id.toString(), 0);
-    await conversation.save();
+    const unreadCount = (conversation.unreadCount as any) || {};
+    unreadCount[req.user.id] = 0;
 
-    // Mark all messages as read
-    await Message.updateMany(
-      {
-        conversation: id,
-        sender: { $ne: req.user._id },
+    await prisma.conversation.update({
+      where: { id },
+      data: { unreadCount },
+    });
+
+    await prisma.message.updateMany({
+      where: {
+        conversationId: id,
+        senderId: { not: req.user.id },
         read: false,
       },
-      {
+      data: {
         read: true,
         readAt: new Date(),
-      }
-    );
+      },
+    });
 
     res.status(200).json({
       success: true,

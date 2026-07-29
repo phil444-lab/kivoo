@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import Item from '../models/Item.js';
+import prisma from '../lib/prisma.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { NotFoundError, ForbiddenError } from '../utils/ApiError.js';
 
@@ -22,35 +22,38 @@ export const getItems = async (
       featured,
     } = req.query;
 
-    const query: any = { status: 'active' };
+    const where: any = { status: 'active' };
 
-    if (category) query.category = category;
-    if (location) query['location.city'] = { $regex: location, $options: 'i' };
+    if (category) where.categoryId = category;
+    if (location) where.location = { path: '$.city', string_contains: location };
     if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = Number(minPrice);
-      if (maxPrice) query.price.$lte = Number(maxPrice);
+      where.price = {};
+      if (minPrice) where.price.gte = Number(minPrice);
+      if (maxPrice) where.price.lte = Number(maxPrice);
     }
-    if (condition) query.condition = condition;
+    if (condition) where.condition = condition;
     if (search) {
-      query.$text = { $search: search };
+      where.OR = [
+        { title: { contains: search } },
+        { description: { contains: search } },
+      ];
     }
-    if (featured === 'true') query.featured = true;
+    if (featured === 'true') where.featured = true;
 
-    let sortOption: any = { createdAt: -1 };
+    let orderBy: any = { createdAt: 'desc' };
     switch (sort) {
       case 'price_asc':
-        sortOption = { price: 1 };
+        orderBy = { price: 'asc' };
         break;
       case 'price_desc':
-        sortOption = { price: -1 };
+        orderBy = { price: 'desc' };
         break;
       case 'popular':
-        sortOption = { views: -1, likes: -1 };
+        orderBy = { views: 'desc' };
         break;
       case 'newest':
       default:
-        sortOption = { createdAt: -1 };
+        orderBy = { createdAt: 'desc' };
     }
 
     const pageNum = parseInt(page as string, 10);
@@ -58,14 +61,17 @@ export const getItems = async (
     const skip = (pageNum - 1) * limitNum;
 
     const [items, totalItems] = await Promise.all([
-      Item.find(query)
-        .populate('category', 'name icon color')
-        .populate('seller', 'name photo rating verified')
-        .sort(sortOption)
-        .skip(skip)
-        .limit(limitNum)
-        .lean(),
-      Item.countDocuments(query),
+      prisma.item.findMany({
+        where,
+        include: {
+          category: { select: { id: true, name: true, icon: true, color: true } },
+          seller: { select: { id: true, name: true, photo: true, rating: true, verified: true } },
+        },
+        orderBy,
+        skip,
+        take: limitNum,
+      }),
+      prisma.item.count({ where }),
     ]);
 
     const totalPages = Math.ceil(totalItems / limitNum);
@@ -96,12 +102,15 @@ export const getTrending = async (
   try {
     const limit = parseInt(req.query.limit as string, 10) || 10;
 
-    const items = await Item.find({ status: 'active' })
-      .sort({ views: -1, likes: -1 })
-      .limit(limit)
-      .populate('category', 'name icon color')
-      .populate('seller', 'name photo rating verified')
-      .lean();
+    const items = await prisma.item.findMany({
+      where: { status: 'active' },
+      orderBy: { views: 'desc' },
+      take: limit,
+      include: {
+        category: { select: { id: true, name: true, icon: true, color: true } },
+        seller: { select: { id: true, name: true, photo: true, rating: true, verified: true } },
+      },
+    });
 
     res.status(200).json({
       success: true,
@@ -120,16 +129,19 @@ export const getFeatured = async (
   try {
     const limit = parseInt(req.query.limit as string, 10) || 10;
 
-    const items = await Item.find({
-      status: 'active',
-      featured: true,
-      featuredUntil: { $gt: new Date() },
-    })
-      .sort({ boostLevel: -1, createdAt: -1 })
-      .limit(limit)
-      .populate('category', 'name icon color')
-      .populate('seller', 'name photo rating verified')
-      .lean();
+    const items = await prisma.item.findMany({
+      where: {
+        status: 'active',
+        featured: true,
+        featuredUntil: { gt: new Date() },
+      },
+      orderBy: [{ boostLevel: 'desc' }, { createdAt: 'desc' }],
+      take: limit,
+      include: {
+        category: { select: { id: true, name: true, icon: true, color: true } },
+        seller: { select: { id: true, name: true, photo: true, rating: true, verified: true } },
+      },
+    });
 
     res.status(200).json({
       success: true,
@@ -146,19 +158,15 @@ export const getItem = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const item = await Item.findByIdAndUpdate(
-      req.params.id,
-      { $inc: { views: 1 } },
-      { new: true }
-    )
-      .populate('category', 'name icon color')
-      .populate('subcategory', 'name icon')
-      .populate('seller', 'name photo rating verified location joinedAt')
-      .lean();
-
-    if (!item) {
-      throw new NotFoundError('Item');
-    }
+    const item = await prisma.item.update({
+      where: { id: req.params.id },
+      data: { views: { increment: 1 } },
+      include: {
+        category: { select: { id: true, name: true, icon: true, color: true } },
+        subcategory: { select: { id: true, name: true, icon: true } },
+        seller: { select: { id: true, name: true, photo: true, rating: true, verified: true, location: true, joinedAt: true } },
+      },
+    });
 
     res.status(200).json({
       success: true,
@@ -177,14 +185,17 @@ export const createItem = async (
   try {
     const itemData = {
       ...req.body,
-      seller: req.user._id,
+      sellerId: req.user.id,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     };
 
-    const item = await Item.create(itemData);
+    const item = await prisma.item.create({
+      data: itemData,
+    });
 
     res.status(201).json({
       success: true,
-      data: item.toJSON(),
+      data: item,
     });
   } catch (error) {
     next(error);
@@ -197,22 +208,26 @@ export const updateItem = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const item = await Item.findById(req.params.id);
+    const item = await prisma.item.findUnique({
+      where: { id: req.params.id },
+    });
 
     if (!item) {
       throw new NotFoundError('Item');
     }
 
-    if (item.seller.toString() !== req.user._id.toString()) {
+    if (item.sellerId !== req.user.id) {
       throw new ForbiddenError('Not authorized to update this item');
     }
 
-    Object.assign(item, req.body);
-    await item.save();
+    const updated = await prisma.item.update({
+      where: { id: req.params.id },
+      data: req.body,
+    });
 
     res.status(200).json({
       success: true,
-      data: item.toJSON(),
+      data: updated,
     });
   } catch (error) {
     next(error);
@@ -225,17 +240,21 @@ export const deleteItem = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const item = await Item.findById(req.params.id);
+    const item = await prisma.item.findUnique({
+      where: { id: req.params.id },
+    });
 
     if (!item) {
       throw new NotFoundError('Item');
     }
 
-    if (item.seller.toString() !== req.user._id.toString()) {
+    if (item.sellerId !== req.user.id) {
       throw new ForbiddenError('Not authorized to delete this item');
     }
 
-    await item.deleteOne();
+    await prisma.item.delete({
+      where: { id: req.params.id },
+    });
 
     res.status(200).json({
       success: true,
@@ -253,28 +272,33 @@ export const boostItem = async (
 ): Promise<void> => {
   try {
     const { duration } = req.body;
-    const item = await Item.findById(req.params.id);
+    const item = await prisma.item.findUnique({
+      where: { id: req.params.id },
+    });
 
     if (!item) {
       throw new NotFoundError('Item');
     }
 
-    if (item.seller.toString() !== req.user._id.toString()) {
+    if (item.sellerId !== req.user.id) {
       throw new ForbiddenError('Not authorized to boost this item');
     }
 
-    item.boostLevel = (item.boostLevel || 0) + 1;
-    item.boostUntil = new Date(
-      Date.now() + duration * 24 * 60 * 60 * 1000
-    );
-    item.featured = true;
-    item.featuredUntil = item.boostUntil;
+    const boostUntil = new Date(Date.now() + duration * 24 * 60 * 60 * 1000);
 
-    await item.save();
+    const updated = await prisma.item.update({
+      where: { id: req.params.id },
+      data: {
+        boostLevel: { increment: 1 },
+        boostUntil,
+        featured: true,
+        featuredUntil: boostUntil,
+      },
+    });
 
     res.status(200).json({
       success: true,
-      data: item.toJSON(),
+      data: updated,
     });
   } catch (error) {
     next(error);

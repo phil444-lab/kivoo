@@ -1,6 +1,5 @@
 import { Response, NextFunction } from 'express';
-import Favorite from '../models/Favorite.js';
-import Item from '../models/Item.js';
+import prisma from '../lib/prisma.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { NotFoundError, ValidationError } from '../utils/ApiError.js';
 
@@ -15,17 +14,26 @@ export const getFavorites = async (
     const skip = (page - 1) * limit;
 
     const [favorites, totalItems] = await Promise.all([
-      Favorite.find({ user: req.user._id })
-        .populate({
-          path: 'item',
-          select: 'title price images condition status seller',
-          populate: { path: 'seller', select: 'name rating' },
-        })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      Favorite.countDocuments({ user: req.user._id }),
+      prisma.favorite.findMany({
+        where: { userId: req.user.id },
+        include: {
+          item: {
+            select: {
+              id: true,
+              title: true,
+              price: true,
+              images: true,
+              condition: true,
+              status: true,
+              seller: { select: { id: true, name: true, rating: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.favorite.count({ where: { userId: req.user.id } }),
     ]);
 
     const totalPages = Math.ceil(totalItems / limit);
@@ -56,26 +64,27 @@ export const addFavorite = async (
   try {
     const { itemId } = req.params;
 
-    const item = await Item.findById(itemId);
+    const item = await prisma.item.findUnique({ where: { id: itemId } });
     if (!item) {
       throw new NotFoundError('Item');
     }
 
-    const existing = await Favorite.findOne({
-      user: req.user._id,
-      item: itemId,
+    const existing = await prisma.favorite.findUnique({
+      where: { userId_itemId: { userId: req.user.id, itemId } },
     });
 
     if (existing) {
       throw new ValidationError('Item already in favorites');
     }
 
-    await Favorite.create({
-      user: req.user._id,
-      item: itemId,
+    await prisma.favorite.create({
+      data: { userId: req.user.id, itemId },
     });
 
-    await Item.findByIdAndUpdate(itemId, { $inc: { likes: 1 } });
+    await prisma.item.update({
+      where: { id: itemId },
+      data: { likes: { increment: 1 } },
+    });
 
     res.status(201).json({
       success: true,
@@ -94,16 +103,22 @@ export const removeFavorite = async (
   try {
     const { itemId } = req.params;
 
-    const favorite = await Favorite.findOneAndDelete({
-      user: req.user._id,
-      item: itemId,
+    const favorite = await prisma.favorite.findUnique({
+      where: { userId_itemId: { userId: req.user.id, itemId } },
     });
 
     if (!favorite) {
       throw new NotFoundError('Favorite');
     }
 
-    await Item.findByIdAndUpdate(itemId, { $inc: { likes: -1 } });
+    await prisma.favorite.delete({
+      where: { userId_itemId: { userId: req.user.id, itemId } },
+    });
+
+    await prisma.item.update({
+      where: { id: itemId },
+      data: { likes: { increment: -1 } },
+    });
 
     res.status(200).json({
       success: true,
@@ -122,9 +137,8 @@ export const checkFavorite = async (
   try {
     const { itemId } = req.params;
 
-    const favorite = await Favorite.findOne({
-      user: req.user._id,
-      item: itemId,
+    const favorite = await prisma.favorite.findUnique({
+      where: { userId_itemId: { userId: req.user.id, itemId } },
     });
 
     res.status(200).json({

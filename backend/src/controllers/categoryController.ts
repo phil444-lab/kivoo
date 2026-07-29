@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import Category from '../models/Category.js';
+import prisma from '../lib/prisma.js';
 import { NotFoundError } from '../utils/ApiError.js';
 
 export const getCategories = async (
@@ -8,30 +8,20 @@ export const getCategories = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const categories = await Category.find({ isActive: true })
-      .populate({
-        path: 'parentCategory',
-        select: 'name icon',
-      })
-      .lean();
-
-    // Group subcategories under parent categories
-    const parentCategories = categories.filter((cat: any) => !cat.parentCategory);
-    const subcategories = categories.filter((cat: any) => cat.parentCategory);
-
-    const result = parentCategories.map((parent: any) => ({
-      ...parent,
-      subcategories: subcategories.filter(
-        (sub: any) =>
-          sub.parentCategory &&
-          (sub.parentCategory._id?.toString() === parent._id?.toString() ||
-            sub.parentCategory.toString() === parent._id?.toString())
-      ),
-    }));
+    const categories = await prisma.category.findMany({
+      where: { isActive: true, parentCategoryId: null },
+      include: {
+        subcategories: {
+          where: { isActive: true },
+          select: { id: true, name: true, icon: true, color: true },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
 
     res.status(200).json({
       success: true,
-      data: result,
+      data: categories,
     });
   } catch (error) {
     next(error);
@@ -44,12 +34,16 @@ export const getCategory = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const category = await Category.findById(req.params.id)
-      .populate({
-        path: 'parentCategory',
-        select: 'name icon',
-      })
-      .lean();
+    const category = await prisma.category.findUnique({
+      where: { id: req.params.id },
+      include: {
+        parentCategory: { select: { id: true, name: true, icon: true } },
+        subcategories: {
+          where: { isActive: true },
+          select: { id: true, name: true, icon: true, color: true },
+        },
+      },
+    });
 
     if (!category) {
       throw new NotFoundError('Category');

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import prisma from '../lib/prisma.js';
 import { UnauthorizedError } from '../utils/ApiError.js';
 import config from '../config/index.js';
 
@@ -27,7 +27,7 @@ export const protect = async (
     }
 
     const decoded = jwt.verify(token, config.jwt.secret) as { id: string };
-    const user = await User.findById(decoded.id);
+    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
 
     if (!user) {
       throw new UnauthorizedError('User not found');

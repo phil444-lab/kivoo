@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import User from '../models/User.js';
-import Item from '../models/Item.js';
-import Review from '../models/Review.js';
+import prisma from '../lib/prisma.js';
 import { NotFoundError } from '../utils/ApiError.js';
 
 export const getUserProfile = async (
@@ -10,15 +8,27 @@ export const getUserProfile = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const user = await User.findById(req.params.id).lean();
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      select: {
+        id: true,
+        name: true,
+        photo: true,
+        location: true,
+        verified: true,
+        rating: true,
+        ratingCount: true,
+        joinedAt: true,
+      },
+    });
 
     if (!user) {
       throw new NotFoundError('User');
     }
 
     const [itemsListed, itemsSold] = await Promise.all([
-      Item.countDocuments({ seller: req.params.id }),
-      Item.countDocuments({ seller: req.params.id, status: 'sold' }),
+      prisma.item.count({ where: { sellerId: req.params.id } }),
+      prisma.item.count({ where: { sellerId: req.params.id, status: 'sold' } }),
     ]);
 
     res.status(200).json({
@@ -49,17 +59,20 @@ export const getUserItems = async (
     const status = req.query.status || 'all';
     const skip = (page - 1) * limit;
 
-    const query: any = { seller: req.params.id };
-    if (status !== 'all') query.status = status;
+    const where: any = { sellerId: req.params.id };
+    if (status !== 'all') where.status = status;
 
     const [items, totalItems] = await Promise.all([
-      Item.find(query)
-        .populate('category', 'name icon color')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      Item.countDocuments(query),
+      prisma.item.findMany({
+        where,
+        include: {
+          category: { select: { id: true, name: true, icon: true, color: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.item.count({ where }),
     ]);
 
     const totalPages = Math.ceil(totalItems / limit);
@@ -92,34 +105,35 @@ export const getUserReviews = async (
     const limit = parseInt(req.query.limit as string, 10) || 20;
     const skip = (page - 1) * limit;
 
-    const [reviews, totalItems] = await Promise.all([
-      Review.find({ reviewed: req.params.id })
-        .populate('reviewer', 'name photo')
-        .populate('item', 'title')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      Review.countDocuments({ reviewed: req.params.id }),
+    const [reviews, totalItems, aggregation] = await Promise.all([
+      prisma.review.findMany({
+        where: { reviewedId: req.params.id },
+        include: {
+          reviewer: { select: { id: true, name: true, photo: true } },
+          item: { select: { id: true, title: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.review.count({ where: { reviewedId: req.params.id } }),
+      prisma.review.aggregate({
+        where: { reviewedId: req.params.id },
+        _avg: { rating: true },
+        _count: { rating: true },
+      }),
     ]);
 
     const totalPages = Math.ceil(totalItems / limit);
-
-    // Calculate average rating
-    const result = await Review.aggregate([
-      { $match: { reviewed: req.params.id as any } },
-      { $group: { _id: null, averageRating: { $avg: '$rating' }, totalReviews: { $sum: 1 } } },
-    ]);
-
-    const averageRating = result.length > 0 ? result[0].averageRating : 0;
-    const totalReviews = result.length > 0 ? result[0].totalReviews : 0;
 
     res.status(200).json({
       success: true,
       data: {
         reviews,
-        averageRating: Math.round(averageRating * 10) / 10,
-        totalReviews,
+        averageRating: aggregation._avg.rating
+          ? Math.round(aggregation._avg.rating * 10) / 10
+          : 0,
+        totalReviews: aggregation._count.rating,
       },
     });
   } catch (error) {

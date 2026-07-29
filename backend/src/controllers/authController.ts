@@ -1,19 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import bcrypt from 'bcryptjs';
+import prisma from '../lib/prisma.js';
 import config from '../config/index.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { ApiError, ValidationError } from '../utils/ApiError.js';
 
 const generateToken = (userId: string): string => {
   return jwt.sign({ id: userId }, config.jwt.secret, {
-    expiresIn: config.jwt.expiresIn,
+    expiresIn: config.jwt.expiresIn as any,
   });
 };
 
 const generateRefreshToken = (userId: string): string => {
   return jwt.sign({ id: userId }, config.jwt.refreshSecret, {
-    expiresIn: config.jwt.refreshExpiresIn,
+    expiresIn: config.jwt.refreshExpiresIn as any,
   });
 };
 
@@ -25,29 +26,48 @@ export const register = async (
   try {
     const { name, email, phone, password, location } = req.body;
 
-    const existingUser = await User.findOne({
-      $or: [{ email }, { phone }],
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [{ email }, { phone }],
+      },
     });
 
     if (existingUser) {
       throw new ValidationError('Email or phone already registered');
     }
 
-    const user = await User.create({
-      name,
-      email,
-      phone,
-      password,
-      location,
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        phone,
+        password: hashedPassword,
+        location: location || {},
+        preferences: { notifications: true, language: 'fr' },
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        photo: true,
+        verified: true,
+        rating: true,
+        ratingCount: true,
+        location: true,
+        joinedAt: true,
+      },
     });
 
-    const token = generateToken(user._id.toString());
-    const refreshToken = generateRefreshToken(user._id.toString());
+    const token = generateToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
 
     res.status(201).json({
       success: true,
       data: {
-        user: user.toJSON(),
+        user,
         token,
         refreshToken,
       },
@@ -65,28 +85,34 @@ export const login = async (
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email }).select('+password');
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
 
     if (!user) {
       throw new ValidationError('Invalid email or password');
     }
 
-    const isPasswordValid = await user.comparePassword(password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
       throw new ValidationError('Invalid email or password');
     }
 
-    user.lastLogin = new Date();
-    await user.save();
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() },
+    });
 
-    const token = generateToken(user._id.toString());
-    const refreshToken = generateRefreshToken(user._id.toString());
+    const token = generateToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
+
+    const { password: _, ...userWithoutPassword } = user;
 
     res.status(200).json({
       success: true,
       data: {
-        user: user.toJSON(),
+        user: userWithoutPassword,
         token,
         refreshToken,
       },
@@ -104,44 +130,55 @@ export const socialLogin = async (
   try {
     const { provider, providerId, email, name, photo } = req.body;
 
-    let user = await User.findOne({
-      'socialProviders.providerId': providerId,
+    let user = await prisma.user.findFirst({
+      where: {
+        socialProviders: {
+          path: '$[*].providerId',
+          string_contains: providerId,
+        },
+      },
     });
 
     if (!user && email) {
-      user = await User.findOne({ email });
+      user = await prisma.user.findUnique({ where: { email } });
     }
 
     if (user) {
-      // Add social provider if not exists
-      const hasProvider = user.socialProviders.some(
-        (sp) => sp.provider === provider
-      );
+      const socialProviders = (user.socialProviders as any[]) || [];
+      const hasProvider = socialProviders.some((sp: any) => sp.provider === provider);
 
       if (!hasProvider) {
-        user.socialProviders.push({ provider, providerId, email });
-        await user.save();
+        socialProviders.push({ provider, providerId, email });
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { socialProviders },
+        });
       }
     } else {
-      // Create new user
-      user = await User.create({
-        name,
-        email,
-        phone: `social_${providerId.slice(0, 10)}`,
-        password: Math.random().toString(36).slice(-12),
-        photo,
-        verified: true,
-        socialProviders: [{ provider, providerId, email }],
+      const hashedPassword = await bcrypt.hash(Math.random().toString(36).slice(-12), 12);
+      user = await prisma.user.create({
+        data: {
+          name,
+          email,
+          phone: `social_${providerId.slice(0, 10)}`,
+          password: hashedPassword,
+          photo,
+          verified: true,
+          socialProviders: [{ provider, providerId, email }],
+          preferences: { notifications: true, language: 'fr' },
+        },
       });
     }
 
-    const token = generateToken(user._id.toString());
-    const refreshToken = generateRefreshToken(user._id.toString());
+    const token = generateToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
+
+    const { password: _, ...userWithoutPassword } = user;
 
     res.status(200).json({
       success: true,
       data: {
-        user: user.toJSON(),
+        user: userWithoutPassword,
         token,
         refreshToken,
       },
@@ -168,14 +205,14 @@ export const refreshToken = async (
       id: string;
     };
 
-    const user = await User.findById(decoded.id);
+    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
 
     if (!user) {
       throw new ApiError(401, 'User not found');
     }
 
-    const newToken = generateToken(user._id.toString());
-    const newRefreshToken = generateRefreshToken(user._id.toString());
+    const newToken = generateToken(user.id);
+    const newRefreshToken = generateRefreshToken(user.id);
 
     res.status(200).json({
       success: true,
@@ -195,7 +232,24 @@ export const getMe = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        photo: true,
+        location: true,
+        verified: true,
+        rating: true,
+        ratingCount: true,
+        joinedAt: true,
+        lastLogin: true,
+        isActive: true,
+        preferences: true,
+      },
+    });
 
     if (!user) {
       throw new ApiError(404, 'User not found');
@@ -203,7 +257,7 @@ export const getMe = async (
 
     res.status(200).json({
       success: true,
-      data: user.toJSON(),
+      data: user,
     });
   } catch (error) {
     next(error);
@@ -218,21 +272,31 @@ export const updateProfile = async (
   try {
     const { name, phone, location } = req.body;
 
-    const user = await User.findById(req.user._id);
+    const updateData: any = {};
+    if (name) updateData.name = name;
+    if (phone) updateData.phone = phone;
+    if (location) updateData.location = location;
 
-    if (!user) {
-      throw new ApiError(404, 'User not found');
-    }
-
-    if (name) user.name = name;
-    if (phone) user.phone = phone;
-    if (location) user.location = { ...user.location, ...location };
-
-    await user.save();
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        photo: true,
+        location: true,
+        verified: true,
+        rating: true,
+        ratingCount: true,
+        joinedAt: true,
+      },
+    });
 
     res.status(200).json({
       success: true,
-      data: user.toJSON(),
+      data: user,
     });
   } catch (error) {
     next(error);
@@ -246,7 +310,7 @@ export const forgotPassword = async (
 ): Promise<void> => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
+    const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
       res.status(200).json({
@@ -255,10 +319,6 @@ export const forgotPassword = async (
       });
       return;
     }
-
-    // In production, send email with reset token
-    // const resetToken = crypto.randomBytes(32).toString('hex');
-    // await sendEmail({ to: email, resetToken });
 
     res.status(200).json({
       success: true,
@@ -276,9 +336,6 @@ export const resetPassword = async (
 ): Promise<void> => {
   try {
     const { token, newPassword } = req.body;
-
-    // In production, verify reset token and update password
-    // const user = await User.findOne({ resetToken: token, resetTokenExpires: { $gt: Date.now() } });
 
     res.status(200).json({
       success: true,
