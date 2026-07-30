@@ -15,6 +15,9 @@ dependencies:
   provider: ^6.1.1
   flutter_native_splash: ^2.4.6
   font_awesome_flutter: ^10.9.1
+  google_sign_in: ^6.2.1
+  http: ^1.2.0
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:
@@ -28,11 +31,11 @@ flutter:
     - assets/
 
 flutter_native_splash:
-  color: "#7FA1EF"
+  color: "#ffffff"
   image: assets/logo-1152.png
   android_12: 
     image: assets/logo-1152.png
-    color: "#7FA1EF"
+    color: "#ffffff"
   android: true
   ios: true
   web: false

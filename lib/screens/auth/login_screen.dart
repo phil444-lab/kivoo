@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
+import '../../providers/auth_provider.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -11,9 +13,11 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+  final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +26,19 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor:
           isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: Icon(
+            FontAwesomeIcons.arrowLeft,
+            color: isDark ? AppTheme.darkText : AppTheme.lightText,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.only(
@@ -33,23 +50,6 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 20),
-
-              // Back button
-              Align(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  icon: Icon(
-                    FontAwesomeIcons.arrowLeft,
-                    color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
 
               // Logo
               Center(
@@ -91,23 +91,41 @@ class _LoginScreenState extends State<LoginScreen> {
                 textAlign: TextAlign.center,
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
 
-              // Email field
+              // Error message
+              if (_errorMessage != null)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  ),
+                  child: Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.red, fontSize: 13),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+              const SizedBox(height: 24),
+
+              // Email or Phone field
               TextField(
-                controller: _emailController,
+                controller: _identifierController,
                 style: TextStyle(
                   color: isDark ? AppTheme.darkText : AppTheme.lightText,
                 ),
                 decoration: InputDecoration(
-                  labelText: 'Email',
+                  labelText: 'Email ou téléphone',
                   labelStyle: TextStyle(
                     color: isDark
                         ? AppTheme.darkTextMuted
                         : AppTheme.lightTextMuted,
                   ),
                   prefixIcon: Icon(
-                    FontAwesomeIcons.envelope,
+                    FontAwesomeIcons.user,
                     color: isDark
                         ? AppTheme.darkTextMuted
                         : AppTheme.lightTextMuted,
@@ -203,7 +221,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: _isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,
@@ -211,14 +229,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'Se connecter',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Se connecter',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                 ),
               ),
 
@@ -271,7 +298,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 child: ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: _isLoading ? null : _handleGoogleLogin,
                   icon: Container(
                     width: 24,
                     height: 24,
@@ -280,7 +307,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
-                      Icons.g_mobiledata,
+                      FontAwesomeIcons.google,
                       color: Colors.red,
                       size: 20,
                     ),
@@ -373,9 +400,81 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Future<void> _handleGoogleLogin() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    setState(() {
+      _errorMessage = null;
+    });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.loginWithGoogle();
+
+      if (mounted) {
+        // Afficher un snackbar de succès
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Connexion réussie !'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        // Retourner à l'écran précédent (ProfileScreen)
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+      });
+    }
+  }
+
+  Future<void> _handleLogin() async {
+    // Masque le clavier sans déclencher de glitch de surface
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.login(
+        identifier: _identifierController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        // Afficher un snackbar de succès
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Connexion réussie !'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        // Retourner à l'écran précédent (ProfileScreen) qui se reconstruira
+        // avec l'état authentifié grâce à AuthProvider
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   void dispose() {
-    _emailController.dispose();
+    _identifierController.dispose();
     _passwordController.dispose();
     super.dispose();
   }

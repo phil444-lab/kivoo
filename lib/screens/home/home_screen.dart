@@ -183,337 +183,119 @@ class _HomeScreenState extends State<HomeScreen> {
         bottom: false,
         child: Column(
           children: [
-            // Header with KIVOO branding + search bar
-            _buildHeader(context, themeProvider),
+            // Header with KIVOO branding + search bar (caché sur l'onglet Profil)
+            if (_currentNavIndex != 4) _buildHeader(context, themeProvider),
 
             // Content
             Expanded(
-              child: SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 20),
-
-                    // Featured section
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: _currentNavIndex == 4
+                  ? const ProfileScreen(showAppBar: false)
+                  : SingleChildScrollView(
+                      physics: const ClampingScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'En Vedette',
-                            style: TextStyle(
-                              color: isDark
-                                  ? AppTheme.darkText
-                                  : AppTheme.lightText,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {},
-                            child: const Text(
-                              'Voir tout',
-                              style: TextStyle(
-                                color: AppTheme.primaryBlue,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                          const SizedBox(height: 20),
 
-                    const SizedBox(height: 12),
-
-                    // Feature cards horizontal scroll
-                    SizedBox(
-                      height: 180,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: featureCards.length,
-                        itemBuilder: (context, index) => Padding(
-                          padding: EdgeInsets.only(
-                            right: index < featureCards.length - 1 ? 12 : 0,
-                          ),
-                          child: FeatureCard(
-                            card: featureCards[index],
-                            isDark: isDark,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Categories section
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Catégories',
-                            style: TextStyle(
-                              color: isDark
-                                  ? AppTheme.darkText
-                                  : AppTheme.lightText,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {},
-                            child: const Text(
-                              'Tout',
-                              style: TextStyle(
-                                color: AppTheme.primaryBlue,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Categories grid - fixed overflow
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final crossAxisCount = 4;
-                          final spacing = 12.0;
-                          final totalSpacing = spacing * (crossAxisCount - 1);
-                          final availableWidth =
-                              constraints.maxWidth - totalSpacing;
-                          final itemWidth = availableWidth / crossAxisCount;
-                          final aspectRatio = itemWidth / (itemWidth + 40);
-
-                          return GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: crossAxisCount,
-                              crossAxisSpacing: spacing,
-                              mainAxisSpacing: spacing,
-                              childAspectRatio: aspectRatio,
-                            ),
-                            itemCount: categories.length,
-                            itemBuilder: (context, index) => CategoryItem(
-                              category: categories[index],
-                              isDark: isDark,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Trending section
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                'Tendances',
-                                style: TextStyle(
-                                  color: isDark
-                                      ? AppTheme.darkText
-                                      : AppTheme.lightText,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primaryBlue,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      FontAwesomeIcons.arrowTrendUp,
-                                      color: Colors.white,
-                                      size: 12,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    const Text(
-                                      'POPULAIRE',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          // View toggle
-                          Container(
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? AppTheme.darkCard
-                                  : AppTheme.lightCard,
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                color: isDark
-                                    ? const Color(0xFF3d4752)
-                                    : const Color(0xFF000000)
-                                        .withValues(alpha: 0.08),
-                                width: 1,
-                              ),
-                            ),
+                          // Featured section
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                IconButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      isListView = true;
-                                    });
-                                  },
-                                icon: Icon(
-                                  FontAwesomeIcons.list,
-                                  size: 14,
-                                  color: isListView
-                                      ? Colors.white
-                                      : (isDark
-                                          ? AppTheme.darkTextMuted
-                                          : AppTheme.lightTextMuted),
-                                ),
-                                  style: IconButton.styleFrom(
-                                    backgroundColor: isListView
-                                        ? AppTheme.primaryBlue
-                                        : Colors.transparent,
+                                Text(
+                                  'En Vedette',
+                                  style: TextStyle(
+                                    color: isDark
+                                        ? AppTheme.darkText
+                                        : AppTheme.lightText,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
-                                IconButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      isListView = false;
-                                    });
-                                  },
-                                  icon: Icon(
-                                    FontAwesomeIcons.grip,
-                                    size: 14,
-                                    color: !isListView
-                                        ? Colors.white
-                                        : (isDark
-                                            ? AppTheme.darkTextMuted
-                                            : AppTheme.lightTextMuted),
-                                  ),
-                                  style: IconButton.styleFrom(
-                                    backgroundColor: !isListView
-                                        ? AppTheme.primaryBlue
-                                        : Colors.transparent,
+                                TextButton(
+                                  onPressed: () {},
+                                  child: const Text(
+                                    'Voir tout',
+                                    style: TextStyle(
+                                      color: AppTheme.primaryBlue,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
 
-                    const SizedBox(height: 12),
+                          const SizedBox(height: 12),
 
-                    // Filter pills
-                    SizedBox(
-                      height: 36,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: filters.length,
-                        itemBuilder: (context, index) {
-                          final filter = filters[index];
-                          final isActive = activeFilter == filter;
-                          return Padding(
-                            padding: EdgeInsets.only(
-                                right: index < filters.length - 1 ? 8 : 0),
-                            child: FilterChip(
-                              label: Text(filter),
-                              onSelected: (selected) {
-                                setState(() {
-                                  activeFilter = filter;
-                                });
-                              },
-                              selected: isActive,
-                              backgroundColor: isDark
-                                  ? AppTheme.darkCard
-                                  : AppTheme.lightCard,
-                              selectedColor: AppTheme.primaryBlue,
-                              labelStyle: TextStyle(
-                                color: isActive
-                                    ? Colors.white
-                                    : (isDark
-                                        ? AppTheme.darkTextMuted
-                                        : AppTheme.lightTextMuted),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              side: BorderSide(
-                                color: isDark
-                                    ? const Color(0xFF3d4752)
-                                    : const Color(0xFF000000)
-                                        .withValues(alpha: 0.08),
-                                width: 1,
+                          // Feature cards horizontal scroll
+                          SizedBox(
+                            height: 180,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: featureCards.length,
+                              itemBuilder: (context, index) => Padding(
+                                padding: EdgeInsets.only(
+                                  right: index < featureCards.length - 1 ? 12 : 0,
+                                ),
+                                child: FeatureCard(
+                                  card: featureCards[index],
+                                  isDark: isDark,
+                                ),
                               ),
                             ),
-                          );
-                        },
-                      ),
-                    ),
+                          ),
 
-                    const SizedBox(height: 16),
+                          const SizedBox(height: 24),
 
-                    // Items list/grid
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: isListView
-                          ? Column(
-                              children: trendingItems
-                                  .map((item) => Padding(
-                                        padding:
-                                            const EdgeInsets.only(bottom: 12),
-                                        child: ItemCard(
-                                          item: item,
-                                          isDark: isDark,
-                                          onTap: () {},
-                                        ),
-                                      ))
-                                  .toList(),
-                            )
-                          : LayoutBuilder(
+                          // Categories section
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Catégories',
+                                  style: TextStyle(
+                                    color: isDark
+                                        ? AppTheme.darkText
+                                        : AppTheme.lightText,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {},
+                                  child: const Text(
+                                    'Tout',
+                                    style: TextStyle(
+                                      color: AppTheme.primaryBlue,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Categories grid - fixed overflow
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: LayoutBuilder(
                               builder: (context, constraints) {
-                                final crossAxisCount = 2;
+                                final crossAxisCount = 4;
                                 final spacing = 12.0;
-                                final totalSpacing =
-                                    spacing * (crossAxisCount - 1);
+                                final totalSpacing = spacing * (crossAxisCount - 1);
                                 final availableWidth =
                                     constraints.maxWidth - totalSpacing;
-                                final itemWidth =
-                                    availableWidth / crossAxisCount;
-                                final estimatedHeight = 245.0;
-                                final aspectRatio = itemWidth / estimatedHeight;
+                                final itemWidth = availableWidth / crossAxisCount;
+                                final aspectRatio = itemWidth / 90;
 
                                 return GridView.builder(
                                   shrinkWrap: true,
@@ -523,23 +305,243 @@ class _HomeScreenState extends State<HomeScreen> {
                                     crossAxisCount: crossAxisCount,
                                     crossAxisSpacing: spacing,
                                     mainAxisSpacing: spacing,
-                                    childAspectRatio: aspectRatio,
+                                    childAspectRatio: aspectRatio > 0 ? aspectRatio : 1.0,
                                   ),
-                                  itemCount: trendingItems.length,
-                                  itemBuilder: (context, index) => ItemCard(
-                                    item: trendingItems[index],
+                                  itemCount: categories.length,
+                                  itemBuilder: (context, index) => CategoryItem(
+                                    category: categories[index],
                                     isDark: isDark,
-                                    onTap: () {},
                                   ),
                                 );
                               },
                             ),
-                    ),
+                          ),
 
-                    const SizedBox(height: 100),
-                  ],
-                ),
-              ),
+                          const SizedBox(height: 24),
+
+                          // Trending section
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Tendances',
+                                      style: TextStyle(
+                                        color: isDark
+                                            ? AppTheme.darkText
+                                            : AppTheme.lightText,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primaryBlue,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            FontAwesomeIcons.arrowTrendUp,
+                                            color: Colors.white,
+                                            size: 12,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          const Text(
+                                            'POPULAIRE',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                // View toggle
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? AppTheme.darkCard
+                                        : AppTheme.lightCard,
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(
+                                      color: isDark
+                                          ? const Color(0xFF3d4752)
+                                          : const Color(0xFF000000)
+                                              .withValues(alpha: 0.08),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      IconButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            isListView = true;
+                                          });
+                                        },
+                                      icon: Icon(
+                                        FontAwesomeIcons.list,
+                                        size: 14,
+                                        color: isListView
+                                            ? Colors.white
+                                            : (isDark
+                                                ? AppTheme.darkTextMuted
+                                                : AppTheme.lightTextMuted),
+                                      ),
+                                        style: IconButton.styleFrom(
+                                          backgroundColor: isListView
+                                              ? AppTheme.primaryBlue
+                                              : Colors.transparent,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            isListView = false;
+                                          });
+                                        },
+                                        icon: Icon(
+                                          FontAwesomeIcons.grip,
+                                          size: 14,
+                                          color: !isListView
+                                              ? Colors.white
+                                              : (isDark
+                                                  ? AppTheme.darkTextMuted
+                                                  : AppTheme.lightTextMuted),
+                                        ),
+                                        style: IconButton.styleFrom(
+                                          backgroundColor: !isListView
+                                              ? AppTheme.primaryBlue
+                                              : Colors.transparent,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Filter pills
+                          SizedBox(
+                            height: 36,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: filters.length,
+                              itemBuilder: (context, index) {
+                                final filter = filters[index];
+                                final isActive = activeFilter == filter;
+                                return Padding(
+                                  padding: EdgeInsets.only(
+                                      right: index < filters.length - 1 ? 8 : 0),
+                                  child: FilterChip(
+                                    label: Text(filter),
+                                    onSelected: (selected) {
+                                      setState(() {
+                                        activeFilter = filter;
+                                      });
+                                    },
+                                    selected: isActive,
+                                    backgroundColor: isDark
+                                        ? AppTheme.darkCard
+                                        : AppTheme.lightCard,
+                                    selectedColor: AppTheme.primaryBlue,
+                                    labelStyle: TextStyle(
+                                      color: isActive
+                                          ? Colors.white
+                                          : (isDark
+                                              ? AppTheme.darkTextMuted
+                                              : AppTheme.lightTextMuted),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    side: BorderSide(
+                                      color: isDark
+                                          ? const Color(0xFF3d4752)
+                                          : const Color(0xFF000000)
+                                              .withValues(alpha: 0.08),
+                                      width: 1,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Items list/grid
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: isListView
+                                ? Column(
+                                    children: trendingItems
+                                        .map((item) => Padding(
+                                              padding:
+                                                  const EdgeInsets.only(bottom: 12),
+                                              child: ItemCard(
+                                                item: item,
+                                                isDark: isDark,
+                                                onTap: () {},
+                                              ),
+                                            ))
+                                        .toList(),
+                                  )
+                                : LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      final crossAxisCount = 2;
+                                      final spacing = 12.0;
+                                      final totalSpacing =
+                                          spacing * (crossAxisCount - 1);
+                                      final availableWidth =
+                                          constraints.maxWidth - totalSpacing;
+                                      final itemWidth =
+                                          availableWidth / crossAxisCount;
+                                      final estimatedHeight = 245.0;
+                                      final aspectRatio = itemWidth / estimatedHeight;
+
+                                      return GridView.builder(
+                                        shrinkWrap: true,
+                                        physics: const NeverScrollableScrollPhysics(),
+                                        gridDelegate:
+                                            SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: crossAxisCount,
+                                          crossAxisSpacing: spacing,
+                                          mainAxisSpacing: spacing,
+                                          childAspectRatio: aspectRatio,
+                                        ),
+                                        itemCount: trendingItems.length,
+                                        itemBuilder: (context, index) => ItemCard(
+                                          item: trendingItems[index],
+                                          isDark: isDark,
+                                          onTap: () {},
+                                        ),
+                                      );
+                                    },
+                                  ),
+                          ),
+
+                          const SizedBox(height: 100),
+                        ],
+                      ),
+                    ),
             ),
           ],
         ),
@@ -778,58 +780,6 @@ class _HomeScreenState extends State<HomeScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: items.map((item) {
           final isSelected = _currentNavIndex == item.index;
-
-          // Special handling for Profil tab
-          if (item.index == 4) {
-            return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(),
-                  ),
-                );
-              },
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    item.icon,
-                    color: isSelected
-                        ? AppTheme.primaryBlue
-                        : (isDark
-                            ? AppTheme.darkTextMuted
-                            : AppTheme.lightTextMuted),
-                    size: 22,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    item.label,
-                    style: TextStyle(
-                      color: isSelected
-                          ? AppTheme.primaryBlue
-                          : (isDark
-                              ? AppTheme.darkTextMuted
-                              : AppTheme.lightTextMuted),
-                      fontSize: 10,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w500,
-                    ),
-                  ),
-                  if (isSelected)
-                    Container(
-                      width: 4,
-                      height: 4,
-                      margin: const EdgeInsets.only(top: 2),
-                      decoration: const BoxDecoration(
-                        color: AppTheme.primaryBlue,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                ],
-              ),
-            );
-          }
 
           return GestureDetector(
             onTap: () {

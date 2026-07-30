@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import prisma from '../lib/prisma.js';
 import config from '../config/index.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { ApiError, ValidationError } from '../utils/ApiError.js';
+import { registerSchema, loginSchema } from '../validators/authValidator.js';
 
 const generateToken = (userId: string): string => {
   return jwt.sign({ id: userId }, config.jwt.secret, {
@@ -18,13 +20,55 @@ const generateRefreshToken = (userId: string): string => {
   });
 };
 
+const hashToken = (token: string): string => {
+  return crypto.createHash('sha256').update(token).digest('hex');
+};
+
+const getTokenExpiry = (): Date => {
+  const expiry = config.jwt.expiresIn as string;
+  const days = parseInt(expiry) || 7;
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+};
+
+const getRefreshTokenExpiry = (): Date => {
+  const expiry = config.jwt.refreshExpiresIn as string;
+  const days = parseInt(expiry) || 30;
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+};
+
+const createSession = async (userId: string, token: string, refreshToken: string, req: Request) => {
+  const tokenHash = hashToken(token);
+  const refreshTokenHash = hashToken(refreshToken);
+  
+  return await prisma.session.create({
+    data: {
+      userId,
+      token,
+      refreshToken,
+      tokenHash,
+      refreshTokenHash,
+      deviceInfo: req.headers['user-agent'] || 'Unknown',
+      ipAddress: req.ip || req.socket.remoteAddress,
+      expiresAt: getTokenExpiry(),
+      refreshExpiresAt: getRefreshTokenExpiry(),
+    },
+  });
+};
+
 export const register = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { name, email, phone, password, location } = req.body;
+    const validation = registerSchema.safeParse(req.body);
+    
+    if (!validation.success) {
+      const errors = validation.error.errors.map(err => err.message);
+      throw new ValidationError(errors.join(', '));
+    }
+
+    const { name, email, phone, password, location } = validation.data;
 
     const existingUser = await prisma.user.findFirst({
       where: {
@@ -33,7 +77,7 @@ export const register = async (
     });
 
     if (existingUser) {
-      throw new ValidationError('Email or phone already registered');
+      throw new ValidationError('Ce profil existe déjà !');
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -64,6 +108,9 @@ export const register = async (
     const token = generateToken(user.id);
     const refreshToken = generateRefreshToken(user.id);
 
+    // Pas de création de session à l'inscription
+    // La session est créée lors de la connexion (login)
+
     res.status(201).json({
       success: true,
       data: {
@@ -83,20 +130,33 @@ export const login = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const validation = loginSchema.safeParse(req.body);
+    
+    if (!validation.success) {
+      const errors = validation.error.errors.map(err => err.message);
+      throw new ValidationError(errors.join(', '));
+    }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
+    const { identifier, password } = validation.data;
+
+    // Rechercher par email ou téléphone
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: identifier },
+          { phone: identifier },
+        ],
+      },
     });
 
     if (!user) {
-      throw new ValidationError('Invalid email or password');
+      throw new ValidationError('Email/téléphone ou mot de passe incorrect');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      throw new ValidationError('Invalid email or password');
+      throw new ValidationError('Email/téléphone ou mot de passe incorrect');
     }
 
     await prisma.user.update({
@@ -107,6 +167,8 @@ export const login = async (
     const token = generateToken(user.id);
     const refreshToken = generateRefreshToken(user.id);
 
+    await createSession(user.id, token, refreshToken, req);
+
     const { password: _, ...userWithoutPassword } = user;
 
     res.status(200).json({
@@ -116,6 +178,32 @@ export const login = async (
         token,
         refreshToken,
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const logout = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const tokenHash = hashToken(token);
+      
+      await prisma.session.updateMany({
+        where: { tokenHash, isActive: true },
+        data: { isActive: false },
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Déconnexion réussie',
     });
   } catch (error) {
     next(error);
@@ -170,8 +258,15 @@ export const socialLogin = async (
       });
     }
 
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() },
+    });
+
     const token = generateToken(user.id);
     const refreshToken = generateRefreshToken(user.id);
+
+    await createSession(user.id, token, refreshToken, req);
 
     const { password: _, ...userWithoutPassword } = user;
 
@@ -197,22 +292,50 @@ export const refreshToken = async (
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new ApiError(401, 'No refresh token provided');
+      throw new ApiError(401, 'Aucun token de rafraîchissement fourni');
     }
 
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, config.jwt.refreshSecret) as {
+    const refreshToken = authHeader.split(' ')[1];
+    const refreshTokenHash = hashToken(refreshToken);
+
+    // Vérifier que la session existe et est active
+    const session = await prisma.session.findFirst({
+      where: { refreshTokenHash, isActive: true },
+    });
+
+    if (!session) {
+      throw new ApiError(401, 'Session invalide ou expirée');
+    }
+
+    if (session.refreshExpiresAt < new Date()) {
+      await prisma.session.update({
+        where: { id: session.id },
+        data: { isActive: false },
+      });
+      throw new ApiError(401, 'Session expirée, veuillez vous reconnecter');
+    }
+
+    const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret) as {
       id: string;
     };
 
     const user = await prisma.user.findUnique({ where: { id: decoded.id } });
 
     if (!user) {
-      throw new ApiError(401, 'User not found');
+      throw new ApiError(401, 'Utilisateur non trouvé');
     }
+
+    // Désactiver l'ancienne session
+    await prisma.session.update({
+      where: { id: session.id },
+      data: { isActive: false },
+    });
 
     const newToken = generateToken(user.id);
     const newRefreshToken = generateRefreshToken(user.id);
+
+    // Créer une nouvelle session
+    await createSession(user.id, newToken, newRefreshToken, req);
 
     res.status(200).json({
       success: true,
@@ -252,7 +375,7 @@ export const getMe = async (
     });
 
     if (!user) {
-      throw new ApiError(404, 'User not found');
+      throw new ApiError(404, 'Utilisateur non trouvé');
     }
 
     res.status(200).json({
@@ -315,14 +438,14 @@ export const forgotPassword = async (
     if (!user) {
       res.status(200).json({
         success: true,
-        message: 'If the email exists, a reset link has been sent',
+        message: 'Si l\'email existe, un lien de réinitialisation a été envoyé',
       });
       return;
     }
 
     res.status(200).json({
       success: true,
-      message: 'If the email exists, a reset link has been sent',
+      message: 'Si l\'email existe, un lien de réinitialisation a été envoyé',
     });
   } catch (error) {
     next(error);
@@ -339,7 +462,7 @@ export const resetPassword = async (
 
     res.status(200).json({
       success: true,
-      message: 'Password reset successful',
+      message: 'Réinitialisation du mot de passe réussie',
     });
   } catch (error) {
     next(error);

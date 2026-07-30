@@ -78,29 +78,8 @@ model User {
   reports       Report[]  @relation("Reporter")
   reportedIn    Report[] @relation("ReportedUser")
   reviewsModerated Report[] @relation("ReviewedBy")
-  sessions      Session[]
 
   @@map("users")
-}
-
-model Session {
-  id              String   @id @default(cuid())
-  userId          String   @db.VarChar(25)
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token           String   @db.Text
-  refreshToken    String   @db.Text
-  tokenHash       String   @db.VarChar(191) @unique
-  refreshTokenHash String  @db.VarChar(191) @unique
-  deviceInfo      String?  @db.VarChar(255)
-  ipAddress       String?  @db.VarChar(45)
-  expiresAt       DateTime
-  refreshExpiresAt DateTime
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  isActive        Boolean  @default(true)
-
-  @@index([userId])
-  @@map("sessions")
 }
 
 model Category {

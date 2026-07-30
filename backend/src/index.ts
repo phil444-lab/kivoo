@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { createServer } from 'http';
@@ -15,7 +15,7 @@ import favoriteRoutes from './routes/favoriteRoutes.js';
 import conversationRoutes from './routes/conversationRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 
-const app: express.Express = express();
+const app = express() as Express;
 const httpServer = createServer(app);
 
 // Socket.io
@@ -58,7 +58,7 @@ app.use('/api/users', userRoutes);
 app.use(errorHandler);
 
 // Socket.io connection handling
-io.on('connection', (socket) => {
+io.on('connection', (socket: any) => {
   console.log('User connected:', socket.id);
 
   socket.on('join-conversation', (conversationId: string) => {

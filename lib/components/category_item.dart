@@ -17,62 +17,66 @@ class CategoryItem extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: double.infinity,
-          child: AspectRatio(
-            aspectRatio: 1,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isDark
-                      ? [const Color(0xFF232b34), const Color(0xFF191f26)]
-                      : [const Color(0xFFffffff), const Color(0xFFf0f2f5)],
+        Expanded(
+          child: Container(
+            width: double.infinity,
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [const Color(0xFF232b34), const Color(0xFF191f26)]
+                        : [const Color(0xFFffffff), const Color(0xFFf0f2f5)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark
+                        ? const Color(0xFF3d4752).withOpacity(0.3)
+                        : const Color(0xFF000000).withOpacity(0.06),
+                    width: 1,
+                  ),
+                  boxShadow: isDark
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.4),
+                            blurRadius: 8,
+                            offset: const Offset(2, 2),
+                          ),
+                        ]
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 6,
+                            offset: const Offset(2, 2),
+                          ),
+                        ],
                 ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isDark
-                      ? const Color(0xFF3d4752).withOpacity(0.3)
-                      : const Color(0xFF000000).withOpacity(0.06),
-                  width: 1,
+                child: Icon(
+                  category.icon,
+                  color: Color(int.parse(category.color.replaceFirst('#', '0xFF'))),
+                  size: 22,
                 ),
-                boxShadow: isDark
-                    ? [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.4),
-                          blurRadius: 12,
-                          offset: const Offset(4, 4),
-                        ),
-                      ]
-                    : [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 8,
-                          offset: const Offset(3, 3),
-                        ),
-                      ],
-              ),
-              child: Icon(
-                category.icon,
-                color: Color(int.parse(category.color.replaceFirst('#', '0xFF'))),
-                size: 28,
               ),
             ),
           ),
         ),
-        const SizedBox(height: 6),
-        Text(
-          category.label,
-          style: TextStyle(
-            color: isDark ? AppTheme.darkText : AppTheme.lightText,
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
-            height: 1.2,
+        const SizedBox(height: 2),
+        Flexible(
+          child: Text(
+            category.label,
+            style: TextStyle(
+              color: isDark ? AppTheme.darkText : AppTheme.lightText,
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              height: 1.0,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
       ],
     );

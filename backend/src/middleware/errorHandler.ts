@@ -19,7 +19,7 @@ export const errorHandler = (
   if (err.name === 'ValidationError') {
     res.status(400).json({
       success: false,
-      message: 'Validation Error',
+      message: 'Erreur de validation',
       errors: err.message,
     });
     return;
@@ -29,7 +29,7 @@ export const errorHandler = (
   if ((err as any).code === 11000) {
     res.status(409).json({
       success: false,
-      message: 'Duplicate entry',
+      message: 'Entrée dupliquée',
     });
     return;
   }
@@ -38,7 +38,7 @@ export const errorHandler = (
   if (err.name === 'JsonWebTokenError') {
     res.status(401).json({
       success: false,
-      message: 'Invalid token',
+      message: 'Token invalide',
     });
     return;
   }
@@ -46,15 +46,16 @@ export const errorHandler = (
   if (err.name === 'TokenExpiredError') {
     res.status(401).json({
       success: false,
-      message: 'Token expired',
+      message: 'Token expiré',
     });
     return;
   }
 
   console.error('Unhandled error:', err);
+  console.error('Error stack:', err.stack);
 
   res.status(500).json({
     success: false,
-    message: 'Internal server error',
+    message: 'Erreur interne du serveur',
   });
 };
