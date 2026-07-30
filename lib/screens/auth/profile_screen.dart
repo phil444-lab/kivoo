@@ -5,6 +5,7 @@ import '../../theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
+import 'terms_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   final bool showAppBar;
@@ -86,6 +87,31 @@ class ProfileScreen extends StatelessWidget {
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 8),
+
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TermsScreen(
+                      title: 'Conditions d\'utilisation',
+                      content: 'Ceci est un placeholder. Vous pourrez modifier ce texte plus tard.',
+                    ),
+                  ),
+                );
+              },
+              child: Text(
+                'En cliquant sur Connexion ou Inscription, vous acceptez nos Conditions d\'utilisation et notre Politique de confidentialité.',
+                style: TextStyle(
+                  color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                  fontSize: 12,
+                  decoration: TextDecoration.underline,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
 
             const SizedBox(height: 8),
