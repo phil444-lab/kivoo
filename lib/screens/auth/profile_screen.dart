@@ -1,9 +1,11 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import 'login_screen.dart';
+import 'privacy_screen.dart';
 import 'register_screen.dart';
 import 'terms_screen.dart';
 
@@ -91,27 +93,50 @@ class ProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 8),
 
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const TermsScreen(
-                      title: 'Conditions d\'utilisation',
-                      content: 'Ceci est un placeholder. Vous pourrez modifier ce texte plus tard.',
-                    ),
-                  ),
-                );
-              },
-              child: Text(
-                'En cliquant sur Connexion ou Inscription, vous acceptez nos Conditions d\'utilisation et notre Politique de confidentialité.',
+            Text.rich(
+              TextSpan(
+                text: 'En cliquant sur Connexion ou Inscription, vous acceptez nos ',
                 style: TextStyle(
                   color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                   fontSize: 12,
-                  decoration: TextDecoration.underline,
                 ),
-                textAlign: TextAlign.center,
+                children: [
+                  TextSpan(
+                    text: 'Conditions d\'utilisation',
+                    style: TextStyle(
+                      color: AppTheme.primaryBlue,
+                      decoration: TextDecoration.underline,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const TermsScreen(),
+                          ),
+                        );
+                      },
+                  ),
+                  const TextSpan(text: ' et notre '),
+                  TextSpan(
+                    text: 'Politique de confidentialité',
+                    style: TextStyle(
+                      color: AppTheme.primaryBlue,
+                      decoration: TextDecoration.underline,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PrivacyScreen(),
+                          ),
+                        );
+                      },
+                  ),
+                ],
               ),
+              textAlign: TextAlign.center,
             ),
 
             const SizedBox(height: 8),
