@@ -406,37 +406,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
 
-              const SizedBox(height: 12),
-
-              // Facebook button
-              Container(
-                height: 50,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1877F2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(
-                    Icons.facebook,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                  label: const Text(
-                    'Continuer avec Facebook',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                  ),
-                ),
-              ),
-
               const SizedBox(height: 32),
 
               // Login link
