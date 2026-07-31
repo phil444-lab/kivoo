@@ -393,12 +393,41 @@ export const updateProfile = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { name, phone, location } = req.body;
+    const { name, email, phone, location } = req.body;
 
     const updateData: any = {};
     if (name) updateData.name = name;
+    if (email) updateData.email = email;
     if (phone) updateData.phone = phone;
     if (location) updateData.location = location;
+
+    // Vérifier si l'email existe déjà pour un autre utilisateur
+    if (email) {
+      const existingEmail = await prisma.user.findFirst({
+        where: {
+          email,
+          id: { not: req.user.id },
+        },
+      });
+      if (existingEmail) {
+        console.log('❌ Email déjà utilisé:', email);
+        throw new ValidationError('Cet email est déjà utilisé par un autre compte');
+      }
+    }
+
+    // Vérifier si le téléphone existe déjà pour un autre utilisateur
+    if (phone) {
+      const existingPhone = await prisma.user.findFirst({
+        where: {
+          phone,
+          id: { not: req.user.id },
+        },
+      });
+      if (existingPhone) {
+        console.log('❌ Téléphone déjà utilisé:', phone);
+        throw new ValidationError('Ce numéro de téléphone est déjà utilisé par un autre compte');
+      }
+    }
 
     const user = await prisma.user.update({
       where: { id: req.user.id },
@@ -421,7 +450,29 @@ export const updateProfile = async (
       success: true,
       data: user,
     });
-  } catch (error) {
+  } catch (error: any) {
+    console.error('❌ Erreur updateProfile:', error);
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
+    
+    // Gérer les erreurs Prisma de contrainte unique
+    if (error.code === 'P2002') {
+      console.log('⚠️ Contrainte unique violée');
+      const field = error.meta?.target?.[0] || 'champ';
+      console.log('📋 Champ en conflit:', field);
+      
+      if (field === 'email') {
+        return next(new ValidationError('Cet email est déjà utilisé par un autre compte'));
+      } else if (field === 'phone') {
+        return next(new ValidationError('Ce numéro de téléphone est déjà utilisé par un autre compte'));
+      }
+    }
+    
+    // Si c'est déjà une ValidationError, la passer directement
+    if (error instanceof ValidationError) {
+      return next(error);
+    }
+    
     next(error);
   }
 };

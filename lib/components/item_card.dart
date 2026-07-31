@@ -65,7 +65,7 @@ class ItemCard extends StatelessWidget {
                         top: Radius.circular(16),
                       ),
                       child: Image.network(
-                        item.photo,
+                        item.photoUrl,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return Container(

@@ -91,4 +91,6 @@ class AppConstants {
   static const String logoutEndpoint = '/auth/logout';
   static const String refreshTokenEndpoint = '/auth/refresh-token';
   static const String socialLoginEndpoint = '/auth/social-login';
+  static const String uploadPhotoEndpoint = '/auth/upload-photo';
+  static const String uploadsBaseUrl = 'http://192.168.100.50:5000/uploads';
 }

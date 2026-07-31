@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../constants.dart';
 
 class ItemModel {
   final int id;
@@ -45,5 +46,15 @@ class ItemModel {
       'photo': photo,
       'verified': verified,
     };
+  }
+
+  /// Retourne l'URL complète de la photo de l'item
+  String get photoUrl {
+    // Si c'est déjà une URL complète (http/https), la retourner telle quelle
+    if (photo.startsWith('http://') || photo.startsWith('https://')) {
+      return photo;
+    }
+    // Sinon, c'est un nom de fichier, construire l'URL
+    return '${AppConstants.uploadsBaseUrl}/$photo';
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:http/http.dart' as http;
 import '../constants.dart';
 import '../models/user_model.dart';
@@ -139,6 +140,99 @@ class AuthService {
         return AuthResponse.fromJson(responseData);
       } else {
         throw Exception(responseData['message'] ?? 'Login failed');
+      }
+    } on http.ClientException catch (e) {
+      throw Exception('Impossible de se connecter au serveur. Vérifiez votre connexion internet.');
+    } catch (e) {
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
+  Future<User> updateProfile({
+    required String token,
+    String? name,
+    String? email,
+    String? phone,
+    String? currentPassword,
+    String? newPassword,
+    String? photo,
+    Map<String, dynamic>? location,
+    Map<String, dynamic>? preferences,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        if (name != null) 'name': name,
+        if (email != null) 'email': email,
+        if (phone != null) 'phone': phone,
+        if (photo != null) 'photo': photo,
+        if (location != null) 'location': location,
+        if (preferences != null) 'preferences': preferences,
+        if (currentPassword != null) 'currentPassword': currentPassword,
+        if (newPassword != null) 'newPassword': newPassword,
+      };
+
+      print('📤 Update Profile Request:');
+      print('URL: ${AppConstants.baseUrl}/users/me');
+      print('Body: ${jsonEncode(body)}');
+      print('Token: $token');
+
+      final response = await http.put(
+        Uri.parse('${AppConstants.baseUrl}/users/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(body),
+      );
+
+      print('📥 Update Profile Response:');
+      print('Status Code: ${response.statusCode}');
+      print('Headers: ${response.headers}');
+      print('Body: ${response.body}');
+
+      try {
+        final responseData = jsonDecode(response.body);
+        print('Parsed Response Data: $responseData');
+
+        if (response.statusCode == 200 && responseData['success'] == true) {
+          return User.fromJson(responseData['data']);
+        } else {
+          throw Exception(responseData['message'] ?? 'Update profile failed');
+        }
+      } catch (e) {
+        print('❌ JSON Parse Error: $e');
+        throw Exception('Erreur de parsing de la réponse serveur: ${response.body.substring(0, min(100, response.body.length))}');
+      }
+    } on http.ClientException catch (e) {
+      print('❌ Client Exception: $e');
+      throw Exception('Impossible de se connecter au serveur. Vérifiez votre connexion internet.');
+    } catch (e) {
+      print('❌ General Exception: $e');
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
+  Future<User> uploadPhoto({
+    required String token,
+    required String imagePath,
+  }) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${AppConstants.baseUrl}${AppConstants.uploadPhotoEndpoint}'),
+      );
+
+      request.headers['Authorization'] = 'Bearer $token';
+      request.files.add(await http.MultipartFile.fromPath('photo', imagePath));
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        return User.fromJson(responseData['data']);
+      } else {
+        throw Exception(responseData['message'] ?? 'Upload photo failed');
       }
     } on http.ClientException catch (e) {
       throw Exception('Impossible de se connecter au serveur. Vérifiez votre connexion internet.');

@@ -259,6 +259,58 @@ model Notification {
   @@map("notifications")
 }
 
+model Country {
+  id        String   @id @default(cuid())
+  name      String   @db.VarChar(100)
+  code      String   @db.VarChar(2) @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  departments Department[]
+
+  @@map("countries")
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String   @db.VarChar(100)
+  countryId String   @db.VarChar(25)
+  country   Country  @relation(fields: [countryId], references: [id])
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  cities City[]
+
+  @@index([countryId])
+  @@map("departments")
+}
+
+model City {
+  id           String     @id @default(cuid())
+  name         String     @db.VarChar(100)
+  departmentId String     @db.VarChar(25)
+  department   Department @relation(fields: [departmentId], references: [id])
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+
+  districts District[]
+
+  @@index([departmentId])
+  @@map("cities")
+}
+
+model District {
+  id         String   @id @default(cuid())
+  name       String   @db.VarChar(100)
+  cityId     String   @db.VarChar(25)
+  city       City     @relation(fields: [cityId], references: [id])
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@index([cityId])
+  @@map("districts")
+}
+
 model Report {
   id             String       @id @default(cuid())
   reporterId     String       @db.VarChar(25)

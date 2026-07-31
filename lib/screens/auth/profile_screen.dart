@@ -4,10 +4,13 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../models/location_model.dart';
 import 'login_screen.dart';
 import 'privacy_screen.dart';
 import 'register_screen.dart';
 import 'terms_screen.dart';
+import 'edit_profile_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   final bool showAppBar;
@@ -84,62 +87,14 @@ class ProfileScreen extends StatelessWidget {
             Text(
               'Rejoignez la plus grande communauté d\'achats et de ventes près de chez vous. Des milliers d\'annonces de voitures, téléphones, biens immobiliers, mode et services disponibles au bout des doigts.',
               style: TextStyle(
-                color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                color: AppTheme.primaryBlue,
                 fontSize: 13,
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
             ),
 
-            const SizedBox(height: 8),
-
-            Text.rich(
-              TextSpan(
-                text: 'En cliquant sur Connexion ou Inscription, vous acceptez nos ',
-                style: TextStyle(
-                  color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-                  fontSize: 12,
-                ),
-                children: [
-                  TextSpan(
-                    text: 'Conditions d\'utilisation',
-                    style: TextStyle(
-                      color: AppTheme.primaryBlue,
-                      decoration: TextDecoration.underline,
-                    ),
-                    recognizer: TapGestureRecognizer()
-                      ..onTap = () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const TermsScreen(),
-                          ),
-                        );
-                      },
-                  ),
-                  const TextSpan(text: ' et notre '),
-                  TextSpan(
-                    text: 'Politique de confidentialité',
-                    style: TextStyle(
-                      color: AppTheme.primaryBlue,
-                      decoration: TextDecoration.underline,
-                    ),
-                    recognizer: TapGestureRecognizer()
-                      ..onTap = () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PrivacyScreen(),
-                          ),
-                        );
-                      },
-                  ),
-                ],
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
 
             Text(
               'Connectez-vous pour accéder à votre profil',
@@ -151,7 +106,7 @@ class ProfileScreen extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
 
-            const Spacer(flex: 2),
+            const Spacer(flex: 1),
 
             // Login button
             Container(
@@ -227,6 +182,56 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
               ),
+            ),
+
+            const SizedBox(height: 20),
+
+            Text.rich(
+              TextSpan(
+                text: 'En cliquant sur Connexion ou Inscription, vous acceptez nos ',
+                style: TextStyle(
+                  color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                  fontSize: 13,
+                ),
+                children: [
+                  TextSpan(
+                    text: 'Conditions d\'utilisation',
+                    style: TextStyle(
+                      color: AppTheme.primaryBlue,
+                      decoration: TextDecoration.underline,
+                      fontSize: 13,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const TermsScreen(),
+                          ),
+                        );
+                      },
+                  ),
+                  const TextSpan(text: ' et notre '),
+                  TextSpan(
+                    text: 'Politique de confidentialité',
+                    style: TextStyle(
+                      color: AppTheme.primaryBlue,
+                      decoration: TextDecoration.underline,
+                      fontSize: 13,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PrivacyScreen(),
+                          ),
+                        );
+                      },
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center,
             ),
 
             const Spacer(flex: 1),
@@ -305,27 +310,8 @@ class ProfileScreen extends StatelessWidget {
                     width: 3,
                   ),
                 ),
-                child: user.photo != null
-                    ? ClipOval(
-                        child: Image.network(
-                          user.photo!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, widget) {
-                            return Center(
-                              child: Text(
-                                user.name.isNotEmpty
-                                    ? user.name[0].toUpperCase()
-                                    : '?',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 40,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      )
+                child: user.photoUrl != null && user.photoUrl!.isNotEmpty
+                    ? _buildAvatarImage(user.photoUrl!, user.name)
                     : Center(
                         child: Text(
                           user.name.isNotEmpty
@@ -388,31 +374,64 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
 
+            // Location
+            if (user.location != null && (user.location as Map<String, dynamic>).isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      FontAwesomeIcons.locationDot,
+                      size: 12,
+                      color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      UserLocation.fromJson(user.location as Map<String, dynamic>).formatted,
+                      style: TextStyle(
+                        color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             const SizedBox(height: 32),
 
             // Stats
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildStatCard(
-                  'Note',
-                  user.rating.toStringAsFixed(1),
-                  FontAwesomeIcons.star,
-                  isDark,
-                ),
-                _buildStatCard(
-                  'Avis',
-                  user.ratingCount.toString(),
-                  FontAwesomeIcons.comment,
-                  isDark,
-                ),
-                _buildStatCard(
-                  'Membre depuis',
-                  '${DateTime.now().difference(user.joinedAt).inDays}j',
-                  FontAwesomeIcons.calendar,
-                  isDark,
-                ),
-              ],
+            IntrinsicHeight(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      'Note',
+                      user.rating.toStringAsFixed(1),
+                      FontAwesomeIcons.star,
+                      isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Avis',
+                      user.ratingCount.toString(),
+                      FontAwesomeIcons.comment,
+                      isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Membre depuis',
+                      '${DateTime.now().difference(user.joinedAt).inDays.abs()} j',
+                      FontAwesomeIcons.calendar,
+                      isDark,
+                    ),
+                  ),
+                ],
+              ),
             ),
 
             const SizedBox(height: 32),
@@ -422,7 +441,14 @@ class ProfileScreen extends StatelessWidget {
               'Modifier le profil',
               FontAwesomeIcons.userPen,
               isDark,
-              () {},
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const EditProfileScreen(),
+                  ),
+                );
+              },
             ),
             _buildMenuItem(
               'Mes annonces',
@@ -440,7 +466,14 @@ class ProfileScreen extends StatelessWidget {
               'Paramètres',
               FontAwesomeIcons.gear,
               isDark,
-              () {},
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                  ),
+                );
+              },
             ),
 
             const SizedBox(height: 24),
@@ -528,32 +561,74 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildAvatarImage(String photoUrl, String userName) {
+    // Utiliser Image.network pour toutes les URLs (plus de base64)
+    return ClipOval(
+      child: Image.network(
+        photoUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, widget) {
+          return _buildFallbackAvatar(userName);
+        },
+      ),
+    );
+  }
+
+  Widget _buildFallbackAvatar(String userName) {
+    return Center(
+      child: Text(
+        userName.isNotEmpty
+            ? userName[0].toUpperCase()
+            : '?',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 40,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+
   Widget _buildStatCard(String label, String value, IconData icon, bool isDark) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          color: AppTheme.primaryBlue,
-          size: 20,
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark
+              ? AppTheme.darkTextMuted.withOpacity(0.1)
+              : AppTheme.lightTextMuted.withOpacity(0.1),
         ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: TextStyle(
-            color: isDark ? AppTheme.darkText : AppTheme.lightText,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: AppTheme.primaryBlue,
+            size: 20,
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-            fontSize: 12,
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              color: isDark ? AppTheme.darkText : AppTheme.lightText,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+            textAlign: TextAlign.center,
           ),
-        ),
-      ],
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+              fontSize: 12,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 

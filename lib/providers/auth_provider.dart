@@ -197,4 +197,74 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
   }
+
+  Future<bool> updateProfile({
+    String? name,
+    String? email,
+    String? phone,
+    String? currentPassword,
+    String? newPassword,
+    String? photo,
+    Map<String, dynamic>? location,
+    Map<String, dynamic>? preferences,
+  }) async {
+    if (_token == null) return false;
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final updatedUser = await _authService.updateProfile(
+        token: _token!,
+        name: name,
+        email: email,
+        phone: phone,
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+        photo: photo,
+        location: location,
+        preferences: preferences,
+      );
+
+      _user = updatedUser;
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user', jsonEncode(updatedUser.toJson()));
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<bool> uploadPhoto(String imagePath) async {
+    if (_token == null) return false;
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final updatedUser = await _authService.uploadPhoto(
+        token: _token!,
+        imagePath: imagePath,
+      );
+
+      _user = updatedUser;
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user', jsonEncode(updatedUser.toJson()));
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
 }

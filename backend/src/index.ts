@@ -1,11 +1,16 @@
 import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import prisma from './lib/prisma.js';
 import config from './config/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Routes
 import authRoutes from './routes/authRoutes.js';
@@ -14,6 +19,7 @@ import categoryRoutes from './routes/categoryRoutes.js';
 import favoriteRoutes from './routes/favoriteRoutes.js';
 import conversationRoutes from './routes/conversationRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import locationRoutes from './routes/locationRoutes.js';
 
 const app = express() as Express;
 const httpServer = createServer(app);
@@ -37,6 +43,9 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Servir les fichiers uploadés statiquement
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Health check
 app.get('/api/health', (_req, res) => {
   res.json({
@@ -53,6 +62,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/locations', locationRoutes);
 
 // Error handler
 app.use(errorHandler);
