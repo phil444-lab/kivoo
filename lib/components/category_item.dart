@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // 1. Import ajouté
 import '../models/category_model.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
 
 class CategoryItem extends StatelessWidget {
   final CategoryModel category;
@@ -14,11 +16,13 @@ class CategoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final iconColor = Color(int.parse(category.color.replaceFirst('#', '0xFF')));
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Expanded(
-          child: Container(
+          child: SizedBox(
             width: double.infinity,
             child: AspectRatio(
               aspectRatio: 1,
@@ -54,10 +58,9 @@ class CategoryItem extends StatelessWidget {
                           ),
                         ],
                 ),
-                child: Icon(
-                  category.icon,
-                  color: Color(int.parse(category.color.replaceFirst('#', '0xFF'))),
-                  size: 22,
+                // 2. Utilisation du helper d'icône dynamique
+                child: Center(
+                  child: _buildIcon(category.icon, iconColor),
                 ),
               ),
             ),
@@ -69,7 +72,7 @@ class CategoryItem extends StatelessWidget {
             category.label,
             style: TextStyle(
               color: isDark ? AppTheme.darkText : AppTheme.lightText,
-              fontSize: 10,
+              fontSize: Responsive.fontSize(context, 10),
               fontWeight: FontWeight.w500,
               height: 1.0,
             ),
@@ -80,5 +83,13 @@ class CategoryItem extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  // 3. Helper pour gérer dynamiquement IconData et FaIconData
+  Widget _buildIcon(dynamic icon, Color color) {
+    if (icon is IconData) {
+      return Icon(icon, color: color, size: 22);
+    }
+    return FaIcon(icon, color: color, size: 22);
   }
 }

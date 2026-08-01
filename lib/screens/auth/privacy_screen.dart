@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/responsive.dart';
 
 class PrivacyScreen extends StatelessWidget {
   const PrivacyScreen({super.key});
@@ -18,7 +19,7 @@ class PrivacyScreen extends StatelessWidget {
           onPressed: () {
             Navigator.pop(context);
           },
-          icon: Icon(
+          icon: FaIcon(
             FontAwesomeIcons.arrowLeft,
             color: isDark ? AppTheme.darkText : AppTheme.lightText,
           ),
@@ -34,7 +35,7 @@ class PrivacyScreen extends StatelessWidget {
                 'Politique de Confidentialité',
                 style: TextStyle(
                   color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                  fontSize: 24,
+                  fontSize: Responsive.fontSize(context, 24),
                   fontWeight: FontWeight.w800,
                 ),
                 textAlign: TextAlign.center,
@@ -44,7 +45,7 @@ class PrivacyScreen extends StatelessWidget {
                 'Dernière mise à jour : 30 juillet 2026',
                 style: TextStyle(
                   color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-                  fontSize: 12,
+                  fontSize: Responsive.fontSize(context, 12),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -84,7 +85,7 @@ Pour toute question concernant cette politique ou pour exercer vos droits (suppr
 📧 support@kivoo.app''',
                 style: TextStyle(
                   color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-                  fontSize: 14,
+                  fontSize: Responsive.fontSize(context, 14),
                   height: 1.6,
                 ),
                 textAlign: TextAlign.justify,

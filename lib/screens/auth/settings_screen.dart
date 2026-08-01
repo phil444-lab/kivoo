@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/responsive.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -117,7 +118,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         backgroundColor: AppTheme.darkBlue,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(
+          icon: const FaIcon(
             FontAwesomeIcons.arrowLeft,
             color: Colors.white,
           ),
@@ -159,7 +160,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title,
       style: TextStyle(
         color: isDark ? AppTheme.darkText : AppTheme.lightText,
-        fontSize: 18,
+        fontSize: Responsive.fontSize(context, 18),
         fontWeight: FontWeight.w700,
       ),
     );
@@ -224,13 +225,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   color: isSelected
                       ? AppTheme.primaryBlue
                       : isDark ? AppTheme.darkText : AppTheme.lightText,
-                  fontSize: 15,
+                  fontSize: Responsive.fontSize(context, 15),
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
             ),
             if (isSelected)
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.check,
                 color: AppTheme.primaryBlue,
                 size: 18,
@@ -255,7 +256,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       child: Row(
         children: [
-          Icon(
+          FaIcon(
             FontAwesomeIcons.bell,
             color: AppTheme.primaryBlue,
             size: 20,
@@ -269,7 +270,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   'Notifications push',
                   style: TextStyle(
                     color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                    fontSize: 15,
+                    fontSize: Responsive.fontSize(context, 15),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -278,7 +279,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _notificationsEnabled ? 'Activées' : 'Désactivées',
                   style: TextStyle(
                     color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-                    fontSize: 13,
+                    fontSize: Responsive.fontSize(context, 13),
                   ),
                 ),
               ],
@@ -308,7 +309,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
+          FaIcon(
             FontAwesomeIcons.circleInfo,
             color: AppTheme.primaryBlue,
             size: 20,
@@ -322,7 +323,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   'À propos des préférences',
                   style: TextStyle(
                     color: AppTheme.primaryBlue,
-                    fontSize: 14,
+                    fontSize: Responsive.fontSize(context, 14),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -331,7 +332,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   'Vos préférences sont automatiquement sauvegardées et synchronisées sur tous vos appareils.',
                   style: TextStyle(
                     color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-                    fontSize: 13,
+                    fontSize: Responsive.fontSize(context, 13),
                     height: 1.5,
                   ),
                 ),

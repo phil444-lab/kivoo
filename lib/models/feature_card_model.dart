@@ -4,7 +4,7 @@ class FeatureCardModel {
   final int id;
   final String title;
   final String subtitle;
-  final IconData icon;
+  final dynamic icon;
   final String borderColor;
   final String darkBg;
   final String lightBg;

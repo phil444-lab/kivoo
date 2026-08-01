@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/responsive.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -33,7 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
           onPressed: () {
             Navigator.pop(context);
           },
-          icon: Icon(
+          icon: FaIcon(
             FontAwesomeIcons.arrowLeft,
             color: isDark ? AppTheme.darkText : AppTheme.lightText,
           ),
@@ -50,7 +51,6 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-
               // Logo
               Center(
                 child: Container(
@@ -73,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 'Connexion',
                 style: TextStyle(
                   color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                  fontSize: 28,
+                  fontSize: Responsive.fontSize(context, 28),
                   fontWeight: FontWeight.w800,
                 ),
                 textAlign: TextAlign.center,
@@ -86,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(
                   color:
                       isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-                  fontSize: 14,
+                  fontSize: Responsive.fontSize(context, 14),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -124,11 +124,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         ? AppTheme.darkTextMuted
                         : AppTheme.lightTextMuted,
                   ),
-                  prefixIcon: Icon(
-                    FontAwesomeIcons.user,
-                    color: isDark
-                        ? AppTheme.darkTextMuted
-                        : AppTheme.lightTextMuted,
+                  prefixIcon: Align(
+                    widthFactor: 1.0,
+                    heightFactor: 1.0,
+                    child: FaIcon(
+                      FontAwesomeIcons.user,
+                      color: isDark
+                          ? AppTheme.darkTextMuted
+                          : AppTheme.lightTextMuted,
+                      size: Responsive.iconSize(context, 20),
+                    ),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -157,20 +162,26 @@ class _LoginScreenState extends State<LoginScreen> {
                         ? AppTheme.darkTextMuted
                         : AppTheme.lightTextMuted,
                   ),
-                  prefixIcon: Icon(
-                    FontAwesomeIcons.lock,
-                    color: isDark
-                        ? AppTheme.darkTextMuted
-                        : AppTheme.lightTextMuted,
+                  prefixIcon: Align(
+                    widthFactor: 1.0,
+                    heightFactor: 1.0,
+                    child: FaIcon(
+                      FontAwesomeIcons.lock,
+                      color: isDark
+                          ? AppTheme.darkTextMuted
+                          : AppTheme.lightTextMuted,
+                      size: Responsive.iconSize(context, 20),
+                    ),
                   ),
                   suffixIcon: IconButton(
-                    icon: Icon(
+                    icon: FaIcon(
                       _obscurePassword
                           ? FontAwesomeIcons.eyeSlash
                           : FontAwesomeIcons.eye,
                       color: isDark
                           ? AppTheme.darkTextMuted
                           : AppTheme.lightTextMuted,
+                      size: Responsive.iconSize(context, 20),
                     ),
                     onPressed: () {
                       setState(() {
@@ -263,15 +274,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'ou',
-                      style: TextStyle(
-                        color: isDark
-                            ? AppTheme.darkTextMuted
-                            : AppTheme.lightTextMuted,
-                        fontSize: 13,
-                      ),
+                  child: Text(
+                    'ou',
+                    style: TextStyle(
+                      color: isDark
+                          ? AppTheme.darkTextMuted
+                          : AppTheme.lightTextMuted,
+                      fontSize: Responsive.fontSize(context, 13),
                     ),
+                  ),
                   ),
                   Expanded(
                     child: Divider(
@@ -306,17 +317,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: Colors.white,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      FontAwesomeIcons.google,
-                      color: Colors.red,
-                      size: 20,
+                    child: const Padding(
+                      padding: EdgeInsets.all(3.0),
+                      child: FaIcon(
+                        FontAwesomeIcons.google,
+                        color: Colors.red,
+                        size: 18,
+                      ),
                     ),
                   ),
                   label: Text(
                     'Continuer avec Google',
                     style: TextStyle(
                       color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                      fontSize: 15,
+                      fontSize: Responsive.fontSize(context, 15),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -339,7 +353,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: isDark
                           ? AppTheme.darkTextMuted
                           : AppTheme.lightTextMuted,
-                      fontSize: 14,
+                      fontSize: Responsive.fontSize(context, 14),
                     ),
                   ),
                   TextButton(
@@ -351,11 +365,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       );
                     },
-                    child: const Text(
+                    child: Text(
                       'S\'inscrire',
                       style: TextStyle(
                         color: AppTheme.primaryBlue,
-                        fontSize: 14,
+                        fontSize: Responsive.fontSize(context, 14),
                         fontWeight: FontWeight.w700,
                       ),
                     ),

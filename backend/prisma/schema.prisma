@@ -106,8 +106,6 @@ model Session {
 model Category {
   id        String   @id @default(cuid())
   name      String   @db.VarChar(50) @unique
-  icon      String   @db.VarChar(10) @default("📦")
-  color     String   @db.VarChar(20) @default("#6366f1")
   parentCategoryId String? @db.VarChar(25)
   parentCategory   Category?  @relation("Subcategories", fields: [parentCategoryId], references: [id])
   subcategories    Category[] @relation("Subcategories")

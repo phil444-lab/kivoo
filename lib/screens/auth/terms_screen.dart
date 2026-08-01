@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/responsive.dart';
 
 class TermsScreen extends StatelessWidget {
   const TermsScreen({super.key});
@@ -18,7 +19,7 @@ class TermsScreen extends StatelessWidget {
           onPressed: () {
             Navigator.pop(context);
           },
-          icon: Icon(
+          icon: FaIcon(
             FontAwesomeIcons.arrowLeft,
             color: isDark ? AppTheme.darkText : AppTheme.lightText,
           ),
@@ -34,7 +35,7 @@ class TermsScreen extends StatelessWidget {
                 'Conditions Générales d\'Utilisation (CGU)',
                 style: TextStyle(
                   color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                  fontSize: 24,
+                  fontSize: Responsive.fontSize(context, 24),
                   fontWeight: FontWeight.w800,
                 ),
                 textAlign: TextAlign.center,
@@ -44,7 +45,7 @@ class TermsScreen extends StatelessWidget {
                 'Dernière mise à jour : 30 juillet 2026',
                 style: TextStyle(
                   color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-                  fontSize: 12,
+                  fontSize: Responsive.fontSize(context, 12),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -77,7 +78,7 @@ Les transactions, paiements et remises en main propre s'effectuent sous la seule
 Kivoo se réserve le droit de suspendre ou de supprimer le compte de tout Utilisateur en cas de violation répétée ou grave des présentes CGU.''',
                 style: TextStyle(
                   color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-                  fontSize: 14,
+                  fontSize: Responsive.fontSize(context, 14),
                   height: 1.6,
                 ),
                 textAlign: TextAlign.justify,

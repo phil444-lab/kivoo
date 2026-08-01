@@ -13,7 +13,7 @@ export const getCategories = async (
       include: {
         subcategories: {
           where: { isActive: true },
-          select: { id: true, name: true, icon: true, color: true },
+          select: { id: true, name: true },
         },
       },
       orderBy: { name: 'asc' },
@@ -37,10 +37,10 @@ export const getCategory = async (
     const category = await prisma.category.findUnique({
       where: { id: req.params.id as string },
       include: {
-        parentCategory: { select: { id: true, name: true, icon: true } },
+        parentCategory: { select: { id: true, name: true } },
         subcategories: {
           where: { isActive: true },
-          select: { id: true, name: true, icon: true, color: true },
+          select: { id: true, name: true },
         },
       },
     });

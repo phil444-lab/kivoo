@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../models/feature_card_model.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
 
 class FeatureCard extends StatelessWidget {
   final FeatureCardModel card;
@@ -15,6 +17,8 @@ class FeatureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cardColor = Color(int.parse(card.borderColor.replaceFirst('#', '0xFF')));
+
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -29,12 +33,12 @@ class FeatureCard extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Color(int.parse(card.borderColor.replaceFirst('#', '0xFF'))),
+            color: cardColor,
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: Color(int.parse(card.borderColor.replaceFirst('#', '0xFF'))).withOpacity(0.15),
+              color: cardColor.withOpacity(0.15),
               blurRadius: 24,
               offset: const Offset(0, 6),
             ),
@@ -53,20 +57,19 @@ class FeatureCard extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Color(int.parse(card.borderColor.replaceFirst('#', '0xFF'))).withOpacity(0.2),
-                      Color(int.parse(card.borderColor.replaceFirst('#', '0xFF'))).withOpacity(0.05),
+                      cardColor.withOpacity(0.2),
+                      cardColor.withOpacity(0.05),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Color(int.parse(card.borderColor.replaceFirst('#', '0xFF'))).withOpacity(0.3),
+                    color: cardColor.withOpacity(0.3),
                     width: 1,
                   ),
                 ),
-                child: Icon(
-                  card.icon,
-                  color: Color(int.parse(card.borderColor.replaceFirst('#', '0xFF'))),
-                  size: 28,
+                // 2. Gestion dynamique de l'icône (FontAwesome / Material)
+                child: Center(
+                  child: _buildIcon(card.icon, cardColor),
                 ),
               ),
               const SizedBox(height: 12),
@@ -75,7 +78,7 @@ class FeatureCard extends StatelessWidget {
                 style: TextStyle(
                   color: isDark ? AppTheme.darkText : AppTheme.lightText,
                   fontWeight: FontWeight.w700,
-                  fontSize: 13,
+                  fontSize: Responsive.fontSize(context, 13),
                   height: 1.3,
                 ),
               ),
@@ -83,8 +86,8 @@ class FeatureCard extends StatelessWidget {
               Text(
                 card.subtitle,
                 style: TextStyle(
-                  color: Color(int.parse(card.borderColor.replaceFirst('#', '0xFF'))),
-                  fontSize: 11,
+                  color: cardColor,
+                  fontSize: Responsive.fontSize(context, 11),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -95,8 +98,15 @@ class FeatureCard extends StatelessWidget {
     );
   }
 
+  // Helper pour basculer entre FaIcon et Icon sans erreur de type
+  Widget _buildIcon(dynamic icon, Color color) {
+    if (icon is IconData) {
+      return Icon(icon, color: color, size: 28);
+    }
+    return FaIcon(icon, color: color, size: 28);
+  }
+
   List<Color> _parseGradient(String gradient) {
-    // Simple gradient parser for the predefined gradients
     if (gradient.contains('#142035')) {
       return const [Color(0xFF142035), Color(0xFF0e1a2e)];
     } else if (gradient.contains('#0f2718')) {

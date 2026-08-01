@@ -11,6 +11,7 @@ import 'register_screen.dart';
 import 'terms_screen.dart';
 import 'edit_profile_screen.dart';
 import 'settings_screen.dart';
+import '../../utils/responsive.dart';
 
 class ProfileScreen extends StatelessWidget {
   final bool showAppBar;
@@ -64,7 +65,7 @@ class ProfileScreen extends StatelessWidget {
               'Bienvenue sur KIVOO',
               style: TextStyle(
                 color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                fontSize: 28,
+                fontSize: Responsive.fontSize(context, 28),
                 fontWeight: FontWeight.w800,
               ),
               textAlign: TextAlign.center,
@@ -76,7 +77,7 @@ class ProfileScreen extends StatelessWidget {
               'Achetez et vendez en toute simplicité.',
               style: TextStyle(
                 color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-                fontSize: 14,
+                fontSize: Responsive.fontSize(context, 14),
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -88,7 +89,7 @@ class ProfileScreen extends StatelessWidget {
               'Rejoignez la plus grande communauté d\'achats et de ventes près de chez vous. Des milliers d\'annonces de voitures, téléphones, biens immobiliers, mode et services disponibles au bout des doigts.',
               style: TextStyle(
                 color: AppTheme.primaryBlue,
-                fontSize: 13,
+                fontSize: Responsive.fontSize(context, 13),
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
@@ -100,7 +101,7 @@ class ProfileScreen extends StatelessWidget {
               'Connectez-vous pour accéder à votre profil',
               style: TextStyle(
                 color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-                fontSize: 14,
+                fontSize: Responsive.fontSize(context, 14),
                 fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,
@@ -135,11 +136,11 @@ class ProfileScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Se connecter',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: Responsive.fontSize(context, 16),
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -177,7 +178,7 @@ class ProfileScreen extends StatelessWidget {
                   'Créer un compte',
                   style: TextStyle(
                     color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                    fontSize: 16,
+                    fontSize: Responsive.fontSize(context, 16),
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -191,7 +192,7 @@ class ProfileScreen extends StatelessWidget {
                 text: 'En cliquant sur Connexion ou Inscription, vous acceptez nos ',
                 style: TextStyle(
                   color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-                  fontSize: 13,
+                  fontSize: Responsive.fontSize(context, 13),
                 ),
                 children: [
                   TextSpan(
@@ -199,7 +200,7 @@ class ProfileScreen extends StatelessWidget {
                     style: TextStyle(
                       color: AppTheme.primaryBlue,
                       decoration: TextDecoration.underline,
-                      fontSize: 13,
+                      fontSize: Responsive.fontSize(context, 13),
                     ),
                     recognizer: TapGestureRecognizer()
                       ..onTap = () {
@@ -217,7 +218,7 @@ class ProfileScreen extends StatelessWidget {
                     style: TextStyle(
                       color: AppTheme.primaryBlue,
                       decoration: TextDecoration.underline,
-                      fontSize: 13,
+                      fontSize: Responsive.fontSize(context, 13),
                     ),
                     recognizer: TapGestureRecognizer()
                       ..onTap = () {
@@ -272,7 +273,7 @@ class ProfileScreen extends StatelessWidget {
           onPressed: () {
             Navigator.pop(context);
           },
-          icon: Icon(
+          icon: FaIcon(
             FontAwesomeIcons.arrowLeft,
             color: isDark ? AppTheme.darkText : AppTheme.lightText,
           ),
@@ -287,7 +288,7 @@ class ProfileScreen extends StatelessWidget {
 
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -334,7 +335,7 @@ class ProfileScreen extends StatelessWidget {
               user.name,
               style: TextStyle(
                 color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                fontSize: 24,
+                fontSize: Responsive.fontSize(context, 24),
                 fontWeight: FontWeight.w800,
               ),
               textAlign: TextAlign.center,
@@ -347,7 +348,7 @@ class ProfileScreen extends StatelessWidget {
               user.email,
               style: TextStyle(
                 color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-                fontSize: 14,
+                fontSize: Responsive.fontSize(context, 14),
               ),
               textAlign: TextAlign.center,
             ),
@@ -358,7 +359,7 @@ class ProfileScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                FaIcon(
                   FontAwesomeIcons.phone,
                   size: 12,
                   color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
@@ -368,7 +369,7 @@ class ProfileScreen extends StatelessWidget {
                   user.phone,
                   style: TextStyle(
                     color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-                    fontSize: 13,
+                    fontSize: Responsive.fontSize(context, 13),
                   ),
                 ),
               ],
@@ -381,7 +382,7 @@ class ProfileScreen extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
+                    FaIcon(
                       FontAwesomeIcons.locationDot,
                       size: 12,
                       color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
@@ -391,14 +392,71 @@ class ProfileScreen extends StatelessWidget {
                       UserLocation.fromJson(user.location as Map<String, dynamic>).formatted,
                       style: TextStyle(
                         color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-                        fontSize: 13,
+                        fontSize: Responsive.fontSize(context, 13),
                       ),
                     ),
                   ],
                 ),
               ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
+
+            // Logout button
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Se déconnecter'),
+                      content: const Text('Voulez-vous vraiment vous déconnecter ?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Annuler'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text(
+                            'Déconnecter',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm != true) return;
+                  await authProvider.logout();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Déconnexion réussie !'),
+                        backgroundColor: Colors.green,
+                        behavior: SnackBarBehavior.floating,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    if (showAppBar) Navigator.pop(context);
+                  }
+                },
+                icon: const FaIcon(
+                  FontAwesomeIcons.rightFromBracket,
+                  color: Colors.red,
+                  size: 13,
+                ),
+                label: Text(
+                  'Se déconnecter',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: Responsive.fontSize(context, 12),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
 
             // Stats
             IntrinsicHeight(
@@ -406,6 +464,7 @@ class ProfileScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _buildStatCard(
+                      context,
                       'Note',
                       user.rating.toStringAsFixed(1),
                       FontAwesomeIcons.star,
@@ -415,6 +474,7 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildStatCard(
+                      context,
                       'Avis',
                       user.ratingCount.toString(),
                       FontAwesomeIcons.comment,
@@ -424,6 +484,7 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildStatCard(
+                      context,
                       'Membre depuis',
                       '${DateTime.now().difference(user.joinedAt).inDays.abs()} j',
                       FontAwesomeIcons.calendar,
@@ -438,6 +499,7 @@ class ProfileScreen extends StatelessWidget {
 
             // Menu items
             _buildMenuItem(
+              context,
               'Modifier le profil',
               FontAwesomeIcons.userPen,
               isDark,
@@ -451,18 +513,21 @@ class ProfileScreen extends StatelessWidget {
               },
             ),
             _buildMenuItem(
+              context,
               'Mes annonces',
               FontAwesomeIcons.store,
               isDark,
               () {},
             ),
             _buildMenuItem(
+              context,
               'Favoris',
               FontAwesomeIcons.heart,
               isDark,
               () {},
             ),
             _buildMenuItem(
+              context,
               'Paramètres',
               FontAwesomeIcons.gear,
               isDark,
@@ -476,53 +541,7 @@ class ProfileScreen extends StatelessWidget {
               },
             ),
 
-            const SizedBox(height: 24),
 
-            // Logout button
-            Container(
-              height: 50,
-              decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red.withOpacity(0.3)),
-              ),
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  await authProvider.logout();
-                  if (context.mounted) {
-                    // Afficher un snackbar de déconnexion
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Déconnexion réussie !'),
-                        backgroundColor: Colors.green,
-                        behavior: SnackBarBehavior.floating,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                    if (showAppBar) {
-                      Navigator.pop(context);
-                    }
-                  }
-                },
-                icon: const Icon(
-                  FontAwesomeIcons.rightFromBracket,
-                  color: Colors.red,
-                  size: 18,
-                ),
-                label: const Text(
-                  'Se déconnecter',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -551,7 +570,7 @@ class ProfileScreen extends StatelessWidget {
           onPressed: () {
             Navigator.pop(context);
           },
-          icon: const Icon(
+          icon: const FaIcon(
             FontAwesomeIcons.arrowLeft,
             color: Colors.white,
           ),
@@ -589,7 +608,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, bool isDark) {
+  Widget _buildStatCard(BuildContext context, String label, String value, FaIconData icon, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
@@ -603,7 +622,7 @@ class ProfileScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(
+          FaIcon(
             icon,
             color: AppTheme.primaryBlue,
             size: 20,
@@ -613,7 +632,7 @@ class ProfileScreen extends StatelessWidget {
             value,
             style: TextStyle(
               color: isDark ? AppTheme.darkText : AppTheme.lightText,
-              fontSize: 18,
+              fontSize: Responsive.fontSize(context, 18),
               fontWeight: FontWeight.w700,
             ),
             textAlign: TextAlign.center,
@@ -623,7 +642,7 @@ class ProfileScreen extends StatelessWidget {
             label,
             style: TextStyle(
               color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-              fontSize: 12,
+              fontSize: Responsive.fontSize(context, 12),
             ),
             textAlign: TextAlign.center,
           ),
@@ -632,7 +651,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuItem(String title, IconData icon, bool isDark, VoidCallback onTap) {
+  Widget _buildMenuItem(BuildContext context, String title, FaIconData icon, bool isDark, VoidCallback onTap) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -644,28 +663,31 @@ class ProfileScreen extends StatelessWidget {
               : AppTheme.lightTextMuted.withOpacity(0.1),
         ),
       ),
-      child: ListTile(
-        onTap: onTap,
-        leading: Icon(
-          icon,
-          color: AppTheme.primaryBlue,
-          size: 20,
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: isDark ? AppTheme.darkText : AppTheme.lightText,
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          onTap: onTap,
+          leading: FaIcon(
+            icon,
+            color: AppTheme.primaryBlue,
+            size: 20,
           ),
-        ),
-        trailing: Icon(
-          FontAwesomeIcons.chevronRight,
-          color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-          size: 14,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          title: Text(
+            title,
+            style: TextStyle(
+              color: isDark ? AppTheme.darkText : AppTheme.lightText,
+              fontSize: Responsive.fontSize(context, 15),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          trailing: FaIcon(
+            FontAwesomeIcons.chevronRight,
+            color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+            size: 14,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );

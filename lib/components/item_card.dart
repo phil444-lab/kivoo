@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/item_model.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
 
 class ItemCard extends StatelessWidget {
   final ItemModel item;
@@ -139,7 +140,7 @@ class ItemCard extends StatelessWidget {
                     item.title,
                     style: TextStyle(
                       color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                      fontSize: 12,
+                      fontSize: Responsive.fontSize(context, 12),
                       fontWeight: FontWeight.w700,
                       height: 1.4,
                     ),
@@ -149,9 +150,9 @@ class ItemCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     item.price,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.primaryBlue,
-                      fontSize: 14,
+                      fontSize: Responsive.fontSize(context, 14),
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -173,7 +174,7 @@ class ItemCard extends StatelessWidget {
                             color: isDark
                                 ? AppTheme.darkTextMuted
                                 : AppTheme.lightTextMuted,
-                            fontSize: 10,
+                            fontSize: Responsive.fontSize(context, 10),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),

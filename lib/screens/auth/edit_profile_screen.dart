@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/location_model.dart';
 import '../../services/location_service.dart';
+import '../../utils/responsive.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -296,7 +297,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           onPressed: () {
             Navigator.pop(context);
           },
-          icon: const Icon(
+          icon: const FaIcon(
             FontAwesomeIcons.arrowLeft,
             color: Colors.white,
           ),
@@ -388,10 +389,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 width: 2,
                               ),
                             ),
-                            child: const Icon(
-                              FontAwesomeIcons.camera,
-                              color: Colors.white,
-                              size: 14,
+                            child: const Center(
+                              child: FaIcon(
+                                FontAwesomeIcons.camera,
+                                color: Colors.white,
+                                size: 14,
+                              ),
                             ),
                           ),
                         ),
@@ -408,7 +411,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   decoration: InputDecoration(
                     labelText: 'Nom complet',
                     hintText: 'Entrez votre nom',
-                    prefixIcon: const Icon(FontAwesomeIcons.user),
+                    prefixIcon: Align(
+                      widthFactor: 1.0,
+                      heightFactor: 1.0,
+                      child: FaIcon(
+                        FontAwesomeIcons.user,
+                        size: Responsive.iconSize(context, 18),
+                      ),
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -435,7 +445,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   decoration: InputDecoration(
                     labelText: 'Email',
                     hintText: 'exemple@email.com',
-                    prefixIcon: const Icon(FontAwesomeIcons.envelope),
+                    prefixIcon: Align(
+                      widthFactor: 1.0,
+                      heightFactor: 1.0,
+                      child: FaIcon(
+                        FontAwesomeIcons.envelope,
+                        size: Responsive.iconSize(context, 18),
+                      ),
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -461,7 +478,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   decoration: InputDecoration(
                     labelText: 'Téléphone',
                     hintText: '01XXXXXXXX',
-                    prefixIcon: const Icon(FontAwesomeIcons.phone),
+                    prefixIcon: Align(
+                      widthFactor: 1.0,
+                      heightFactor: 1.0,
+                      child: FaIcon(
+                        FontAwesomeIcons.phone,
+                        size: Responsive.iconSize(context, 18),
+                      ),
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -500,7 +524,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       _showPasswordFields = !_showPasswordFields;
                     });
                   },
-                  icon: Icon(
+                  icon: FaIcon(
                     _showPasswordFields
                         ? FontAwesomeIcons.chevronUp
                         : FontAwesomeIcons.chevronDown,
@@ -525,13 +549,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     decoration: InputDecoration(
                       labelText: 'Mot de passe actuel',
                       hintText: 'Entrez votre mot de passe actuel',
-                      prefixIcon: const Icon(FontAwesomeIcons.lock),
+                      prefixIcon: Align(
+                        widthFactor: 1.0,
+                        heightFactor: 1.0,
+                        child: FaIcon(
+                          FontAwesomeIcons.lock,
+                          size: Responsive.iconSize(context, 18),
+                        ),
+                      ),
                       suffixIcon: IconButton(
-                        icon: Icon(
+                        icon: FaIcon(
                           _obscureCurrentPassword
                               ? FontAwesomeIcons.eye
                               : FontAwesomeIcons.eyeSlash,
-                          size: 18,
+                          size: Responsive.iconSize(context, 18),
                         ),
                         onPressed: () {
                           setState(() {
@@ -560,13 +591,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     decoration: InputDecoration(
                       labelText: 'Nouveau mot de passe',
                       hintText: 'Minimum 8 caractères',
-                      prefixIcon: const Icon(FontAwesomeIcons.lock),
+                      prefixIcon: Align(
+                        widthFactor: 1.0,
+                        heightFactor: 1.0,
+                        child: FaIcon(
+                          FontAwesomeIcons.lock,
+                          size: Responsive.iconSize(context, 18),
+                        ),
+                      ),
                       suffixIcon: IconButton(
-                        icon: Icon(
+                        icon: FaIcon(
                           _obscureNewPassword
                               ? FontAwesomeIcons.eye
                               : FontAwesomeIcons.eyeSlash,
-                          size: 18,
+                          size: Responsive.iconSize(context, 18),
                         ),
                         onPressed: () {
                           setState(() {
@@ -642,7 +680,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       title,
       style: TextStyle(
         color: isDark ? AppTheme.darkText : AppTheme.lightText,
-        fontSize: 18,
+        fontSize: Responsive.fontSize(context, 18),
         fontWeight: FontWeight.w700,
       ),
     );
@@ -695,7 +733,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
+                    FaIcon(
                       FontAwesomeIcons.pen,
                       size: 14,
                       color: _useCustomLocation
@@ -739,7 +777,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
+                    FaIcon(
                       FontAwesomeIcons.list,
                       size: 14,
                       color: !_useCustomLocation
@@ -866,7 +904,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Widget _buildDropdownField<T>({
     required String label,
-    required IconData icon,
+    required FaIconData icon,
     required T? value,
     required List<T> items,
     required String Function(T) getLabel,
@@ -888,7 +926,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: AppTheme.primaryBlue),
+            FaIcon(icon, size: 18, color: AppTheme.primaryBlue),
             const SizedBox(width: 12),
             SizedBox(
               width: 16,
@@ -928,11 +966,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           isDense: true,
           decoration: InputDecoration(
             labelText: label,
-            prefixIcon: Icon(icon, size: 18),
+            prefixIcon: Align(
+              widthFactor: 1.0,
+              heightFactor: 1.0,
+              child: FaIcon(icon, size: Responsive.iconSize(context, 18)),
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: Responsive.padding(context, 16),
+              vertical: Responsive.padding(context, 14),
+            ),
           ),
           hint: Text(
             'Sélectionnez un ${label.toLowerCase()}',
@@ -1000,7 +1045,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget _buildCustomTextField({
     required TextEditingController controller,
     required String label,
-    required IconData icon,
+    required FaIconData icon,
     required String hint,
     required bool isDark,
   }) {
@@ -1009,7 +1054,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: Icon(icon, size: 18),
+        prefixIcon: Align(
+          widthFactor: 1.0,
+          heightFactor: 1.0,
+          child: FaIcon(icon, size: Responsive.iconSize(context, 18)),
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
         ),

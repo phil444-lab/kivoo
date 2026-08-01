@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/responsive.dart';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -36,7 +37,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           onPressed: () {
             Navigator.pop(context);
           },
-          icon: Icon(
+          icon: FaIcon(
             FontAwesomeIcons.arrowLeft,
             color: isDark ? AppTheme.darkText : AppTheme.lightText,
           ),
@@ -76,7 +77,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 'Créer un compte',
                 style: TextStyle(
                   color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                  fontSize: 28,
+                  fontSize: Responsive.fontSize(context, 28),
                   fontWeight: FontWeight.w800,
                 ),
                 textAlign: TextAlign.center,
@@ -88,7 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 'Rejoignez Kivoo dès maintenant',
                 style: TextStyle(
                   color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-                  fontSize: 14,
+                  fontSize: Responsive.fontSize(context, 14),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -106,9 +107,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   labelStyle: TextStyle(
                     color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                   ),
-                  prefixIcon: Icon(
-                    FontAwesomeIcons.user,
-                    color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                  prefixIcon: Align(
+                    widthFactor: 1.0,
+                    heightFactor: 1.0,
+                    child: FaIcon(
+                      FontAwesomeIcons.user,
+                      color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                      size: Responsive.iconSize(context, 20),
+                    ),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -133,9 +139,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   labelStyle: TextStyle(
                     color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                   ),
-                  prefixIcon: Icon(
-                    FontAwesomeIcons.envelope,
-                    color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                  prefixIcon: Align(
+                    widthFactor: 1.0,
+                    heightFactor: 1.0,
+                    child: FaIcon(
+                      FontAwesomeIcons.envelope,
+                      color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                      size: Responsive.iconSize(context, 20),
+                    ),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -160,9 +171,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   labelStyle: TextStyle(
                     color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                   ),
-                  prefixIcon: Icon(
-                    FontAwesomeIcons.phone,
-                    color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                  prefixIcon: Align(
+                    widthFactor: 1.0,
+                    heightFactor: 1.0,
+                    child: FaIcon(
+                      FontAwesomeIcons.phone,
+                      color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                      size: Responsive.iconSize(context, 20),
+                    ),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -188,14 +204,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   labelStyle: TextStyle(
                     color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                   ),
-                  prefixIcon: Icon(
-                    FontAwesomeIcons.lock,
-                    color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                  prefixIcon: Align(
+                    widthFactor: 1.0,
+                    heightFactor: 1.0,
+                    child: FaIcon(
+                      FontAwesomeIcons.lock,
+                      color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                      size: Responsive.iconSize(context, 20),
+                    ),
                   ),
                   suffixIcon: IconButton(
-                    icon: Icon(
+                    icon: FaIcon(
                       _obscurePassword ? FontAwesomeIcons.eyeSlash : FontAwesomeIcons.eye,
                       color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                      size: Responsive.iconSize(context, 20),
                     ),
                     onPressed: () {
                       setState(() {
@@ -227,14 +249,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   labelStyle: TextStyle(
                     color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                   ),
-                  prefixIcon: Icon(
-                    FontAwesomeIcons.lock,
-                    color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                  prefixIcon: Align(
+                    widthFactor: 1.0,
+                    heightFactor: 1.0,
+                    child: FaIcon(
+                      FontAwesomeIcons.lock,
+                      color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                      size: Responsive.iconSize(context, 20),
+                    ),
                   ),
                   suffixIcon: IconButton(
-                    icon: Icon(
+                    icon: FaIcon(
                       _obscureConfirmPassword ? FontAwesomeIcons.eyeSlash : FontAwesomeIcons.eye,
                       color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                      size: Responsive.iconSize(context, 20),
                     ),
                     onPressed: () {
                       setState(() {
@@ -385,10 +413,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       color: Colors.white,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      FontAwesomeIcons.google,
-                      color: Colors.red,
-                      size: 20,
+                    child: const Padding(
+                      padding: EdgeInsets.all(3.0),
+                      child: FaIcon(
+                        FontAwesomeIcons.google,
+                        color: Colors.red,
+                        size: 18,
+                      ),
                     ),
                   ),
                   label: Text(
