@@ -11,10 +11,15 @@ import '../../models/location_model.dart';
 import '../../components/feature_card.dart';
 import '../../components/category_item.dart';
 import '../../components/item_card.dart';
+import '../../screens/home/category_screen.dart';
 import '../auth/profile_screen.dart';
+import '../sell/sell_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/location_service.dart';
 import '../../services/category_service.dart';
+import '../../services/feature_card_service.dart';
+import '../../services/item_service.dart';
+
 import '../../utils/responsive.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -30,13 +35,17 @@ class _HomeScreenState extends State<HomeScreen> {
   bool showLocationMenu = false;
   String searchQuery = '';
   String activeFilter = 'Tout';
-  Set<int> savedItems = {};
   bool isListView = true;
   int _currentNavIndex = 0;
 
   final _locationService = LocationService();
   final _categoryService = CategoryService();
+  final _featureCardService = FeatureCardService();
+  final _itemService = ItemService();
   List<CategoryModel> _categories = [];
+  List<FeatureCardModel> _featureCards = [];
+  List<ItemModel> _trendingItems = [];
+  bool _trendingLoading = true;
   Country? _country;
   List<Department> _departments = [];
   List<City> _cities = [];
@@ -55,10 +64,14 @@ class _HomeScreenState extends State<HomeScreen> {
     final results = await Future.wait([
       _locationService.getCountries(),
       _categoryService.getParentCategories(),
+      _featureCardService.getFeaturedOptions(),
+      _itemService.getTrendingItems(),
     ]);
 
     final countries = results[0] as List<Country>;
     final cats = results[1] as List<CategoryModel>;
+    final cards = results[2] as List<FeatureCardModel>;
+    final trending = results[3] as List<ItemModel>;
 
     if (!mounted) return;
 
@@ -68,7 +81,46 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) setState(() { _country = country; _departments = deps; });
     }
 
-    if (mounted) setState(() => _categories = cats);
+    // Trier les articles du plus récent au plus ancien
+    final sorted = List<ItemModel>.of(trending);
+    sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    if (mounted) setState(() {
+      _categories = cats;
+      _featureCards = cards;
+      _trendingItems = sorted;
+      _trendingLoading = false;
+    });
+  }
+
+  Future<void> _refreshData() async {
+    // Recharger seulement les items, sans toucher aux catégories/localisation/featured
+    // pour conserver les filtres et la sélection de localisation
+    setState(() => _trendingLoading = true);
+    try {
+      final trending = await _itemService.getTrendingItems();
+      if (!mounted) return;
+      // Trier les articles du plus récent au plus ancien
+      final sorted = List<ItemModel>.of(trending);
+      sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      setState(() {
+        _trendingItems = sorted;
+        _trendingLoading = false;
+      });
+    } catch (e) {
+      if (mounted) setState(() => _trendingLoading = false);
+    }
+  }
+
+  void _resetLocation() {
+    setState(() {
+      _selectedDepartment = null;
+      _selectedCity = null;
+      _selectedDistrict = null;
+      _cities = [];
+      _districts = [];
+      selectedLocation = 'Localisation';
+    });
   }
 
   Future<void> _onDepartmentSelected(Department dept) async {
@@ -118,6 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
           selectedDepartment: _selectedDepartment,
           selectedCity: _selectedCity,
           selectedDistrict: _selectedDistrict,
+          onReset: _resetLocation,
           onDepartmentSelected: (d) async {
             await _onDepartmentSelected(d);
             setSheetState(() {});
@@ -132,99 +185,43 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  static const List<FeatureCardModel> featureCards = [
-    FeatureCardModel(
-      id: 1,
-      title: 'Offres Premium',
-      subtitle: 'Jusqu\'à -60%',
-      icon: FontAwesomeIcons.gift,
-      borderColor: '#4f8ef7',
-      darkBg: 'linear-gradient(145deg, #142035 0%, #0e1a2e 100%)',
-      lightBg: 'linear-gradient(145deg, #deeaff 0%, #c8daff 100%)',
-    ),
-    FeatureCardModel(
-      id: 2,
-      title: 'Nouveautés',
-      subtitle: 'Fraîchement arrivé',
-      icon: FontAwesomeIcons.star,
-      borderColor: '#22c55e',
-      darkBg: 'linear-gradient(145deg, #0f2718 0%, #0a2014 100%)',
-      lightBg: 'linear-gradient(145deg, #dcfce7 0%, #c5f4d4 100%)',
-    ),
-    FeatureCardModel(
-      id: 3,
-      title: 'Grandes Marques',
-      subtitle: 'Vendeurs vérifiés',
-      icon: FontAwesomeIcons.circleCheck,
-      borderColor: '#f59e0b',
-      darkBg: 'linear-gradient(145deg, #241a06 0%, #1c1404 100%)',
-      lightBg: 'linear-gradient(145deg, #fef3c7 0%, #fde8a0 100%)',
-    ),
-    FeatureCardModel(
-      id: 4,
-      title: 'Soldes Flash',
-      subtitle: 'Édition limitée',
-      icon: FontAwesomeIcons.bolt,
-      borderColor: '#a855f7',
-      darkBg: 'linear-gradient(145deg, #1c0e34 0%, #160828 100%)',
-      lightBg: 'linear-gradient(145deg, #f3e8ff 0%, #e9d5ff 100%)',
-    ),
-  ];
+  /// Construit la liste des filtres dynamiquement :
+  /// "Tout" + les noms des catégories principales chargées depuis l'API.
+  List<String> get _filters {
+    final cats = _categories.map((c) => c.label).toList();
+    return ['Tout', ...cats];
+  }
 
-  static const List<ItemModel> trendingItems = [
-    ItemModel(
-      id: 1,
-      title: 'iPhone 15 Pro Max — 256GB Natural Titanium',
-      price: '₦950,000',
-      location: 'Lagos Island, Lagos',
-      condition: 'Neuf',
-      time: 'Il y a 2h',
-      photo: 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=160&h=160&fit=crop&auto=format',
-      verified: true,
-    ),
-    ItemModel(
-      id: 2,
-      title: '2021 Toyota Camry XSE V6 — Low Mileage',
-      price: '₦14,500,000',
-      location: 'Ikeja GRA, Lagos',
-      condition: 'Occasion importé',
-      time: 'Il y a 5h',
-      photo: 'https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=160&h=160&fit=crop&auto=format',
-      verified: true,
-    ),
-    ItemModel(
-      id: 3,
-      title: '3 Bedroom Apartment — Lekki Phase 1',
-      price: '₦4,200,000/yr',
-      location: 'Lekki Phase 1, Lagos',
-      condition: 'À louer',
-      time: 'Il y a 1j',
-      photo: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=160&h=160&fit=crop&auto=format',
-      verified: false,
-    ),
-    ItemModel(
-      id: 4,
-      title: 'Samsung Galaxy S24 Ultra — 512GB Titanium Black',
-      price: '₦780,000',
-      location: 'Wuse II, Abuja',
-      condition: 'Légèrement utilisé',
-      time: 'Il y a 3h',
-      photo: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=160&h=160&fit=crop&auto=format',
-      verified: true,
-    ),
-    ItemModel(
-      id: 5,
-      title: 'MacBook Pro 16" M3 Max — 36GB RAM, 1TB',
-      price: '₦1,850,000',
-      location: 'Victoria Island, Lagos',
-      condition: 'Neuf',
-      time: 'Il y a 6h',
-      photo: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=160&h=160&fit=crop&auto=format',
-      verified: false,
-    ),
-  ];
+  /// Filtre dynamique combinant :
+  /// - catégorie sélectionnée (_filters / activeFilter)
+  /// - localisation sélectionnée (selectedLocation)
+  /// - recherche texte (searchQuery)
+  List<ItemModel> get _filteredItems {
+    var items = _trendingItems;
 
-  static const List<String> filters = ['Tout', 'Électronique', 'Véhicules', 'Immobilier', 'Mode'];
+    // Filtre par catégorie
+    if (activeFilter != 'Tout' && activeFilter.isNotEmpty) {
+      items = items.where((item) => item.categoryName == activeFilter).toList();
+    }
+
+    // Filtre par localisation
+    if (selectedLocation != 'Localisation' && selectedLocation.isNotEmpty) {
+      final query = selectedLocation.toLowerCase();
+      items = items.where((item) => item.location.toLowerCase().contains(query)).toList();
+    }
+
+    // Filtre par recherche texte
+    if (searchQuery.isNotEmpty) {
+      final query = searchQuery.toLowerCase();
+      items = items.where((item) {
+        return item.title.toLowerCase().contains(query) ||
+            item.location.toLowerCase().contains(query) ||
+            item.condition.toLowerCase().contains(query);
+      }).toList();
+    }
+
+    return items;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -244,9 +241,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: _currentNavIndex == 4
                       ? const ProfileScreen(showAppBar: false)
-                      : SingleChildScrollView(
-                          physics: const ClampingScrollPhysics(),
-                          child: Column(
+                      : RefreshIndicator(
+                          onRefresh: _refreshData,
+                          color: AppTheme.primaryBlue,
+                          backgroundColor: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+                          child: SingleChildScrollView(
+                            physics: const ClampingScrollPhysics(),
+                            child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 20),
@@ -265,17 +266,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
-                                    TextButton(
-                                      onPressed: () {},
-                                      child: Text(
-                                        'Voir tout',
-                                        style: TextStyle(
-                                          color: AppTheme.primaryBlue,
-                                          fontSize: Responsive.fontSize(context, 12),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
                                   ],
                                 ),
                               ),
@@ -284,17 +274,33 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               SizedBox(
                                 height: 180,
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  itemCount: featureCards.length,
-                                  itemBuilder: (context, index) => Padding(
-                                    padding: EdgeInsets.only(
-                                      right: index < featureCards.length - 1 ? 12 : 0,
-                                    ),
-                                    child: FeatureCard(card: featureCards[index], isDark: isDark),
-                                  ),
-                                ),
+                                child: _featureCards.isEmpty
+                                    ? ListView.builder(
+                                        scrollDirection: Axis.horizontal,
+                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        itemCount: 4,
+                                        itemBuilder: (_, __) => Padding(
+                                          padding: const EdgeInsets.only(right: 12),
+                                          child: Container(
+                                            width: 155,
+                                            decoration: BoxDecoration(
+                                              color: isDark ? const Color(0xFF232b34) : const Color(0xFFf0f2f5),
+                                              borderRadius: BorderRadius.circular(16),
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : ListView.builder(
+                                        scrollDirection: Axis.horizontal,
+                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        itemCount: _featureCards.length,
+                                        itemBuilder: (context, index) => Padding(
+                                          padding: EdgeInsets.only(
+                                            right: index < _featureCards.length - 1 ? 12 : 0,
+                                          ),
+                                          child: FeatureCard(card: _featureCards[index], isDark: isDark),
+                                        ),
+                                      ),
                               ),
 
                               const SizedBox(height: 24),
@@ -313,17 +319,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
-                                    TextButton(
-                                      onPressed: () {},
-                                      child: Text(
-                                        'Tout',
-                                        style: TextStyle(
-                                          color: AppTheme.primaryBlue,
-                                          fontSize: Responsive.fontSize(context, 12),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
                                   ],
                                 ),
                               ),
@@ -338,7 +333,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     const spacing = 12.0;
                                     const totalSpacing = spacing * (crossAxisCount - 1);
                                     final itemWidth = (constraints.maxWidth - totalSpacing) / crossAxisCount;
-                                    final aspectRatio = itemWidth / 90;
+                                    // hauteur totale = card carrée (itemWidth) + 4 spacing + 36 texte
+                                    final aspectRatio = itemWidth / (itemWidth + 40);
 
                                     return GridView.builder(
                                       shrinkWrap: true,
@@ -347,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         crossAxisCount: crossAxisCount,
                                         crossAxisSpacing: spacing,
                                         mainAxisSpacing: spacing,
-                                        childAspectRatio: aspectRatio > 0 ? aspectRatio : 1.0,
+                                        childAspectRatio: aspectRatio,
                                       ),
                                       itemCount: _categories.isEmpty ? 8 : _categories.length,
                                       itemBuilder: (context, index) {
@@ -359,9 +355,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ),
                                           );
                                         }
-                                        return CategoryItem(
-                                          category: _categories[index],
-                                          isDark: isDark,
+                                        return GestureDetector(
+                                          onTap: () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => CategoryScreen(category: _categories[index]),
+                                            ),
+                                          ),
+                                          child: CategoryItem(
+                                            category: _categories[index],
+                                            isDark: isDark,
+                                          ),
                                         );
                                       },
                                     );
@@ -371,7 +375,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               const SizedBox(height: 24),
 
-                              // Trending section
+                              // News/Actualités section
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
                                 child: Row(
@@ -380,30 +384,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Row(
                                       children: [
                                         Text(
-                                          'Tendances',
+                                          'Actualités',
                                           style: TextStyle(
                                             color: isDark ? AppTheme.darkText : AppTheme.lightText,
                                             fontSize: Responsive.fontSize(context, 15),
                                             fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.primaryBlue,
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const FaIcon(FontAwesomeIcons.arrowTrendUp, color: Colors.white, size: 12),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                'POPULAIRE',
-                                                style: TextStyle(color: Colors.white, fontSize: Responsive.fontSize(context, 10), fontWeight: FontWeight.w700),
-                                              ),
-                                            ],
                                           ),
                                         ),
                                       ],
@@ -464,12 +449,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: ListView.builder(
                                   scrollDirection: Axis.horizontal,
                                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  itemCount: filters.length,
+                                  itemCount: _filters.length,
                                   itemBuilder: (context, index) {
-                                    final filter = filters[index];
+                                    final filter = _filters[index];
                                     final isActive = activeFilter == filter;
                                     return Padding(
-                                      padding: EdgeInsets.only(right: index < filters.length - 1 ? 8 : 0),
+                                      padding: EdgeInsets.only(right: index < _filters.length - 1 ? 8 : 0),
                                       child: FilterChip(
                                         label: Text(filter),
                                         onSelected: (_) => setState(() => activeFilter = filter),
@@ -497,49 +482,62 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               const SizedBox(height: 16),
 
-                              // Items list/grid
+                              // Items list/grid (filtrés selon la catégorie active)
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                                child: isListView
-                                    ? Column(
-                                        children: trendingItems
-                                            .map((item) => Padding(
-                                                  padding: const EdgeInsets.only(bottom: 12),
-                                                  child: ItemCard(item: item, isDark: isDark, onTap: () {}),
-                                                ))
-                                            .toList(),
-                                      )
-                                    : LayoutBuilder(
-                                        builder: (context, constraints) {
-                                          const crossAxisCount = 2;
-                                          const spacing = 12.0;
-                                          final itemWidth = (constraints.maxWidth - spacing) / crossAxisCount;
-                                          final aspectRatio = itemWidth / 245.0;
+                                child: _trendingLoading
+                                    ? _buildTrendingSkeleton()
+                                    : _filteredItems.isEmpty
+                                        ? const SizedBox(
+                                            height: 120,
+                                            child: Center(
+                                              child: Text(
+                                                'Aucun article dans cette catégorie',
+                                                style: TextStyle(color: Colors.grey),
+                                              ),
+                                            ),
+                                          )
+                                        : isListView
+                                            ? Column(
+                                                children: _filteredItems
+                                                    .map((item) => Padding(
+                                                          padding: const EdgeInsets.only(bottom: 12),
+                                                          child: ItemCard(item: item, isDark: isDark, onTap: () {}),
+                                                        ))
+                                                    .toList(),
+                                              )
+                                            : LayoutBuilder(
+                                                builder: (context, constraints) {
+                                                  const crossAxisCount = 2;
+                                                  const spacing = 12.0;
+                                                  final itemWidth = (constraints.maxWidth - spacing) / crossAxisCount;
+                                                  final aspectRatio = itemWidth / 245.0;
 
-                                          return GridView.builder(
-                                            shrinkWrap: true,
-                                            physics: const NeverScrollableScrollPhysics(),
-                                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                              crossAxisCount: crossAxisCount,
-                                              crossAxisSpacing: spacing,
-                                              mainAxisSpacing: spacing,
-                                              childAspectRatio: aspectRatio,
-                                            ),
-                                            itemCount: trendingItems.length,
-                                            itemBuilder: (context, index) => ItemCard(
-                                              item: trendingItems[index],
-                                              isDark: isDark,
-                                              onTap: () {},
-                                            ),
-                                          );
-                                        },
-                                      ),
+                                                  return GridView.builder(
+                                                    shrinkWrap: true,
+                                                    physics: const NeverScrollableScrollPhysics(),
+                                                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                                      crossAxisCount: crossAxisCount,
+                                                      crossAxisSpacing: spacing,
+                                                      mainAxisSpacing: spacing,
+                                                      childAspectRatio: aspectRatio,
+                                                    ),
+                                                    itemCount: _filteredItems.length,
+                                                    itemBuilder: (context, index) => ItemCard(
+                                                      item: _filteredItems[index],
+                                                      isDark: isDark,
+                                                      onTap: () {},
+                                                    ),
+                                                  );
+                                                },
+                                              ),
                               ),
 
                               const SizedBox(height: 100),
                             ],
                           ),
                         ),
+                      ),
                 ),
               ],
             ),
@@ -692,6 +690,22 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildTrendingSkeleton() {
+    final skeletonColor = isDark ? const Color(0xFF232b34) : const Color(0xFFf0f2f5);
+    return Column(
+      children: List.generate(3, (_) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Container(
+          height: 130,
+          decoration: BoxDecoration(
+            color: skeletonColor,
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      )),
+    );
+  }
+
   Widget _buildFloatingBottomNav() {
     final items = [
       _NavItem(FontAwesomeIcons.house, 'Accueil', 0),
@@ -738,7 +752,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 return GestureDetector(
                   onTap: () {
-                    const protectedIndexes = [1, 2, 3];
+                    // Bouton Vendre → ouvrir la page de vente
+                    if (item.index == 2) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SellScreen()),
+                      );
+                      return;
+                    }
+                    const protectedIndexes = [1, 3];
                     final isAuthenticated = context.read<AuthProvider>().isAuthenticated;
                     if (protectedIndexes.contains(item.index) && !isAuthenticated) {
                       setState(() => _currentNavIndex = 4);
@@ -831,6 +853,7 @@ class _LocationPickerSheet extends StatelessWidget {
   final Department? selectedDepartment;
   final City? selectedCity;
   final District? selectedDistrict;
+  final VoidCallback onReset;
   final ValueChanged<Department> onDepartmentSelected;
   final ValueChanged<City> onCitySelected;
   final ValueChanged<District> onDistrictSelected;
@@ -844,6 +867,7 @@ class _LocationPickerSheet extends StatelessWidget {
     required this.selectedDepartment,
     required this.selectedCity,
     required this.selectedDistrict,
+    required this.onReset,
     required this.onDepartmentSelected,
     required this.onCitySelected,
     required this.onDistrictSelected,
@@ -881,6 +905,12 @@ class _LocationPickerSheet extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(countryName,
                     style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.w700)),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: onReset,
+                  icon: const FaIcon(FontAwesomeIcons.rotateLeft, size: 12, color: AppTheme.primaryBlue),
+                  label: const Text('Tout', style: TextStyle(color: AppTheme.primaryBlue, fontSize: 12, fontWeight: FontWeight.w600)),
+                ),
               ],
             ),
           ),
