@@ -28,6 +28,26 @@ export const getCategories = async (
   }
 };
 
+export const getSubcategories = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const subcategories = await prisma.category.findMany({
+      where: { isActive: true, parentCategoryId: String(req.params.id) },
+      orderBy: { name: 'asc' },
+    });
+
+    res.status(200).json({
+      success: true,
+      data: subcategories,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getCategory = async (
   req: Request,
   res: Response,

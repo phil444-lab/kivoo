@@ -20,6 +20,7 @@ import favoriteRoutes from './routes/favoriteRoutes.js';
 import conversationRoutes from './routes/conversationRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
+import featuredRoutes from './routes/featuredRoutes.js';
 
 const app = express() as Express;
 const httpServer = createServer(app);
@@ -63,6 +64,7 @@ app.use('/api/favorites', favoriteRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/locations', locationRoutes);
+app.use('/api/featured', featuredRoutes);
 
 // Error handler
 app.use(errorHandler);

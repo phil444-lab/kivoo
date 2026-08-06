@@ -70,7 +70,7 @@ export const getUserItems = async (
       prisma.item.findMany({
         where,
         include: {
-          category: { select: { id: true, name: true, icon: true, color: true } },
+          category: { select: { id: true, name: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip,

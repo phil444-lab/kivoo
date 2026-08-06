@@ -19,6 +19,8 @@ dependencies:
   shared_preferences: ^2.2.2
   image_picker: ^1.0.7
   font_awesome_flutter: ^11.0.0
+  http_parser: ^4.0.2
+  mime: ^1.0.5
 
 dev_dependencies:
   flutter_test:

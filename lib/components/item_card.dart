@@ -84,27 +84,6 @@ class ItemCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Verified badge
-                  if (item.verified)
-                    Positioned(
-                      top: 8,
-                      left: 8,
-                      child: Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? AppTheme.darkCard
-                              : AppTheme.lightCard,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.check_circle,
-                          color: const Color(0xFF22c55e),
-                          size: 20,
-                        ),
-                      ),
-                    ),
                   // Bookmark button
                   Positioned(
                     top: 8,

@@ -103,6 +103,23 @@ model Session {
   @@map("sessions")
 }
 
+model FeaturedOption {
+  id          String   @id @default(cuid())
+  title       String   @db.VarChar(100)
+  subtitle    String   @db.VarChar(100)
+  icon        String   @db.VarChar(50)
+  borderColor String   @db.VarChar(7)
+  darkBg      String   @db.VarChar(7)
+  lightBg     String   @db.VarChar(7)
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  items Item[]
+
+  @@map("featured_options")
+}
+
 model Category {
   id        String   @id @default(cuid())
   name      String   @db.VarChar(50) @unique
@@ -135,9 +152,18 @@ model Item {
   brand       String?     @db.VarChar(50)
   model       String?     @db.VarChar(50)
   year        Int?
+  color       String?     @db.VarChar(50)
   images      Json?
   featured    Boolean     @default(false)
   featuredUntil DateTime?
+  featureId   String?     @db.VarChar(25)
+  feature     FeaturedOption? @relation(fields: [featureId], references: [id])
+  departmentId String?    @db.VarChar(25)
+  department  Department? @relation(fields: [departmentId], references: [id])
+  cityId      String?     @db.VarChar(25)
+  city        City?       @relation(fields: [cityId], references: [id])
+  districtId  String?     @db.VarChar(25)
+  district    District?   @relation(fields: [districtId], references: [id])
   status      ItemStatus  @default(active)
   views       Int         @default(0)
   likes       Int         @default(0)
@@ -160,6 +186,10 @@ model Item {
   @@index([createdAt])
   @@index([status])
   @@index([featured, boostLevel])
+  @@index([featureId])
+  @@index([departmentId])
+  @@index([cityId])
+  @@index([districtId])
   @@map("items")
 }
 
@@ -278,6 +308,7 @@ model Department {
   createdAt DateTime @default(now())
 
   cities City[]
+  items  Item[]
 
   @@index([countryId])
   @@map("departments")
@@ -292,6 +323,7 @@ model City {
   createdAt    DateTime   @default(now())
 
   districts District[]
+  items    Item[]
 
   @@index([departmentId])
   @@map("cities")
@@ -304,6 +336,8 @@ model District {
   city       City     @relation(fields: [cityId], references: [id])
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
+
+  items Item[]
 
   @@index([cityId])
   @@map("districts")

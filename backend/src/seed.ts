@@ -222,7 +222,7 @@ async function main() {
       ],
     },
     {
-      name: 'Maison, Jardin & Électroménager',
+      name: 'Équipement Maison',
       subcategories: [
         'Électroménager',
         'Meubles & Mobilier',
@@ -343,6 +343,55 @@ async function main() {
   }
 
   console.log('✅ Seed completed successfully!');
+
+  console.log('\n🌱 Seeding featured options...');
+
+  const featuredData = [
+    {
+      title: 'Offres Premium',
+      subtitle: 'Jusqu\'à -60%',
+      icon: 'gift',
+      borderColor: '#4f8ef7',
+      darkBg: '#142035',
+      lightBg: '#deeaff',
+      order: 0,
+    },
+    {
+      title: 'Nouveautés',
+      subtitle: 'Fraîchement arrivé',
+      icon: 'star',
+      borderColor: '#22c55e',
+      darkBg: '#0f2718',
+      lightBg: '#dcfce7',
+      order: 1,
+    },
+    {
+      title: 'Grandes Marques',
+      subtitle: 'Vendeurs vérifiés',
+      icon: 'circle-check',
+      borderColor: '#f59e0b',
+      darkBg: '#241a06',
+      lightBg: '#fef3c7',
+      order: 2,
+    },
+    {
+      title: 'Soldes Flash',
+      subtitle: 'Édition limitée',
+      icon: 'bolt',
+      borderColor: '#a855f7',
+      darkBg: '#1c0e34',
+      lightBg: '#f3e8ff',
+      order: 3,
+    },
+  ];
+
+  await prisma.featuredOption.createMany({
+    data: featuredData,
+    skipDuplicates: true,
+  });
+  console.log(`   ✓ ${featuredData.length} options insérées`);
+
+  console.log('✅ Featured options seeded!');
 }
 
 main()

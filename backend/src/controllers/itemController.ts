@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { AuthRequest } from '../middleware/auth.js';
-import { NotFoundError, ForbiddenError } from '../utils/ApiError.js';
+import { ApiError, NotFoundError, ForbiddenError } from '../utils/ApiError.js';
 
 export const getItems = async (
   req: Request,
@@ -64,8 +64,13 @@ export const getItems = async (
       prisma.item.findMany({
         where,
         include: {
-          category: { select: { id: true, name: true, icon: true, color: true } },
+          category: { select: { id: true, name: true } },
+          subcategory: { select: { id: true, name: true } },
           seller: { select: { id: true, name: true, photo: true, rating: true, verified: true } },
+          feature: { select: { id: true, title: true, icon: true } },
+          department: { select: { id: true, name: true } },
+          city: { select: { id: true, name: true } },
+          district: { select: { id: true, name: true } },
         },
         orderBy,
         skip,
@@ -107,8 +112,13 @@ export const getTrending = async (
       orderBy: { views: 'desc' },
       take: limit,
       include: {
-        category: { select: { id: true, name: true, icon: true, color: true } },
+        category: { select: { id: true, name: true } },
+        subcategory: { select: { id: true, name: true } },
         seller: { select: { id: true, name: true, photo: true, rating: true, verified: true } },
+        feature: { select: { id: true, title: true, icon: true } },
+        department: { select: { id: true, name: true } },
+        city: { select: { id: true, name: true } },
+        district: { select: { id: true, name: true } },
       },
     });
 
@@ -138,8 +148,13 @@ export const getFeatured = async (
       orderBy: [{ boostLevel: 'desc' }, { createdAt: 'desc' }],
       take: limit,
       include: {
-        category: { select: { id: true, name: true, icon: true, color: true } },
+        category: { select: { id: true, name: true } },
+        subcategory: { select: { id: true, name: true } },
         seller: { select: { id: true, name: true, photo: true, rating: true, verified: true } },
+        feature: { select: { id: true, title: true, icon: true } },
+        department: { select: { id: true, name: true } },
+        city: { select: { id: true, name: true } },
+        district: { select: { id: true, name: true } },
       },
     });
 
@@ -162,9 +177,13 @@ export const getItem = async (
       where: { id: req.params.id as string },
       data: { views: { increment: 1 } },
       include: {
-        category: { select: { id: true, name: true, icon: true, color: true } },
-        subcategory: { select: { id: true, name: true, icon: true } },
+        category: { select: { id: true, name: true } },
+        subcategory: { select: { id: true, name: true } },
         seller: { select: { id: true, name: true, photo: true, rating: true, verified: true, location: true, joinedAt: true } },
+        feature: { select: { id: true, title: true, icon: true } },
+        department: { select: { id: true, name: true } },
+        city: { select: { id: true, name: true } },
+        district: { select: { id: true, name: true } },
       },
     });
 
@@ -183,14 +202,52 @@ export const createItem = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    const { featureId, ...rest } = req.body;
+
+    // Récupérer les fichiers uploadés (multer les place dans req.files)
+    const files = (req.files as Express.Multer.File[]) || [];
+    if (files.length < 3) {
+      throw new ApiError(400, 'Au moins 3 photos sont requises');
+    }
+    const images = files.map((f) => f.filename);
+
+    // Convertir les champs numériques reçus en string (multipart/form-data)
+    const price = rest.price !== undefined ? Number(rest.price) : undefined;
+    const year = rest.year !== undefined ? Number(rest.year) : undefined;
+    if (price !== undefined && isNaN(price)) {
+      throw new ApiError(400, 'Le prix doit être un nombre valide');
+    }
+
+    // Si aucun featureId n'est fourni, on utilise "Nouveautés" par défaut
+    let defaultFeatureId = featureId;
+    if (!defaultFeatureId) {
+      const nouveautes = await prisma.featuredOption.findFirst({
+        where: { title: 'Nouveautés', isActive: true },
+        select: { id: true },
+      });
+      defaultFeatureId = nouveautes?.id ?? null;
+    }
+
     const itemData = {
-      ...req.body,
+      ...rest,
+      price,
+      year,
+      images,
+      featureId: defaultFeatureId,
       sellerId: req.user.id,
       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     };
 
     const item = await prisma.item.create({
       data: itemData,
+      include: {
+        category: { select: { id: true, name: true } },
+        subcategory: { select: { id: true, name: true } },
+        feature: { select: { id: true, title: true, icon: true } },
+        department: { select: { id: true, name: true } },
+        city: { select: { id: true, name: true } },
+        district: { select: { id: true, name: true } },
+      },
     });
 
     res.status(201).json({
@@ -220,9 +277,30 @@ export const updateItem = async (
       throw new ForbiddenError('Not authorized to update this item');
     }
 
+    const { featureId, ...rest } = req.body;
+
+    // Si de nouvelles images sont uploadées, les utiliser
+    const files = (req.files as Express.Multer.File[]) || [];
+    let images = item.images as string[] | null;
+    if (files.length > 0) {
+      images = files.map((f) => f.filename);
+    }
+
     const updated = await prisma.item.update({
       where: { id: req.params.id as string },
-      data: req.body,
+      data: {
+        ...rest,
+        ...(images ? { images } : {}),
+        ...(featureId ? { featureId } : {}),
+      },
+      include: {
+        category: { select: { id: true, name: true } },
+        subcategory: { select: { id: true, name: true } },
+        feature: { select: { id: true, title: true, icon: true } },
+        department: { select: { id: true, name: true } },
+        city: { select: { id: true, name: true } },
+        district: { select: { id: true, name: true } },
+      },
     });
 
     res.status(200).json({

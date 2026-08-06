@@ -22,62 +22,57 @@ class CategoryItem extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Expanded(
-          child: SizedBox(
+          child: Container(
             width: double.infinity,
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: isDark
-                        ? [const Color(0xFF232b34), const Color(0xFF191f26)]
-                        : [const Color(0xFFffffff), const Color(0xFFf0f2f5)],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isDark
-                        ? const Color(0xFF3d4752).withOpacity(0.3)
-                        : const Color(0xFF000000).withOpacity(0.06),
-                    width: 1,
-                  ),
-                  boxShadow: isDark
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.4),
-                            blurRadius: 8,
-                            offset: const Offset(2, 2),
-                          ),
-                        ]
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 6,
-                            offset: const Offset(2, 2),
-                          ),
-                        ],
-                ),
-                // 2. Utilisation du helper d'icône dynamique
-                child: Center(
-                  child: _buildIcon(category.icon, iconColor),
-                ),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDark
+                    ? [const Color(0xFF232b34), const Color(0xFF191f26)]
+                    : [const Color(0xFFffffff), const Color(0xFFf0f2f5)],
               ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark
+                    ? const Color(0xFF3d4752).withOpacity(0.3)
+                    : const Color(0xFF000000).withOpacity(0.06),
+                width: 1,
+              ),
+              boxShadow: isDark
+                  ? [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.4),
+                        blurRadius: 8,
+                        offset: const Offset(2, 2),
+                      ),
+                    ]
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 6,
+                        offset: const Offset(2, 2),
+                      ),
+                    ],
+            ),
+            child: Center(
+              child: _buildIcon(category.icon, iconColor),
             ),
           ),
         ),
-        const SizedBox(height: 2),
-        Flexible(
+        const SizedBox(height: 4),
+        SizedBox(
+          height: 36,
           child: Text(
             category.label,
             style: TextStyle(
               color: isDark ? AppTheme.darkText : AppTheme.lightText,
               fontSize: Responsive.fontSize(context, 10),
               fontWeight: FontWeight.w500,
-              height: 1.0,
+              height: 1.2,
             ),
             textAlign: TextAlign.center,
-            maxLines: 1,
+            maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -88,8 +83,8 @@ class CategoryItem extends StatelessWidget {
   // 3. Helper pour gérer dynamiquement IconData et FaIconData
   Widget _buildIcon(dynamic icon, Color color) {
     if (icon is IconData) {
-      return Icon(icon, color: color, size: 22);
+      return Icon(icon, color: color, size: 28);
     }
-    return FaIcon(icon, color: color, size: 22);
+    return FaIcon(icon, color: color, size: 28);
   }
 }
