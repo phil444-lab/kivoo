@@ -12,6 +12,7 @@ import '../../components/feature_card.dart';
 import '../../components/category_item.dart';
 import '../../components/item_card.dart';
 import '../../screens/home/category_screen.dart';
+import '../../screens/home/item_detail_screen.dart';
 import '../auth/profile_screen.dart';
 import '../sell/sell_screen.dart';
 import '../../providers/auth_provider.dart';
@@ -502,7 +503,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 children: _filteredItems
                                                     .map((item) => Padding(
                                                           padding: const EdgeInsets.only(bottom: 12),
-                                                          child: ItemCard(item: item, isDark: isDark, onTap: () {}),
+                                                          child: ItemCard(
+                                                            item: item,
+                                                            isDark: isDark,
+                                                            onTap: () => Navigator.push(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                builder: (_) => ItemDetailScreen(item: item),
+                                                              ),
+                                                            ),
+                                                          ),
                                                         ))
                                                     .toList(),
                                               )
@@ -523,11 +533,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       childAspectRatio: aspectRatio,
                                                     ),
                                                     itemCount: _filteredItems.length,
-                                                    itemBuilder: (context, index) => ItemCard(
-                                                      item: _filteredItems[index],
-                                                      isDark: isDark,
-                                                      onTap: () {},
-                                                    ),
+                                                    itemBuilder: (context, index) {
+                                                      final item = _filteredItems[index];
+                                                      return ItemCard(
+                                                        item: item,
+                                                        isDark: isDark,
+                                                        onTap: () => Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (_) => ItemDetailScreen(item: item),
+                                                          ),
+                                                        ),
+                                                      );
+                                                    },
                                                   );
                                                 },
                                               ),

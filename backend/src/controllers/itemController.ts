@@ -3,6 +3,60 @@ import prisma from '../lib/prisma.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { ApiError, NotFoundError, ForbiddenError } from '../utils/ApiError.js';
 
+export const getMyItems = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const {
+      page = '1',
+      limit = '50',
+    } = req.query;
+
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
+    const skip = (pageNum - 1) * limitNum;
+
+    const [items, totalItems] = await Promise.all([
+      prisma.item.findMany({
+        where: { sellerId: req.user.id },
+        include: {
+          category: { select: { id: true, name: true } },
+          subcategory: { select: { id: true, name: true } },
+          seller: { select: { id: true, name: true, photo: true, rating: true, verified: true } },
+          feature: { select: { id: true, title: true, icon: true } },
+          department: { select: { id: true, name: true } },
+          city: { select: { id: true, name: true } },
+          district: { select: { id: true, name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limitNum,
+      }),
+      prisma.item.count({ where: { sellerId: req.user.id } }),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limitNum);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        items,
+        pagination: {
+          currentPage: pageNum,
+          totalPages,
+          totalItems,
+          hasNext: pageNum < totalPages,
+          hasPrev: pageNum > 1,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getItems = async (
   req: Request,
   res: Response,
@@ -13,6 +67,7 @@ export const getItems = async (
       page = '1',
       limit = '20',
       category,
+      subcategory,
       location,
       minPrice,
       maxPrice,
@@ -20,12 +75,25 @@ export const getItems = async (
       search,
       sort = 'newest',
       featured,
+      department,
+      city,
+      district,
+      color,
+      brand,
+      priceType,
     } = req.query;
 
     const where: any = { status: 'active' };
 
     if (category) where.categoryId = category as string;
+    if (subcategory) where.subcategoryId = subcategory as string;
     if (location) where.location = { path: '$.city', string_contains: location as string };
+    if (department) where.departmentId = department as string;
+    if (city) where.cityId = city as string;
+    if (district) where.districtId = district as string;
+    if (color) where.color = { contains: color as string };
+    if (brand) where.brand = { contains: brand as string };
+    if (priceType) where.priceType = priceType as any;
     if (minPrice || maxPrice) {
       where.price = {};
       if (minPrice) where.price.gte = Number(minPrice);
@@ -277,19 +345,46 @@ export const updateItem = async (
       throw new ForbiddenError('Not authorized to update this item');
     }
 
-    const { featureId, ...rest } = req.body;
+    const { featureId, keepImages, ...rest } = req.body;
 
-    // Si de nouvelles images sont uploadées, les utiliser
+    // Convertir les champs numériques reçus en string (multipart/form-data)
+    const price = rest.price !== undefined ? Number(rest.price) : undefined;
+    const year = rest.year !== undefined ? Number(rest.year) : undefined;
+    if (price !== undefined && isNaN(price)) {
+      throw new ApiError(400, 'Le prix doit être un nombre valide');
+    }
+
+    // Gestion des images :
+    // - keepImages : liste des images existantes à conserver (JSON string ou array)
+    // - files : nouvelles images uploadées
     const files = (req.files as Express.Multer.File[]) || [];
-    let images = item.images as string[] | null;
-    if (files.length > 0) {
-      images = files.map((f) => f.filename);
+    const newImages = files.map((f) => f.filename);
+
+    // Décoder keepImages (peut être un JSON string en multipart, ou un array en JSON)
+    let keptImages: string[] = [];
+    if (typeof keepImages === 'string') {
+      try {
+        const parsed = JSON.parse(keepImages);
+        if (Array.isArray(parsed)) keptImages = parsed.map(String);
+      } catch {
+        keptImages = [keepImages];
+      }
+    } else if (Array.isArray(keepImages)) {
+      keptImages = keepImages.map(String);
+    }
+
+    // Images finales = conservées + nouvelles
+    let images: string[] | null = null;
+    if (keptImages.length > 0 || newImages.length > 0) {
+      images = [...keptImages, ...newImages];
     }
 
     const updated = await prisma.item.update({
       where: { id: req.params.id as string },
       data: {
         ...rest,
+        ...(price !== undefined ? { price } : {}),
+        ...(year !== undefined ? { year } : {}),
         ...(images ? { images } : {}),
         ...(featureId ? { featureId } : {}),
       },

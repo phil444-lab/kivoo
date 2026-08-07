@@ -6,6 +6,7 @@ import '../../services/category_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/theme_provider.dart';
 import '../../utils/responsive.dart';
+import 'items_list_screen.dart';
 
 class CategoryScreen extends StatefulWidget {
   final CategoryModel category;
@@ -103,7 +104,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => CategoryScreen(category: sub),
+                        builder: (_) => ItemsListScreen(
+                          category: sub,
+                          parentCategory: widget.category,
+                          isSubcategory: true,
+                        ),
                       ),
                     );
                   },

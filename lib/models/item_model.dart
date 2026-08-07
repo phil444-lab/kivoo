@@ -1,38 +1,86 @@
-import 'dart:convert';
 import '../constants.dart';
 
 class ItemModel {
   final String id;
   final String title;
+  final String description;
   final String price;
+  final String priceType;
+  final String priceTypeValue;
   final String location;
   final String condition;
   final String time;
   final String photo;
+  final List<String> images;
   final bool verified;
+  final String sellerName;
+  final String sellerPhoto;
+  final double sellerRating;
+  final String sellerLocation;
   final String categoryName;
+  final String subcategoryName;
+  final String brand;
+  final String model;
+  final String color;
+  final int year;
+  final int views;
+  final int likes;
+  final String featureTitle;
+  final String featureIcon;
+  final bool featured;
+  final String categoryId;
+  final String subcategoryId;
+  final String departmentId;
+  final String cityId;
+  final String districtId;
+  final String featureId;
   final DateTime createdAt;
 
   const ItemModel({
     required this.id,
     required this.title,
+    this.description = '',
     required this.price,
+    this.priceType = 'fixed',
+    this.priceTypeValue = 'fixed',
     required this.location,
     required this.condition,
     required this.time,
     required this.photo,
+    this.images = const [],
     required this.verified,
+    this.sellerName = '',
+    this.sellerPhoto = '',
+    this.sellerRating = 0,
+    this.sellerLocation = '',
     this.categoryName = '',
+    this.subcategoryName = '',
+    this.brand = '',
+    this.model = '',
+    this.color = '',
+    this.year = 0,
+    this.views = 0,
+    this.likes = 0,
+    this.featureTitle = '',
+    this.featureIcon = '',
+    this.featured = false,
+    this.categoryId = '',
+    this.subcategoryId = '',
+    this.departmentId = '',
+    this.cityId = '',
+    this.districtId = '',
+    this.featureId = '',
     required this.createdAt,
   });
 
   factory ItemModel.fromJson(Map<String, dynamic> json) {
     // Images
-    String photo = '';
-    final images = json['images'];
-    if (images is List && images.isNotEmpty) {
-      photo = images.first.toString();
+    final rawImages = json['images'];
+    List<String> imagesList = [];
+    if (rawImages is List) {
+      imagesList = rawImages.map((e) => e.toString()).toList();
     }
+    String photo = imagesList.isNotEmpty ? imagesList.first : '';
 
     // Localisation (department, city, district imbriqués)
     String location = '';
@@ -66,6 +114,16 @@ class ItemModel {
     final price = (json['price'] as num?)?.toDouble() ?? 0;
     final formattedPrice = _formatPrice(price);
 
+    // Type de prix
+    const priceTypes = {
+      'fixed': 'Prix fixe',
+      'negotiable': 'Négociable',
+      'rent': 'Location',
+      'auction': 'Enchère',
+    };
+    final priceTypeValue = json['priceType']?.toString() ?? 'fixed';
+    final priceType = priceTypes[priceTypeValue] ?? 'Prix fixe';
+
     // Temps relatif depuis createdAt
     final createdAtRaw = DateTime.tryParse(json['createdAt']?.toString() ?? '');
     final time = _formatRelativeTime(createdAtRaw);
@@ -75,25 +133,118 @@ class ItemModel {
     final categoryName = category is Map<String, dynamic>
         ? (category['name']?.toString() ?? '')
         : '';
+    final categoryId = category is Map<String, dynamic>
+        ? (category['id']?.toString() ?? '')
+        : '';
 
-    // Vérifié → vient du vendeur
+    // Sous-catégorie
+    final subcategory = json['subcategory'];
+    final subcategoryName = subcategory is Map<String, dynamic>
+        ? (subcategory['name']?.toString() ?? '')
+        : '';
+    final subcategoryId = subcategory is Map<String, dynamic>
+        ? (subcategory['id']?.toString() ?? '')
+        : '';
+
+    // Vendeur → nom, photo, rating, vérifié
     final seller = json['seller'];
     final verified = seller is Map<String, dynamic>
         ? (seller['verified'] as bool? ?? false)
         : false;
+    final sellerName = seller is Map<String, dynamic>
+        ? (seller['name']?.toString() ?? '')
+        : '';
+
+    // Photo du vendeur
+    String sellerPhoto = '';
+    if (seller is Map<String, dynamic>) {
+      final sp = seller['photo']?.toString() ?? '';
+      if (sp.startsWith('http://') || sp.startsWith('https://')) {
+        sellerPhoto = sp;
+      } else if (sp.isNotEmpty) {
+        sellerPhoto = '${AppConstants.uploadsBaseUrl}/$sp';
+      }
+    }
+
+    // Rating du vendeur
+    final sellerRating = seller is Map<String, dynamic>
+        ? ((seller['rating'] as num?)?.toDouble() ?? 0)
+        : 0.0;
+
+    // Localisation du vendeur
+    String sellerLocation = '';
+    if (seller is Map<String, dynamic>) {
+      final sl = seller['location'];
+      if (sl is Map<String, dynamic>) {
+        final locParts = <String>[];
+        if (sl['company'] != null) locParts.add(sl['company'].toString());
+        if (sl['address'] != null) locParts.add(sl['address'].toString());
+        if (sl['city'] != null) locParts.add(sl['city'].toString());
+        sellerLocation = locParts.join(', ');
+      } else if (sl != null) {
+        sellerLocation = sl.toString();
+      }
+    }
+
+    // Feature
+    final feature = json['feature'];
+    final featureTitle = feature is Map<String, dynamic>
+        ? (feature['title']?.toString() ?? '')
+        : '';
+    final featureIcon = feature is Map<String, dynamic>
+        ? (feature['icon']?.toString() ?? '')
+        : '';
+    final featureId = feature is Map<String, dynamic>
+        ? (feature['id']?.toString() ?? '')
+        : '';
+
+    // Département / Ville / Quartier (IDs depuis objets imbriqués ou champs racines)
+    final departmentId = dept is Map<String, dynamic>
+        ? (dept['id']?.toString() ?? json['departmentId']?.toString() ?? '')
+        : (json['departmentId']?.toString() ?? '');
+    final cityId = city is Map<String, dynamic>
+        ? (city['id']?.toString() ?? json['cityId']?.toString() ?? '')
+        : (json['cityId']?.toString() ?? '');
+    final districtId = district is Map<String, dynamic>
+        ? (district['id']?.toString() ?? json['districtId']?.toString() ?? '')
+        : (json['districtId']?.toString() ?? '');
 
     final createdAt = createdAtRaw ?? DateTime.now();
 
     return ItemModel(
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
       price: formattedPrice,
+      priceType: priceType,
+      priceTypeValue: priceTypeValue,
       location: location,
       condition: condition,
       time: time,
       photo: photo,
+      images: imagesList,
       verified: verified,
+      sellerName: sellerName,
+      sellerPhoto: sellerPhoto,
+      sellerRating: sellerRating,
+      sellerLocation: sellerLocation,
       categoryName: categoryName,
+      subcategoryName: subcategoryName,
+      brand: json['brand']?.toString() ?? '',
+      model: json['model']?.toString() ?? '',
+      color: json['color']?.toString() ?? '',
+      year: (json['year'] as num?)?.toInt() ?? 0,
+      views: (json['views'] as num?)?.toInt() ?? 0,
+      likes: (json['likes'] as num?)?.toInt() ?? 0,
+      featureTitle: featureTitle,
+      featureIcon: featureIcon,
+      featured: json['featured'] as bool? ?? false,
+      categoryId: categoryId,
+      subcategoryId: subcategoryId,
+      departmentId: departmentId,
+      cityId: cityId,
+      districtId: districtId,
+      featureId: featureId,
       createdAt: createdAt,
     );
   }
@@ -102,25 +253,58 @@ class ItemModel {
     return {
       'id': id,
       'title': title,
+      'description': description,
       'price': price,
+      'priceType': priceType,
+      'priceTypeValue': priceTypeValue,
       'location': location,
       'condition': condition,
       'time': time,
       'photo': photo,
+      'images': images,
       'verified': verified,
+      'sellerName': sellerName,
+      'sellerPhoto': sellerPhoto,
+      'sellerRating': sellerRating,
+      'sellerLocation': sellerLocation,
       'categoryName': categoryName,
+      'subcategoryName': subcategoryName,
+      'brand': brand,
+      'model': model,
+      'color': color,
+      'year': year,
+      'views': views,
+      'likes': likes,
+      'featureTitle': featureTitle,
+      'featureIcon': featureIcon,
+      'featured': featured,
+      'categoryId': categoryId,
+      'subcategoryId': subcategoryId,
+      'departmentId': departmentId,
+      'cityId': cityId,
+      'districtId': districtId,
+      'featureId': featureId,
       'createdAt': createdAt.toIso8601String(),
     };
   }
 
-  /// Retourne l'URL complète de la photo de l'item
+  /// Retourne l'URL complète de la photo principale de l'item
   String get photoUrl {
-    // Si c'est déjà une URL complète (http/https), la retourner telle quelle
     if (photo.startsWith('http://') || photo.startsWith('https://')) {
       return photo;
     }
-    // Sinon, c'est un nom de fichier, construire l'URL
     return '${AppConstants.uploadsBaseUrl}/$photo';
+  }
+
+  /// Retourne toutes les URLs complètes des images de l'item
+  List<String> get imageUrls {
+    final urls = images.map((img) {
+      if (img.startsWith('http://') || img.startsWith('https://')) {
+        return img;
+      }
+      return '${AppConstants.uploadsBaseUrl}/$img';
+    }).toList();
+    return urls.isNotEmpty ? urls : [photoUrl];
   }
 
   /// Formate un prix numérique en chaîne FCFA avec séparateurs de milliers.

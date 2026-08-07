@@ -5,9 +5,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/theme_provider.dart';
+import '../../constants.dart';
 import '../../models/category_model.dart';
 import '../../models/location_model.dart';
 import '../../models/feature_card_model.dart';
+import '../../models/item_model.dart';
 import '../../services/category_service.dart';
 import '../../services/location_service.dart';
 import '../../services/feature_card_service.dart';
@@ -16,7 +18,10 @@ import '../../providers/auth_provider.dart';
 import '../../utils/responsive.dart';
 
 class SellScreen extends StatefulWidget {
-  const SellScreen({super.key});
+  /// Si item est fourni, le formulaire est en mode édition et prérempli.
+  final ItemModel? item;
+
+  const SellScreen({super.key, this.item});
 
   @override
   State<SellScreen> createState() => _SellScreenState();
@@ -52,28 +57,92 @@ class _SellScreenState extends State<SellScreen> {
   String? _selectedCondition;
   final List<String> _conditions = ['new', 'like_new', 'good', 'fair', 'used'];
 
-  final List<File> _images = [];
+  String? _selectedPriceType;
+  final List<String> _priceTypes = ['fixed', 'negotiable', 'rent', 'auction'];
+  final Map<String, String> _priceTypeLabels = {
+    'fixed': 'Prix fixe',
+    'negotiable': 'Négociable',
+    'rent': 'Location',
+    'auction': 'Enchère',
+  };
+
+  /// Images existantes de l'item (en mode édition)
+  List<String> _existingImages = [];
+
+  /// Nouvelles images sélectionnées localement
+  final List<File> _newImages = [];
+
   bool _isLoading = false;
   bool _isSubmitting = false;
+
+  /// Mode édition si un item est fourni
+  bool get _isEditing => widget.item != null;
+
+  /// Images existantes conservées (non supprimées)
+  List<String> get _keptExistingImages {
+    final item = widget.item;
+    if (item == null) return [];
+    return item.images.where((img) => _existingImages.contains(img)).toList();
+  }
 
   @override
   void initState() {
     super.initState();
+    _prefillForm();
     _loadData();
   }
 
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _priceController.dispose();
-    _brandController.dispose();
-    _colorController.dispose();
-    super.dispose();
+  /// Préremplit le formulaire avec les données de l'item en mode édition
+  void _prefillForm() {
+    final item = widget.item;
+    if (item == null) return;
+
+    _titleController.text = item.title;
+    _descriptionController.text = item.description;
+    _priceController.text = _extractNumericPrice(item.price);
+    _brandController.text = item.brand;
+    _colorController.text = item.color;
+    _selectedCondition = _conditionToApi(item.condition);
+    _selectedPriceType = item.priceTypeValue;
+    _existingImages = List.of(item.images);
+  }
+
+  /// Convertit le libellé français de condition en valeur API
+  String? _conditionToApi(String conditionLabel) {
+    const map = {
+      'Neuf': 'new',
+      'Comme neuf': 'like_new',
+      'Bon état': 'good',
+      'État correct': 'fair',
+      'Occasion': 'used',
+    };
+    return map[conditionLabel];
+  }
+
+  /// Extrait le nombre depuis une chaîne formatée "250 000 FCFA"
+  String _extractNumericPrice(String formatted) {
+    return formatted.replaceAll(RegExp(r'[^\d]'), '');
+  }
+
+  /// Construit l'URL complète d'une image existante
+  String _imageUrl(String img) {
+    if (img.startsWith('http://') || img.startsWith('https://')) {
+      return img;
+    }
+    return '${AppConstants.uploadsBaseUrl}/$img';
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      // Réinitialiser les sélections pour éviter les instances obsolètes lors du refresh
+      _selectedParentCategory = null;
+      _selectedSubCategory = null;
+      _selectedDepartment = null;
+      _selectedCity = null;
+      _selectedDistrict = null;
+      _selectedFeature = null;
+    });
     final results = await Future.wait([
       _categoryService.getParentCategories(),
       _locationService.getCountries(),
@@ -98,6 +167,79 @@ class _SellScreenState extends State<SellScreen> {
         _isLoading = false;
       });
     }
+
+    // Préremplir les sélections (catégories, localisation, feature)
+    if (_isEditing) {
+      await _preselectRelations(cats, features);
+    }
+  }
+
+  /// Sélectionne les objets correspondant aux IDs de l'item en édition
+  Future<void> _preselectRelations(
+    List<CategoryModel> cats,
+    List<FeatureCardModel> features,
+  ) async {
+    final item = widget.item!;
+
+    // Catégorie parente
+    if (item.categoryId.isNotEmpty) {
+      final parent = cats.where((c) => c.id == item.categoryId).toList();
+      if (parent.isNotEmpty) {
+        setState(() => _selectedParentCategory = parent.first);
+        // Charger les sous-catégories
+        final subs = await _categoryService.getSubCategories(parent.first.id);
+        if (mounted) {
+          setState(() {
+            _subCategories = subs;
+            // Sous-catégorie
+            if (item.subcategoryId.isNotEmpty) {
+              final sub = subs.where((s) => s.id == item.subcategoryId).toList();
+              if (sub.isNotEmpty) _selectedSubCategory = sub.first;
+            }
+          });
+        }
+      }
+    }
+
+    // Département / Ville / Quartier
+    if (item.departmentId.isNotEmpty) {
+      final dept = _departments.where((d) => d.id == item.departmentId).toList();
+      if (dept.isNotEmpty) {
+        setState(() => _selectedDepartment = dept.first);
+        final cities = await _locationService.getCities(dept.first.id);
+        if (mounted) {
+          setState(() {
+            _cities = cities;
+            if (item.cityId.isNotEmpty) {
+              final city = cities.where((c) => c.id == item.cityId).toList();
+              if (city.isNotEmpty) _selectedCity = city.first;
+            }
+          });
+          // Quartier
+          if (item.cityId.isNotEmpty) {
+            final currentCity = _selectedCity;
+            if (currentCity != null) {
+              final districts = await _locationService.getDistricts(currentCity.id);
+              if (mounted) {
+                setState(() {
+                  _districts = districts;
+                  if (item.districtId.isNotEmpty) {
+                    final district = districts.where((d) => d.id == item.districtId).toList();
+                    if (district.isNotEmpty) _selectedDistrict = district.first;
+                  }
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Feature
+    if (item.featureId.isNotEmpty) {
+      final feature = features.where((f) => f.id == item.featureId).toList();
+      if (feature.isNotEmpty) setState(() => _selectedFeature = feature.first);
+    }
   }
 
   Future<void> _refresh() async {
@@ -107,19 +249,23 @@ class _SellScreenState extends State<SellScreen> {
 
   Future<void> _pickImages() async {
     final picker = ImagePicker();
-    final remaining = 10 - _images.length;
+    final remaining = 10 - _newImages.length - _keptExistingImages.length;
     if (remaining <= 0) return;
 
     final picked = await picker.pickMultiImage(limit: remaining);
     if (picked.isEmpty) return;
 
     setState(() {
-      _images.addAll(picked.map((x) => File(x.path)));
+      _newImages.addAll(picked.map((x) => File(x.path)));
     });
   }
 
-  Future<void> _removeImage(int index) async {
-    setState(() => _images.removeAt(index));
+  Future<void> _removeNewImage(int index) async {
+    setState(() => _newImages.removeAt(index));
+  }
+
+  Future<void> _removeExistingImage(String imageName) async {
+    setState(() => _existingImages.remove(imageName));
   }
 
   Future<void> _onParentCategorySelected(CategoryModel? cat) async {
@@ -162,76 +308,102 @@ class _SellScreenState extends State<SellScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_images.length < 3) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez ajouter au moins 3 photos'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+
+    final keptImages = _keptExistingImages;
+
+    // 3 photos minimum requises (création et modification)
+    final totalImages = keptImages.length + _newImages.length;
+    if (totalImages < 3) {
+      _showSnack('Veuillez avoir au moins 3 photos');
       return;
     }
     if (_selectedSubCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez sélectionner une sous-catégorie'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      _showSnack('Veuillez sélectionner une sous-catégorie');
       return;
     }
 
     final authProvider = context.read<AuthProvider>();
     if (!authProvider.isAuthenticated || authProvider.token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez vous connecter pour vendre un article'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      _showSnack('Veuillez vous connecter pour vendre un article');
       return;
     }
 
     setState(() => _isSubmitting = true);
 
-    final result = await _itemService.createItem(
-      token: authProvider.token!,
-      title: _titleController.text.trim(),
-      description: _descriptionController.text.trim(),
-      price: double.parse(_priceController.text.trim()),
-      categoryId: _selectedParentCategory!.id,
-      subcategoryId: _selectedSubCategory!.id,
-      images: _images,
-      brand: _brandController.text.trim().isEmpty ? null : _brandController.text.trim(),
-      color: _colorController.text.trim().isEmpty ? null : _colorController.text.trim(),
-      condition: _selectedCondition,
-      departmentId: _selectedDepartment?.id,
-      cityId: _selectedCity?.id,
-      districtId: _selectedDistrict?.id,
-      featureId: _selectedFeature?.id,
-    );
+    final brand = _brandController.text.trim().isEmpty ? null : _brandController.text.trim();
+    final color = _colorController.text.trim().isEmpty ? null : _colorController.text.trim();
 
-    if (!mounted) return;
-    setState(() => _isSubmitting = false);
-
-    if (result != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Article publié avec succès !'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
+    if (_isEditing) {
+      // Mode édition : mettre à jour l'annonce
+      final result = await _itemService.updateItem(
+        token: authProvider.token!,
+        itemId: widget.item!.id,
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        price: double.parse(_priceController.text.trim()),
+        priceType: _selectedPriceType ?? 'fixed',
+        categoryId: _selectedParentCategory!.id,
+        subcategoryId: _selectedSubCategory!.id,
+        images: _newImages.isNotEmpty ? _newImages : null,
+        keepImages: keptImages,
+        brand: brand,
+        color: color,
+        condition: _selectedCondition,
+        departmentId: _selectedDepartment?.id,
+        cityId: _selectedCity?.id,
+        districtId: _selectedDistrict?.id,
+        featureId: _selectedFeature?.id,
       );
-      Navigator.pop(context);
+
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+
+      if (result != null) {
+        _showSnack('Annonce modifiée avec succès !', isError: false);
+        Navigator.pop(context, true);
+      } else {
+        _showSnack('Erreur lors de la modification. Veuillez réessayer.');
+      }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Erreur lors de la publication. Veuillez réessayer.'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
+      // Mode création
+      final result = await _itemService.createItem(
+        token: authProvider.token!,
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        price: double.parse(_priceController.text.trim()),
+        priceType: _selectedPriceType ?? 'fixed',
+        images: _newImages,
+        categoryId: _selectedParentCategory!.id,
+        subcategoryId: _selectedSubCategory!.id,
+        brand: brand,
+        color: color,
+        condition: _selectedCondition,
+        departmentId: _selectedDepartment?.id,
+        cityId: _selectedCity?.id,
+        districtId: _selectedDistrict?.id,
+        featureId: _selectedFeature?.id,
       );
+
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+
+      if (result != null) {
+        _showSnack('Article publié avec succès !', isError: false);
+        Navigator.pop(context);
+      } else {
+        _showSnack('Erreur lors de la publication. Veuillez réessayer.');
+      }
     }
+  }
+
+  void _showSnack(String message, {bool isError = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -252,7 +424,7 @@ class _SellScreenState extends State<SellScreen> {
       backgroundColor: bg,
       appBar: AppBar(
         title: Text(
-          'Vendre un article',
+          _isEditing ? 'Modifier l\'annonce' : 'Vendre un article',
           style: TextStyle(fontSize: Responsive.fontSize(context, 18)),
         ),
         backgroundColor: AppTheme.darkBlue,
@@ -271,7 +443,11 @@ class _SellScreenState extends State<SellScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Photos (minimum 3)', style: sectionTitleStyle),
+                      // Photos
+                      Text(
+                        _isEditing ? 'Photos (cliquez sur la corbeille pour supprimer)' : 'Photos (minimum 3)',
+                        style: sectionTitleStyle,
+                      ),
                       SizedBox(height: Responsive.dimension(context, 8)),
                       _buildPhotoPicker(cardBg, borderColor, textColor),
                       SizedBox(height: Responsive.dimension(context, 20)),
@@ -355,6 +531,20 @@ class _SellScreenState extends State<SellScreen> {
                         style: TextStyle(color: textColor, fontSize: Responsive.fontSize(context, 14)),
                         items: _conditions.map((c) => DropdownMenuItem(value: c, child: Text(_conditionLabel(c)))).toList(),
                         onChanged: (v) => setState(() => _selectedCondition = v),
+                      ),
+                      SizedBox(height: Responsive.dimension(context, 20)),
+
+                      // Type de prix
+                      Text('Type de prix', style: sectionTitleStyle),
+                      SizedBox(height: Responsive.dimension(context, 8)),
+                      DropdownButtonFormField<String>(
+                        value: _selectedPriceType,
+                        isExpanded: true,
+                        decoration: _inputDecoration('Sélectionner le type de prix', cardBg, borderColor),
+                        dropdownColor: cardBg,
+                        style: TextStyle(color: textColor, fontSize: Responsive.fontSize(context, 14)),
+                        items: _priceTypes.map((t) => DropdownMenuItem(value: t, child: Text(_priceTypeLabels[t] ?? t))).toList(),
+                        onChanged: (v) => setState(() => _selectedPriceType = v),
                       ),
                       SizedBox(height: Responsive.dimension(context, 20)),
 
@@ -445,7 +635,7 @@ class _SellScreenState extends State<SellScreen> {
                           ),
                           child: _isSubmitting
                               ? SizedBox(width: Responsive.dimension(context, 24), height: Responsive.dimension(context, 24), child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                              : Text('Publier l\'article', style: TextStyle(fontSize: Responsive.fontSize(context, 16), fontWeight: FontWeight.w700)),
+                              : Text(_isEditing ? 'Enregistrer les modifications' : 'Publier l\'article', style: TextStyle(fontSize: Responsive.fontSize(context, 16), fontWeight: FontWeight.w700)),
                         ),
                       ),
                       SizedBox(height: Responsive.dimension(context, 20)),
@@ -460,7 +650,8 @@ class _SellScreenState extends State<SellScreen> {
   Widget _buildPhotoPicker(Color cardBg, Color borderColor, Color textColor) {
     return Column(
       children: [
-        if (_images.isNotEmpty)
+        // Images existantes (mode édition uniquement)
+        if (_isEditing && _existingImages.isNotEmpty)
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -469,27 +660,35 @@ class _SellScreenState extends State<SellScreen> {
               crossAxisSpacing: Responsive.dimension(context, 8),
               mainAxisSpacing: Responsive.dimension(context, 8),
             ),
-            itemCount: _images.length,
+            itemCount: _existingImages.length,
             itemBuilder: (context, index) {
+              final img = _existingImages[index];
               return Stack(
                 fit: StackFit.expand,
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(Responsive.dimension(context, 12)),
-                    child: Image.file(_images[index], fit: BoxFit.cover),
+                    child: Image.network(
+                      _imageUrl(img),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: cardBg,
+                        child: FaIcon(FontAwesomeIcons.image, color: textColor),
+                      ),
+                    ),
                   ),
                   Positioned(
                     top: Responsive.dimension(context, 4),
                     right: Responsive.dimension(context, 4),
                     child: GestureDetector(
-                      onTap: () => _removeImage(index),
+                      onTap: () => _removeExistingImage(img),
                       child: Container(
                         padding: EdgeInsets.all(Responsive.dimension(context, 4)),
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.6),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(Icons.close, color: Colors.white, size: Responsive.iconSize(context, 14)),
+                        child: FaIcon(FontAwesomeIcons.trash, color: Colors.white, size: Responsive.iconSize(context, 14)),
                       ),
                     ),
                   ),
@@ -497,7 +696,52 @@ class _SellScreenState extends State<SellScreen> {
               );
             },
           ),
-        SizedBox(height: Responsive.dimension(context, 8)),
+
+        if (_isEditing && _existingImages.isNotEmpty)
+          SizedBox(height: Responsive.dimension(context, 8)),
+
+        // Nouvelles images sélectionnées
+        if (_newImages.isNotEmpty)
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: Responsive.dimension(context, 8),
+              mainAxisSpacing: Responsive.dimension(context, 8),
+            ),
+            itemCount: _newImages.length,
+            itemBuilder: (context, index) {
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(Responsive.dimension(context, 12)),
+                    child: Image.file(_newImages[index], fit: BoxFit.cover),
+                  ),
+                  Positioned(
+                    top: Responsive.dimension(context, 4),
+                    right: Responsive.dimension(context, 4),
+                    child: GestureDetector(
+                      onTap: () => _removeNewImage(index),
+                      child: Container(
+                        padding: EdgeInsets.all(Responsive.dimension(context, 4)),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          shape: BoxShape.circle,
+                        ),
+                        child: FaIcon(FontAwesomeIcons.trash, color: Colors.white, size: Responsive.iconSize(context, 14)),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+
+        if (_newImages.isNotEmpty)
+          SizedBox(height: Responsive.dimension(context, 8)),
+
         InkWell(
           onTap: _pickImages,
           borderRadius: BorderRadius.circular(Responsive.dimension(context, 12)),
@@ -515,8 +759,11 @@ class _SellScreenState extends State<SellScreen> {
                 FaIcon(FontAwesomeIcons.camera, color: AppTheme.primaryBlue, size: Responsive.iconSize(context, 24)),
                 SizedBox(height: Responsive.dimension(context, 4)),
                 Text(
-                  '${_images.length}/10 photos',
+                  _isEditing
+                      ? '${_keptExistingImages.length + _newImages.length}/10 photos'
+                      : '${_newImages.length}/10 photos',
                   style: TextStyle(color: textColor, fontSize: Responsive.fontSize(context, 12)),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),

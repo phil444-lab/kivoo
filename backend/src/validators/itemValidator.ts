@@ -40,6 +40,7 @@ export const updateItemSchema = z.object({
     cityId: z.string().optional(),
     districtId: z.string().optional(),
     featureId: z.string().optional(),
+    keepImages: z.array(z.string()).or(z.string()).optional(),
     location: z.any().optional(),
     tags: z.array(z.string()).optional(),
     specifications: z.any().optional(),

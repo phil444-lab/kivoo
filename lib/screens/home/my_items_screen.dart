@@ -1,0 +1,188 @@
+import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
+import '../../models/item_model.dart';
+import '../../services/item_service.dart';
+import '../../theme/app_theme.dart';
+import '../../theme/theme_provider.dart';
+import '../../utils/responsive.dart';
+import '../../components/item_card.dart';
+import '../../providers/auth_provider.dart';
+import 'item_detail_screen.dart';
+import '../sell/sell_screen.dart';
+
+class MyItemsScreen extends StatefulWidget {
+  const MyItemsScreen({super.key});
+
+  @override
+  State<MyItemsScreen> createState() => _MyItemsScreenState();
+}
+
+class _MyItemsScreenState extends State<MyItemsScreen> {
+  final _itemService = ItemService();
+  List<ItemModel> _items = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMyItems();
+  }
+
+  Future<void> _loadMyItems() async {
+    setState(() => _loading = true);
+    final authProvider = context.read<AuthProvider>();
+    final token = authProvider.token;
+
+    if (token == null) {
+      setState(() => _loading = false);
+      return;
+    }
+
+    final items = await _itemService.getMyItems(token: token);
+    if (mounted) {
+      setState(() {
+        _items = items;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDark;
+
+    return Scaffold(
+      backgroundColor: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
+      appBar: AppBar(
+        title: const Text(
+          'Mes annonces',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        backgroundColor: AppTheme.darkBlue,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const FaIcon(
+            FontAwesomeIcons.arrowLeft,
+            color: Colors.white,
+          ),
+        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _loadMyItems,
+        color: AppTheme.primaryBlue,
+        backgroundColor: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+        child: _buildBody(isDark),
+      ),
+    );
+  }
+
+  Widget _buildBody(bool isDark) {
+    if (_loading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppTheme.primaryBlue),
+      );
+    }
+
+    if (_items.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FaIcon(
+              FontAwesomeIcons.store,
+              size: 48,
+              color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Aucune annonce pour le moment',
+              style: TextStyle(
+                color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                fontSize: Responsive.fontSize(context, 16),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Créez votre première annonce en cliquant sur "Vendre"',
+              style: TextStyle(
+                color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                fontSize: Responsive.fontSize(context, 13),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _items.length,
+      itemBuilder: (context, index) {
+        final item = _items[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Stack(
+            children: [
+              ItemCard(
+                item: item,
+                isDark: isDark,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ItemDetailScreen(item: item),
+                  ),
+                ),
+              ),
+              // Bouton modifier
+              Positioned(
+                top: 8,
+                left: 8,
+                child: GestureDetector(
+                  onTap: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SellScreen(item: item),
+                      ),
+                    );
+                    if (result == true) {
+                      await _loadMyItems();
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const FaIcon(FontAwesomeIcons.penToSquare, size: 13, color: Colors.white),
+                        const SizedBox(width: 5),
+                        Text(
+                          'Modifier',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: Responsive.fontSize(context, 12),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}

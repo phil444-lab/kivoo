@@ -16,11 +16,12 @@ class CategoryModel {
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     final name = json['name'] as String;
+    final color = json['color'] as String? ?? _colorForCategory(name);
     return CategoryModel(
       id: json['id'] as String,
       icon: _iconForCategory(name),
       label: name,
-      color: _colorForCategory(name),
+      color: color,
     );
   }
 

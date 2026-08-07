@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../models/item_model.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
@@ -50,7 +51,7 @@ class ItemCard extends StatelessWidget {
           children: [
             // Image container
             Container(
-              height: 120,
+              height: 112,
               decoration: BoxDecoration(
                 color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
                 borderRadius: const BorderRadius.vertical(
@@ -73,8 +74,8 @@ class ItemCard extends StatelessWidget {
                             color: isDark
                                 ? AppTheme.darkSurface
                                 : AppTheme.lightSurface,
-                            child: Icon(
-                              Icons.image_not_supported,
+                            child: FaIcon(
+                              FontAwesomeIcons.image,
                               color: isDark
                                   ? AppTheme.darkTextMuted
                                   : AppTheme.lightTextMuted,
@@ -97,12 +98,14 @@ class ItemCard extends StatelessWidget {
                             : const Color(0xFFffffff).withOpacity(0.9),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        Icons.bookmark_border,
-                        color: isDark
-                            ? AppTheme.darkTextMuted
-                            : AppTheme.lightTextMuted,
-                        size: 16,
+                      child: Center(
+                        child: FaIcon(
+                          FontAwesomeIcons.heart,
+                          color: isDark
+                              ? AppTheme.darkTextMuted
+                              : AppTheme.lightTextMuted,
+                          size: 14,
+                        ),
                       ),
                     ),
                   ),
@@ -115,18 +118,7 @@ class ItemCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    item.title,
-                    style: TextStyle(
-                      color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                      fontSize: Responsive.fontSize(context, 12),
-                      fontWeight: FontWeight.w700,
-                      height: 1.4,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
+                  // Prix (en premier)
                   Text(
                     item.price,
                     style: TextStyle(
@@ -136,14 +128,32 @@ class ItemCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
+                  // Nom du produit
+                  Text(
+                    item.title,
+                    style: TextStyle(
+                      color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                      fontSize: Responsive.fontSize(context, 12),
+                      fontWeight: FontWeight.w700,
+                      height: 1.4,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  // Localisation complète (non tronquée)
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.location_on,
-                        size: 10,
-                        color: isDark
-                            ? AppTheme.darkTextMuted
-                            : AppTheme.lightTextMuted,
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: FaIcon(
+                          FontAwesomeIcons.locationDot,
+                          size: 10,
+                          color: isDark
+                              ? AppTheme.darkTextMuted
+                              : AppTheme.lightTextMuted,
+                        ),
                       ),
                       const SizedBox(width: 2),
                       Expanded(
@@ -154,9 +164,75 @@ class ItemCard extends StatelessWidget {
                                 ? AppTheme.darkTextMuted
                                 : AppTheme.lightTextMuted,
                             fontSize: Responsive.fontSize(context, 10),
+                            height: 1.3,
                           ),
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  // Nom du vendeur (à gauche, non tronqué) + Durée (à droite)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Nom du vendeur (complet, non tronqué)
+                      if (item.sellerName.isNotEmpty) ...[
+                        Expanded(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: FaIcon(
+                                  FontAwesomeIcons.user,
+                                  size: 10,
+                                  color: isDark
+                                      ? AppTheme.darkTextMuted
+                                      : AppTheme.lightTextMuted,
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              Expanded(
+                                child: Text(
+                                  item.sellerName,
+                                  style: TextStyle(
+                                    color: isDark
+                                        ? AppTheme.darkTextMuted
+                                        : AppTheme.lightTextMuted,
+                                    fontSize: Responsive.fontSize(context, 10),
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      // Durée de publication (à droite)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          FaIcon(
+                            FontAwesomeIcons.clock,
+                            size: 10,
+                            color: isDark
+                                ? AppTheme.darkTextMuted
+                                : AppTheme.lightTextMuted,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            item.time,
+                            style: TextStyle(
+                              color: isDark
+                                  ? AppTheme.darkTextMuted
+                                  : AppTheme.lightTextMuted,
+                              fontSize: Responsive.fontSize(context, 10),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

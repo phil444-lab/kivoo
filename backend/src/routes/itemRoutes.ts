@@ -4,6 +4,7 @@ import {
   getTrending,
   getFeatured,
   getItem,
+  getMyItems,
   createItem,
   updateItem,
   deleteItem,
@@ -17,6 +18,7 @@ import { createItemSchema, updateItemSchema } from '../validators/itemValidator.
 const router: Router = Router();
 
 router.get('/', getItems);
+router.get('/mine', protect, getMyItems);
 router.get('/trending', getTrending);
 router.get('/featured', getFeatured);
 router.get('/:id', getItem);

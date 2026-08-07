@@ -11,6 +11,7 @@ import 'register_screen.dart';
 import 'terms_screen.dart';
 import 'edit_profile_screen.dart';
 import 'settings_screen.dart';
+import '../home/my_items_screen.dart';
 import '../../utils/responsive.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -517,14 +518,14 @@ class ProfileScreen extends StatelessWidget {
               'Mes annonces',
               FontAwesomeIcons.store,
               isDark,
-              () {},
-            ),
-            _buildMenuItem(
-              context,
-              'Favoris',
-              FontAwesomeIcons.heart,
-              isDark,
-              () {},
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MyItemsScreen(),
+                  ),
+                );
+              },
             ),
             _buildMenuItem(
               context,
