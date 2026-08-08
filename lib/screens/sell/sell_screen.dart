@@ -389,7 +389,7 @@ class _SellScreenState extends State<SellScreen> {
 
       if (result != null) {
         _showSnack('Article publié avec succès !', isError: false);
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       } else {
         _showSnack('Erreur lors de la publication. Veuillez réessayer.');
       }

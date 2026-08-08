@@ -732,7 +732,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _handleNavTap(int index) {
+  Future<void> _handleNavTap(int index) async {
     // Onglets protégés : Favoris (1), Vendre (2), Discussions (3)
     const protectedIndexes = [1, 2, 3];
     final isAuthenticated = context.read<AuthProvider>().isAuthenticated;
@@ -744,10 +744,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Bouton Vendre → ouvrir la page de vente
     if (index == 2) {
-      Navigator.push(
+      final result = await Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const SellScreen()),
       );
+      // Rafraîchir les données si un item a été créé/modifié
+      if (result == true) {
+        _refreshData();
+      }
       return;
     }
 
