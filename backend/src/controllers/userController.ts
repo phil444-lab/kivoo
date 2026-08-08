@@ -146,6 +146,93 @@ export const getUserReviews = async (
   }
 };
 
+export const deleteAccount = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+
+    // Supprimer toutes les données liées à l'utilisateur
+    // L'ordre est important pour respecter les contraintes de clés étrangères
+    
+    // 1. Supprimer les messages
+    await prisma.message.deleteMany({
+      where: { senderId: userId },
+    });
+
+    // 2. Supprimer les conversations (participants et conversations)
+    // D'abord les participants
+    await prisma.conversationParticipant.deleteMany({
+      where: { userId: userId },
+    });
+
+    // Puis les conversations où l'utilisateur est le seul participant
+    await prisma.conversation.deleteMany({
+      where: {
+        participants: {
+          none: {},
+        },
+      },
+    });
+
+    // 3. Supprimer les favoris
+    await prisma.favorite.deleteMany({
+      where: { userId: userId },
+    });
+
+    // 4. Supprimer les notifications
+    await prisma.notification.deleteMany({
+      where: { userId: userId },
+    });
+
+    // 5. Supprimer les sessions
+    await prisma.session.deleteMany({
+      where: { userId: userId },
+    });
+
+    // 6. Supprimer les items de l'utilisateur
+    // Cela supprimera aussi les favoris, conversations, reviews, reports liés aux items (cascade)
+    await prisma.item.deleteMany({
+      where: { sellerId: userId },
+    });
+
+    // 7. Supprimer les reviews (données et reçues)
+    await prisma.review.deleteMany({
+      where: {
+        OR: [
+          { reviewerId: userId },
+          { reviewedId: userId },
+        ],
+      },
+    });
+
+    // 8. Supprimer les reports
+    await prisma.report.deleteMany({
+      where: {
+        OR: [
+          { reporterId: userId },
+          { reportedUserId: userId },
+        ],
+      },
+    });
+
+    // 9. Enfin supprimer l'utilisateur
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Compte supprimé avec succès',
+    });
+  } catch (error: any) {
+    console.error('❌ Erreur deleteAccount:', error);
+    next(error);
+  }
+};
+
 export const updateUserProfile = async (
   req: AuthRequest,
   res: Response,

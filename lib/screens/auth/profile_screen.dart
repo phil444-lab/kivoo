@@ -402,59 +402,125 @@ class ProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // Logout button
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Se déconnecter'),
-                      content: const Text('Voulez-vous vraiment vous déconnecter ?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('Annuler'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text(
-                            'Déconnecter',
-                            style: TextStyle(color: Colors.red),
+            // Delete account + Logout buttons
+            Row(
+              children: [
+                // Delete account button
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Supprimer le compte'),
+                          content: const Text(
+                            'Cette action est irréversible. Toutes vos données seront supprimées (annonces, favoris, messages, avis, etc.). '
+                            'Voulez-vous vraiment supprimer votre compte ?',
                           ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: const Text('Annuler'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: const Text(
+                                'Supprimer',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      );
+                      if (confirm != true) return;
+
+                      final success = await authProvider.deleteAccount();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              success
+                                  ? 'Compte supprimé avec succès'
+                                  : 'Erreur lors de la suppression du compte',
+                            ),
+                            backgroundColor: success ? Colors.green : Colors.red,
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                        if (success && showAppBar) Navigator.pop(context);
+                      }
+                    },
+                    icon: const FaIcon(
+                      FontAwesomeIcons.trash,
+                      color: Colors.red,
+                      size: 13,
                     ),
-                  );
-                  if (confirm != true) return;
-                  await authProvider.logout();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Déconnexion réussie !'),
-                        backgroundColor: Colors.green,
-                        behavior: SnackBarBehavior.floating,
-                        duration: Duration(seconds: 2),
+                    label: Text(
+                      'Supprimer mon compte',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: Responsive.fontSize(context, 12),
+                        fontWeight: FontWeight.w600,
                       ),
-                    );
-                    if (showAppBar) Navigator.pop(context);
-                  }
-                },
-                icon: const FaIcon(
-                  FontAwesomeIcons.rightFromBracket,
-                  color: Colors.red,
-                  size: 13,
-                ),
-                label: Text(
-                  'Se déconnecter',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: Responsive.fontSize(context, 12),
-                    fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                // Logout button
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Se déconnecter'),
+                          content: const Text('Voulez-vous vraiment vous déconnecter ?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: const Text('Annuler'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: const Text(
+                                'Déconnecter',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm != true) return;
+                      await authProvider.logout();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Déconnexion réussie !'),
+                            backgroundColor: Colors.green,
+                            behavior: SnackBarBehavior.floating,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                        if (showAppBar) Navigator.pop(context);
+                      }
+                    },
+                    icon: const FaIcon(
+                      FontAwesomeIcons.rightFromBracket,
+                      color: Colors.red,
+                      size: 13,
+                    ),
+                    label: Text(
+                      'Se déconnecter',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: Responsive.fontSize(context, 12),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 8),
@@ -541,8 +607,6 @@ class ProfileScreen extends StatelessWidget {
                 );
               },
             ),
-
-
           ],
         ),
       ),

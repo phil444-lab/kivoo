@@ -196,6 +196,32 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<bool> deleteAccount() async {
+    if (_token == null) return false;
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await _authService.deleteAccount(_token!);
+
+      if (response['success'] == true) {
+        await _clearAuth();
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> refreshTokens() async {
     if (_refreshToken == null) return false;
 

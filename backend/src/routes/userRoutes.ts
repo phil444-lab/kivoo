@@ -4,6 +4,7 @@ import {
   getUserItems,
   getUserReviews,
   updateUserProfile,
+  deleteAccount,
 } from '../controllers/userController.js';
 import { uploadProfilePhoto } from '../controllers/uploadController.js';
 import { protect } from '../middleware/auth.js';
@@ -18,5 +19,6 @@ router.get('/:id/items', getUserItems);
 router.get('/:id/reviews', getUserReviews);
 router.put('/me', protect, validate(updateProfileSchema), updateUserProfile);
 router.post('/me/photo', protect, upload.single('photo'), uploadProfilePhoto);
+router.delete('/me', protect, deleteAccount);
 
 export default router;

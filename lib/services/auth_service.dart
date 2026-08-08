@@ -240,4 +240,28 @@ class AuthService {
       throw Exception(e.toString().replaceAll('Exception: ', ''));
     }
   }
+
+  Future<Map<String, dynamic>> deleteAccount(String token) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${AppConstants.baseUrl}/users/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        return responseData;
+      } else {
+        throw Exception(responseData['message'] ?? 'Delete account failed');
+      }
+    } on http.ClientException catch (e) {
+      throw Exception('Impossible de se connecter au serveur. Vérifiez votre connexion internet.');
+    } catch (e) {
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
 }
