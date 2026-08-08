@@ -128,13 +128,29 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         ),
                         const SizedBox(width: 14),
                         Expanded(
-                          child: Text(
-                            sub.label,
-                            style: TextStyle(
-                              color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                              fontSize: Responsive.fontSize(context, 14),
-                              fontWeight: FontWeight.w500,
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                sub.label,
+                                style: TextStyle(
+                                  color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                                  fontSize: Responsive.fontSize(context, 14),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              if (sub.itemCount > 0) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${sub.itemCount} article${sub.itemCount > 1 ? 's' : ''}',
+                                  style: TextStyle(
+                                    color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                                    fontSize: Responsive.fontSize(context, 11),
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                         FaIcon(

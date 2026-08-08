@@ -37,11 +37,28 @@ export const getSubcategories = async (
     const subcategories = await prisma.category.findMany({
       where: { isActive: true, parentCategoryId: String(req.params.id) },
       orderBy: { name: 'asc' },
+      include: {
+        _count: {
+          select: {
+            items: {
+              where: {
+                status: 'active',
+              },
+            },
+          },
+        },
+      },
     });
+
+    // Ajouter le count d'items actifs à chaque sous-catégorie
+    const subcategoriesWithCount = subcategories.map((sub) => ({
+      ...sub,
+      itemCount: sub._count.items,
+    }));
 
     res.status(200).json({
       success: true,
-      data: subcategories,
+      data: subcategoriesWithCount,
     });
   } catch (error) {
     next(error);

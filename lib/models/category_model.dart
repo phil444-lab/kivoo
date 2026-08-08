@@ -6,12 +6,14 @@ class CategoryModel {
   final dynamic icon;
   final String label;
   final String color;
+  final int itemCount;
 
   const CategoryModel({
     required this.id,
     required this.icon,
     required this.label,
     required this.color,
+    this.itemCount = 0,
   });
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
@@ -22,6 +24,7 @@ class CategoryModel {
       icon: _iconForCategory(name),
       label: name,
       color: color,
+      itemCount: json['itemCount'] as int? ?? 0,
     );
   }
 
