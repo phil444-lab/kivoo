@@ -188,7 +188,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         const spacing = 12.0;
         final itemWidth = (constraints.maxWidth - spacing) / crossAxisCount;
         // Hauteur totale : image 150px (grille) + contenu ~190px
-        final aspectRatio = itemWidth / 340.0;
+        // Protéger contre les largeurs <= 0 (premier frame) qui rendraient l'aspectRatio négatif
+        final aspectRatio = itemWidth > 0 ? itemWidth / 340.0 : 1.0;
 
         return GridView.builder(
           padding: const EdgeInsets.all(16),

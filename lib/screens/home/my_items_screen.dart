@@ -82,6 +82,60 @@ class _MyItemsScreenState extends State<MyItemsScreen> {
     );
   }
 
+  Future<void> _toggleItemStatus(String? token, String itemId, bool activate) async {
+    if (token == null) return;
+
+    final success = activate
+      ? await _itemService.activateItem(token: token, itemId: itemId)
+      : await _itemService.deactivateItem(token: token, itemId: itemId);
+
+    if (success) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(activate 
+              ? 'Annonce activée avec succès' 
+              : 'Annonce désactivée avec succès'),
+            backgroundColor: activate ? Colors.green : Colors.orange,
+          ),
+        );
+        await _loadMyItems();
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(activate 
+              ? 'Erreur lors de l\'activation' 
+              : 'Erreur lors de la désactivation'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<bool?> _showConfirmDialog(String title, String message) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Confirmer'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBody(bool isDark) {
     if (_loading) {
       return const Center(
@@ -170,6 +224,133 @@ class _MyItemsScreenState extends State<MyItemsScreen> {
                         const SizedBox(width: 5),
                         Text(
                           'Modifier',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: Responsive.fontSize(context, 12),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Bouton activer/désactiver
+              Positioned(
+                top: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: () async {
+                    if (item.status == 'active') {
+                      // Désactiver l'annonce
+                      final confirm = await _showConfirmDialog(
+                        'Désactiver l\'annonce',
+                        'Voulez-vous désactiver cette annonce ? Elle ne sera plus visible publiquement.',
+                      );
+                      if (confirm == true) {
+                        final authProvider = context.read<AuthProvider>();
+                        final token = authProvider.token;
+                        await _toggleItemStatus(token, item.id, false);
+                      }
+                    } else {
+                      // Activer l'annonce
+                      final confirm = await _showConfirmDialog(
+                        'Activer l\'annonce',
+                        'Voulez-vous activer cette annonce ? Elle sera à nouveau visible publiquement.',
+                      );
+                      if (confirm == true) {
+                        final authProvider = context.read<AuthProvider>();
+                        final token = authProvider.token;
+                        await _toggleItemStatus(token, item.id, true);
+                      }
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: item.status == 'active' 
+                        ? Colors.orange.withValues(alpha: 0.9)
+                        : Colors.green.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FaIcon(
+                          item.status == 'active' 
+                            ? FontAwesomeIcons.eyeSlash 
+                            : FontAwesomeIcons.eye,
+                          size: 13, 
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          item.status == 'active' ? 'Désactiver' : 'Activer',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: Responsive.fontSize(context, 12),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Bouton supprimer
+              Positioned(
+                bottom: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: () async {
+                    final confirm = await _showConfirmDialog(
+                      'Supprimer l\'annonce',
+                      'Êtes-vous sûr de vouloir supprimer cette annonce ? Cette action est irréversible et supprimera également tous les commentaires et avis associés.',
+                    );
+                    if (confirm == true) {
+                      final authProvider = context.read<AuthProvider>();
+                      final token = authProvider.token;
+                      if (token != null) {
+                        final success = await _itemService.deleteItem(
+                          token: token,
+                          itemId: item.id,
+                        );
+                        if (success) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Annonce supprimée avec succès'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            await _loadMyItems();
+                          }
+                        } else {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Erreur lors de la suppression'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const FaIcon(FontAwesomeIcons.trash, size: 13, color: Colors.white),
+                        const SizedBox(width: 5),
+                        Text(
+                          'Supprimer',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: Responsive.fontSize(context, 12),

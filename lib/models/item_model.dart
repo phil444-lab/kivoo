@@ -13,7 +13,9 @@ class ItemModel {
   final String photo;
   final List<String> images;
   final bool verified;
+  final String sellerId;
   final String sellerName;
+  final String sellerPhone;
   final String sellerPhoto;
   final double sellerRating;
   final String sellerLocation;
@@ -34,6 +36,7 @@ class ItemModel {
   final String cityId;
   final String districtId;
   final String featureId;
+  final String status;
   final DateTime createdAt;
 
   const ItemModel({
@@ -49,7 +52,9 @@ class ItemModel {
     required this.photo,
     this.images = const [],
     required this.verified,
+    this.sellerId = '',
     this.sellerName = '',
+    this.sellerPhone = '',
     this.sellerPhoto = '',
     this.sellerRating = 0,
     this.sellerLocation = '',
@@ -70,6 +75,7 @@ class ItemModel {
     this.cityId = '',
     this.districtId = '',
     this.featureId = '',
+    this.status = 'active',
     required this.createdAt,
   });
 
@@ -146,13 +152,19 @@ class ItemModel {
         ? (subcategory['id']?.toString() ?? '')
         : '';
 
-    // Vendeur → nom, photo, rating, vérifié
+    // Vendeur → id, nom, photo, rating, vérifié
     final seller = json['seller'];
     final verified = seller is Map<String, dynamic>
         ? (seller['verified'] as bool? ?? false)
         : false;
+    final sellerId = seller is Map<String, dynamic>
+        ? (seller['id']?.toString() ?? '')
+        : '';
     final sellerName = seller is Map<String, dynamic>
         ? (seller['name']?.toString() ?? '')
+        : '';
+    final sellerPhone = seller is Map<String, dynamic>
+        ? (seller['phone']?.toString() ?? '')
         : '';
 
     // Photo du vendeur
@@ -210,6 +222,7 @@ class ItemModel {
         : (json['districtId']?.toString() ?? '');
 
     final createdAt = createdAtRaw ?? DateTime.now();
+    final status = json['status']?.toString() ?? 'active';
 
     return ItemModel(
       id: json['id']?.toString() ?? '',
@@ -224,7 +237,9 @@ class ItemModel {
       photo: photo,
       images: imagesList,
       verified: verified,
+      sellerId: sellerId,
       sellerName: sellerName,
+      sellerPhone: sellerPhone,
       sellerPhoto: sellerPhoto,
       sellerRating: sellerRating,
       sellerLocation: sellerLocation,
@@ -245,6 +260,7 @@ class ItemModel {
       cityId: cityId,
       districtId: districtId,
       featureId: featureId,
+      status: status,
       createdAt: createdAt,
     );
   }
@@ -263,7 +279,9 @@ class ItemModel {
       'photo': photo,
       'images': images,
       'verified': verified,
+      'sellerId': sellerId,
       'sellerName': sellerName,
+      'sellerPhone': sellerPhone,
       'sellerPhoto': sellerPhoto,
       'sellerRating': sellerRating,
       'sellerLocation': sellerLocation,
@@ -284,6 +302,7 @@ class ItemModel {
       'cityId': cityId,
       'districtId': districtId,
       'featureId': featureId,
+      'status': status,
       'createdAt': createdAt.toIso8601String(),
     };
   }

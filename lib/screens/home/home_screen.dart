@@ -14,6 +14,7 @@ import '../../components/item_card.dart';
 import '../../screens/home/category_screen.dart';
 import '../../screens/home/item_detail_screen.dart';
 import '../../screens/home/favorites_screen.dart';
+import '../../screens/home/feature_items_screen.dart';
 import '../auth/profile_screen.dart';
 import '../sell/sell_screen.dart';
 import '../../providers/auth_provider.dart';
@@ -304,7 +305,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                           padding: EdgeInsets.only(
                                             right: index < _featureCards.length - 1 ? 12 : 0,
                                           ),
-                                          child: FeatureCard(card: _featureCards[index], isDark: isDark),
+                                          child: FeatureCard(
+                                            card: _featureCards[index],
+                                            isDark: isDark,
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) => FeatureItemsScreen(
+                                                    feature: _featureCards[index],
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
                                         ),
                                       ),
                               ),
@@ -340,7 +354,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     const totalSpacing = spacing * (crossAxisCount - 1);
                                     final itemWidth = (constraints.maxWidth - totalSpacing) / crossAxisCount;
                                     // hauteur totale = card carrée (itemWidth) + 4 spacing + 36 texte
-                                    final aspectRatio = itemWidth / (itemWidth + 40);
+                                    // Protéger contre les largeurs <= 0 (premier frame) qui rendraient l'aspectRatio négatif
+                                    final aspectRatio = itemWidth > 0 ? itemWidth / (itemWidth + 40) : 1.0;
 
                                     return GridView.builder(
                                       shrinkWrap: true,
@@ -527,7 +542,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   const spacing = 12.0;
                                                   final itemWidth = (constraints.maxWidth - spacing) / crossAxisCount;
                                                   // Hauteur totale : image 150px (grille) + contenu ~190px
-                                                  final aspectRatio = itemWidth / 340.0;
+                                                  // Protéger contre les largeurs <= 0 (premier frame) qui rendraient l'aspectRatio négatif
+                                                  final aspectRatio = itemWidth > 0 ? itemWidth / 340.0 : 1.0;
 
                                                   return GridView.builder(
                                                     shrinkWrap: true,

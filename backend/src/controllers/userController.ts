@@ -16,6 +16,7 @@ export const getUserProfile = async (
       select: {
         id: true,
         name: true,
+        phone: true,
         photo: true,
         location: true,
         verified: true,
@@ -71,6 +72,12 @@ export const getUserItems = async (
         where,
         include: {
           category: { select: { id: true, name: true } },
+          subcategory: { select: { id: true, name: true } },
+          seller: { select: { id: true, name: true, phone: true, photo: true, rating: true, verified: true, location: true } },
+          feature: { select: { id: true, title: true, icon: true } },
+          department: { select: { id: true, name: true } },
+          city: { select: { id: true, name: true } },
+          district: { select: { id: true, name: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip,

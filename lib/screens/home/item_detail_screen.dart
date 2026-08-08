@@ -6,6 +6,9 @@ import '../../providers/auth_provider.dart';
 import '../../theme/theme_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/responsive.dart';
+import '../../components/fullscreen_image_viewer.dart';
+import '../../components/phone_number_dialog.dart';
+import 'seller_profile_screen.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   final ItemModel item;
@@ -314,20 +317,33 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
     return Stack(
       children: [
-        // Image principale
+        // Image principale - clic pour ouvrir en plein écran
         Positioned.fill(
-          child: PageView.builder(
-            itemCount: images.length,
-            onPageChanged: (index) => setState(() => _currentImageIndex = index),
-            itemBuilder: (context, index) => Image.network(
-              images[index],
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: isDarkFromContext ? AppTheme.darkSurface : AppTheme.lightSurface,
-                child: FaIcon(
-                  FontAwesomeIcons.image,
-                  size: 48,
-                  color: isDarkFromContext ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => FullscreenImageViewer(
+                    images: images,
+                    initialIndex: _currentImageIndex,
+                  ),
+                ),
+              );
+            },
+            child: PageView.builder(
+              itemCount: images.length,
+              onPageChanged: (index) => setState(() => _currentImageIndex = index),
+              itemBuilder: (context, index) => Image.network(
+                images[index],
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: isDarkFromContext ? AppTheme.darkSurface : AppTheme.lightSurface,
+                  child: FaIcon(
+                    FontAwesomeIcons.image,
+                    size: 48,
+                    color: isDarkFromContext ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                  ),
                 ),
               ),
             ),
@@ -489,6 +505,37 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                             color: AppTheme.primaryBlue,
                           ),
                         ],
+                        if (item.sellerId.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => SellerProfileScreen(
+                                    sellerId: item.sellerId,
+                                    initialName: item.sellerName,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'Voir profil',
+                                style: TextStyle(
+                                  color: AppTheme.primaryBlue,
+                                  fontSize: Responsive.fontSize(context, 11),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -540,9 +587,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Téléphone bientôt disponible')),
-                    );
+                    if (item.sellerPhone.isNotEmpty) {
+                      showPhoneNumberDialog(context, phoneNumber: item.sellerPhone);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Numéro de téléphone non disponible')),
+                      );
+                    }
                   },
                   icon: const FaIcon(FontAwesomeIcons.phone, size: 14),
                   label: const Text('Appeler'),

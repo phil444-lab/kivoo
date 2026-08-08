@@ -24,7 +24,7 @@ export const getMyItems = async (
         include: {
           category: { select: { id: true, name: true } },
           subcategory: { select: { id: true, name: true } },
-          seller: { select: { id: true, name: true, photo: true, rating: true, verified: true } },
+          seller: { select: { id: true, name: true, phone: true, photo: true, rating: true, verified: true } },
           feature: { select: { id: true, title: true, icon: true } },
           department: { select: { id: true, name: true } },
           city: { select: { id: true, name: true } },
@@ -81,6 +81,7 @@ export const getItems = async (
       color,
       brand,
       priceType,
+      feature,
     } = req.query;
 
     const where: any = { status: 'active' };
@@ -107,6 +108,7 @@ export const getItems = async (
       ];
     }
     if (featured === 'true') where.featured = true;
+    if (feature) where.featureId = feature as string;
 
     let orderBy: any = { createdAt: 'desc' };
     switch (sort) {
@@ -134,7 +136,7 @@ export const getItems = async (
         include: {
           category: { select: { id: true, name: true } },
           subcategory: { select: { id: true, name: true } },
-          seller: { select: { id: true, name: true, photo: true, rating: true, verified: true } },
+          seller: { select: { id: true, name: true, phone: true, photo: true, rating: true, verified: true } },
           feature: { select: { id: true, title: true, icon: true } },
           department: { select: { id: true, name: true } },
           city: { select: { id: true, name: true } },
@@ -182,7 +184,7 @@ export const getTrending = async (
       include: {
         category: { select: { id: true, name: true } },
         subcategory: { select: { id: true, name: true } },
-        seller: { select: { id: true, name: true, photo: true, rating: true, verified: true } },
+        seller: { select: { id: true, name: true, phone: true, photo: true, rating: true, verified: true } },
         feature: { select: { id: true, title: true, icon: true } },
         department: { select: { id: true, name: true } },
         city: { select: { id: true, name: true } },
@@ -218,7 +220,7 @@ export const getFeatured = async (
       include: {
         category: { select: { id: true, name: true } },
         subcategory: { select: { id: true, name: true } },
-        seller: { select: { id: true, name: true, photo: true, rating: true, verified: true } },
+        seller: { select: { id: true, name: true, phone: true, photo: true, rating: true, verified: true } },
         feature: { select: { id: true, title: true, icon: true } },
         department: { select: { id: true, name: true } },
         city: { select: { id: true, name: true } },
@@ -247,7 +249,7 @@ export const getItem = async (
       include: {
         category: { select: { id: true, name: true } },
         subcategory: { select: { id: true, name: true } },
-        seller: { select: { id: true, name: true, photo: true, rating: true, verified: true, location: true, joinedAt: true } },
+        seller: { select: { id: true, name: true, phone: true, photo: true, rating: true, verified: true, location: true, joinedAt: true } },
         feature: { select: { id: true, title: true, icon: true } },
         department: { select: { id: true, name: true } },
         city: { select: { id: true, name: true } },
@@ -425,13 +427,110 @@ export const deleteItem = async (
       throw new ForbiddenError('Not authorized to delete this item');
     }
 
-    await prisma.item.delete({
+    const itemId = req.params.id as string;
+
+    // Supprimer explicitement toutes les dépendances liées à l'item
+    // (les contraintes onDelete: Cascade ne sont pas toujours appliquées en base)
+    await prisma.$transaction([
+      // 1. Favoris
+      prisma.favorite.deleteMany({ where: { itemId } }),
+      // 2. Messages des conversations liées à l'item
+      prisma.message.deleteMany({
+        where: { conversation: { itemId } },
+      }),
+      // 3. Participants des conversations liées à l'item
+      prisma.conversationParticipant.deleteMany({
+        where: { conversation: { itemId } },
+      }),
+      // 4. Reviews liées à l'item
+      prisma.review.deleteMany({ where: { itemId } }),
+      // 5. Reports liés à l'item
+      prisma.report.deleteMany({ where: { reportedItemId: itemId } }),
+      // 6. Conversations liées à l'item
+      prisma.conversation.deleteMany({ where: { itemId } }),
+      // 7. L'item lui-même
+      prisma.item.delete({ where: { id: itemId } }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: 'Annonce supprimée avec succès',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deactivateItem = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const item = await prisma.item.findUnique({
       where: { id: req.params.id as string },
+    });
+
+    if (!item) {
+      throw new NotFoundError('Item');
+    }
+
+    if (item.sellerId !== req.user.id) {
+      throw new ForbiddenError('Not authorized to deactivate this item');
+    }
+
+    // Changer le statut de 'active' à 'pending'
+    const updated = await prisma.item.update({
+      where: { id: req.params.id as string },
+      data: { status: 'pending' },
+      include: {
+        category: { select: { id: true, name: true } },
+        subcategory: { select: { id: true, name: true } },
+      },
     });
 
     res.status(200).json({
       success: true,
-      message: 'Item deleted successfully',
+      data: updated,
+      message: 'Annonce désactivée avec succès',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const activateItem = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const item = await prisma.item.findUnique({
+      where: { id: req.params.id as string },
+    });
+
+    if (!item) {
+      throw new NotFoundError('Item');
+    }
+
+    if (item.sellerId !== req.user.id) {
+      throw new ForbiddenError('Not authorized to activate this item');
+    }
+
+    // Changer le statut de 'pending' à 'active'
+    const updated = await prisma.item.update({
+      where: { id: req.params.id as string },
+      data: { status: 'active' },
+      include: {
+        category: { select: { id: true, name: true } },
+        subcategory: { select: { id: true, name: true } },
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      data: updated,
+      message: 'Annonce activée avec succès',
     });
   } catch (error) {
     next(error);

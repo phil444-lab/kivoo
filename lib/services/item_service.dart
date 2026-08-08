@@ -90,6 +90,7 @@ class ItemService {
     String? color,
     String? brand,
     String? priceType,
+    String? featureId,
   }) async {
     try {
       final queryParams = <String, String>{
@@ -133,6 +134,9 @@ class ItemService {
       }
       if (priceType != null && priceType.isNotEmpty) {
         queryParams['priceType'] = priceType;
+      }
+      if (featureId != null && featureId.isNotEmpty) {
+        queryParams['feature'] = featureId;
       }
 
       final uri = Uri.parse('${AppConstants.baseUrl}/items').replace(queryParameters: queryParams);
@@ -260,6 +264,72 @@ class ItemService {
     } catch (e) {
       print('⚠️ Error updating item: $e');
       return null;
+    }
+  }
+
+  /// Désactive une annonce (passe le statut de 'active' à 'pending')
+  Future<bool> deactivateItem({required String token, required String itemId}) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('${AppConstants.baseUrl}/items/$itemId/deactivate'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['success'] == true;
+      }
+      print('⚠️ Error deactivating item: ${response.statusCode} - ${response.body}');
+      return false;
+    } catch (e) {
+      print('⚠️ Error deactivating item: $e');
+      return false;
+    }
+  }
+
+  /// Réactive une annonce (passe le statut de 'pending' à 'active')
+  Future<bool> activateItem({required String token, required String itemId}) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('${AppConstants.baseUrl}/items/$itemId/activate'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['success'] == true;
+      }
+      print('⚠️ Error activating item: ${response.statusCode} - ${response.body}');
+      return false;
+    } catch (e) {
+      print('⚠️ Error activating item: $e');
+      return false;
+    }
+  }
+
+  /// Supprime une annonce et tous les éléments associés (conversations, avis, favoris)
+  Future<bool> deleteItem({required String token, required String itemId}) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${AppConstants.baseUrl}/items/$itemId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['success'] == true;
+      }
+      print('⚠️ Error deleting item: ${response.statusCode} - ${response.body}');
+      return false;
+    } catch (e) {
+      print('⚠️ Error deleting item: $e');
+      return false;
     }
   }
 

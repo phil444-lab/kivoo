@@ -15,7 +15,12 @@ export const getFavorites = async (
 
     const [favorites, totalItems] = await Promise.all([
       prisma.favorite.findMany({
-        where: { userId: req.user.id },
+        where: { 
+          userId: req.user.id,
+          item: {
+            status: 'active'
+          }
+        },
         include: {
           item: {
             select: {
@@ -33,7 +38,14 @@ export const getFavorites = async (
         skip,
         take: limit,
       }),
-      prisma.favorite.count({ where: { userId: req.user.id } }),
+      prisma.favorite.count({ 
+        where: { 
+          userId: req.user.id,
+          item: {
+            status: 'active'
+          }
+        } 
+      }),
     ]);
 
     const totalPages = Math.ceil(totalItems / limit);

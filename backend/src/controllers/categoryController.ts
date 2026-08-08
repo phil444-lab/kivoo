@@ -40,7 +40,7 @@ export const getSubcategories = async (
       include: {
         _count: {
           select: {
-            items: {
+            subItems: {
               where: {
                 status: 'active',
               },
@@ -53,7 +53,7 @@ export const getSubcategories = async (
     // Ajouter le count d'items actifs à chaque sous-catégorie
     const subcategoriesWithCount = subcategories.map((sub) => ({
       ...sub,
-      itemCount: sub._count.items,
+      itemCount: sub._count.subItems,
     }));
 
     res.status(200).json({

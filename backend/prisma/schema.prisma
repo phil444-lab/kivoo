@@ -175,10 +175,10 @@ model Item {
   updatedAt   DateTime    @updatedAt
   expiresAt   DateTime
 
-  favorites   Favorite[]
-  conversations Conversation[]
-  reviews      Review[]
-  reports      Report[]
+  favorites   Favorite[] @relation("ItemFavorites")
+  conversations Conversation[] @relation("ItemConversations")
+  reviews      Review[] @relation("ItemReviews")
+  reports      Report[] @relation("ItemReports")
 
   @@index([categoryId, status])
   @@index([sellerId])
@@ -198,7 +198,7 @@ model Favorite {
   userId    String   @db.VarChar(25)
   user      User     @relation(fields: [userId], references: [id])
   itemId    String   @db.VarChar(25)
-  item      Item     @relation(fields: [itemId], references: [id])
+  item      Item     @relation("ItemFavorites", fields: [itemId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
   @@unique([userId, itemId])
@@ -209,7 +209,7 @@ model Favorite {
 model Conversation {
   id        String   @id @default(cuid())
   itemId    String?  @db.VarChar(25)
-  item      Item?    @relation(fields: [itemId], references: [id])
+  item      Item?    @relation("ItemConversations", fields: [itemId], references: [id], onDelete: Cascade)
   lastMessageContent String? @db.VarChar(191)
   lastMessageSenderId String? @db.VarChar(25)
   lastMessageSentAt  DateTime?
@@ -259,7 +259,7 @@ model Review {
   reviewedId String   @db.VarChar(25)
   reviewed   User     @relation("Reviewed", fields: [reviewedId], references: [id])
   itemId     String?  @db.VarChar(25)
-  item       Item?    @relation(fields: [itemId], references: [id])
+  item       Item?    @relation("ItemReviews", fields: [itemId], references: [id], onDelete: Cascade)
   conversationId String? @db.VarChar(25)
   conversation Conversation? @relation(fields: [conversationId], references: [id])
   rating     Int
@@ -345,19 +345,19 @@ model District {
 
 model Report {
   id             String       @id @default(cuid())
-  reporterId     String       @db.VarChar(25)
-  reporter       User         @relation("Reporter", fields: [reporterId], references: [id])
-  reportedItemId String       @db.VarChar(25)
-  reportedItem   Item         @relation(fields: [reportedItemId], references: [id])
-  reportedUserId String       @db.VarChar(25)
-  reportedUser   User         @relation("ReportedUser", fields: [reportedUserId], references: [id])
-  reason         String       @db.VarChar(100)
-  description    String?      @db.VarChar(191)
-  status         ReportStatus @default(pending)
-  reviewedById   String?      @db.VarChar(25)
-  reviewedBy     User?        @relation("ReviewedBy", fields: [reviewedById], references: [id])
+  reporterId String   @db.VarChar(25)
+  reporter   User     @relation("Reporter", fields: [reporterId], references: [id])
+  reportedItemId String   @db.VarChar(25)
+  reportedItem   Item     @relation("ItemReports", fields: [reportedItemId], references: [id], onDelete: Cascade)
+  reportedUserId String   @db.VarChar(25)
+  reportedUser   User     @relation("ReportedUser", fields: [reportedUserId], references: [id])
+  reason     String   @db.VarChar(100)
+  description    String?  @db.VarChar(191)
+  status     ReportStatus @default(pending)
+  reviewedById   String?  @db.VarChar(25)
+  reviewedBy     User?    @relation("ReviewedBy", fields: [reviewedById], references: [id])
   reviewedAt     DateTime?
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime @default(now())
 
   @@map("reports")
 }

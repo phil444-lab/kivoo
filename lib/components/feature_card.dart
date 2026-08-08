@@ -8,11 +8,13 @@ import '../utils/responsive.dart';
 class FeatureCard extends StatelessWidget {
   final FeatureCardModel card;
   final bool isDark;
+  final VoidCallback? onTap;
 
   const FeatureCard({
     super.key,
     required this.card,
     required this.isDark,
+    this.onTap,
   });
 
   @override
@@ -22,6 +24,7 @@ class FeatureCard extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
+        onTap?.call();
       },
       child: Container(
         width: 155,

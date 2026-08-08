@@ -457,7 +457,7 @@ class ProfileScreen extends StatelessWidget {
                       size: 13,
                     ),
                     label: Text(
-                      'Supprimer mon compte',
+                      'Supprimer le compte',
                       style: TextStyle(
                         color: Colors.red,
                         fontSize: Responsive.fontSize(context, 12),
@@ -511,7 +511,7 @@ class ProfileScreen extends StatelessWidget {
                       size: 13,
                     ),
                     label: Text(
-                      'Se déconnecter',
+                      'Déconnecter le compte',
                       style: TextStyle(
                         color: Colors.red,
                         fontSize: Responsive.fontSize(context, 12),

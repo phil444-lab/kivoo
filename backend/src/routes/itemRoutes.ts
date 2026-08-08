@@ -8,6 +8,8 @@ import {
   createItem,
   updateItem,
   deleteItem,
+  deactivateItem,
+  activateItem,
   boostItem,
 } from '../controllers/itemController.js';
 import { protect } from '../middleware/auth.js';
@@ -25,6 +27,8 @@ router.get('/:id', getItem);
 router.post('/', protect, upload.array('images', 10), validate(createItemSchema), createItem);
 router.put('/:id', protect, upload.array('images', 10), validate(updateItemSchema), updateItem);
 router.delete('/:id', protect, deleteItem);
+router.patch('/:id/deactivate', protect, deactivateItem);
+router.patch('/:id/activate', protect, activateItem);
 router.post('/:id/boost', protect, boostItem);
 
 export default router;
