@@ -752,6 +752,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     setState(() => _currentNavIndex = index);
+
+    // Rafraîchir les données quand on clique sur l'onglet Accueil
+    if (index == 0) {
+      _refreshData();
+    }
   }
 
   Widget _buildFloatingBottomNav() {
