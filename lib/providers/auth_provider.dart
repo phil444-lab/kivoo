@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/google_auth_service.dart';
+import '../services/favorite_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -14,6 +16,9 @@ class AuthProvider extends ChangeNotifier {
   String? _refreshToken;
   bool _isLoading = false;
   bool _isInitialized = false;
+  final FavoriteService _favoriteService = FavoriteService();
+  final Set<String> _favoriteItemIds = {};
+  bool _isLoadingFavorites = false;
 
   User? get user => _user;
   String? get token => _token;
@@ -21,6 +26,8 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isInitialized => _isInitialized;
   bool get isAuthenticated => _token != null && _user != null;
+  bool get isLoadingFavorites => _isLoadingFavorites;
+  Set<String> get favoriteItemIds => Set.unmodifiable(_favoriteItemIds);
 
   AuthProvider() {
     _loadStoredAuth();
@@ -37,6 +44,9 @@ class AuthProvider extends ChangeNotifier {
         _token = token;
         _refreshToken = refreshToken;
         _user = User.fromJson(jsonDecode(userJson) as Map<String, dynamic>);
+        // Charger les favoris dès la restauration de session
+        // pour que les boutons favoris soient à jour partout
+        unawaited(loadFavorites());
       }
     } catch (e) {
       debugPrint('Error loading stored auth: $e');
@@ -61,6 +71,7 @@ class AuthProvider extends ChangeNotifier {
     _token = null;
     _refreshToken = null;
     _user = null;
+    _favoriteItemIds.clear();
   }
 
   Future<bool> register({
@@ -113,6 +124,10 @@ class AuthProvider extends ChangeNotifier {
 
       _isLoading = false;
       notifyListeners();
+
+      // Charger les favoris après connexion
+      unawaited(loadFavorites());
+
       return true;
     } catch (e) {
       _isLoading = false;
@@ -151,6 +166,10 @@ class AuthProvider extends ChangeNotifier {
 
       _isLoading = false;
       notifyListeners();
+
+      // Charger les favoris après connexion Google
+      unawaited(loadFavorites());
+
       return true;
     } catch (e) {
       _isLoading = false;
@@ -265,6 +284,119 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       rethrow;
+    }
+  }
+
+  /// Vérifie si un article est dans les favoris
+  bool isFavorite(String itemId) {
+    return _favoriteItemIds.contains(itemId);
+  }
+
+  /// Ajoute un article aux favoris
+  Future<bool> addToFavorites(String itemId) async {
+    if (_token == null) return false;
+
+    _isLoadingFavorites = true;
+    notifyListeners();
+
+    try {
+      final success = await _favoriteService.addFavorite(
+        token: _token!,
+        itemId: itemId,
+      );
+
+      if (success) {
+        _favoriteItemIds.add(itemId);
+        notifyListeners();
+      }
+
+      _isLoadingFavorites = false;
+      notifyListeners();
+      return success;
+    } catch (e) {
+      _isLoadingFavorites = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Retire un article des favoris
+  Future<bool> removeFromFavorites(String itemId) async {
+    if (_token == null) return false;
+
+    _isLoadingFavorites = true;
+    notifyListeners();
+
+    try {
+      final success = await _favoriteService.removeFavorite(
+        token: _token!,
+        itemId: itemId,
+      );
+
+      if (success) {
+        _favoriteItemIds.remove(itemId);
+        notifyListeners();
+      }
+
+      _isLoadingFavorites = false;
+      notifyListeners();
+      return success;
+    } catch (e) {
+      _isLoadingFavorites = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Bascule le statut favori d'un article
+  Future<bool> toggleFavorite(String itemId) async {
+    if (isFavorite(itemId)) {
+      return await removeFromFavorites(itemId);
+    } else {
+      return await addToFavorites(itemId);
+    }
+  }
+
+  /// Charge la liste des favoris de l'utilisateur
+  Future<void> loadFavorites() async {
+    if (_token == null) return;
+
+    _isLoadingFavorites = true;
+    notifyListeners();
+
+    try {
+      final favorites = await _favoriteService.getFavorites(token: _token!);
+      _favoriteItemIds.clear();
+      for (final item in favorites) {
+        _favoriteItemIds.add(item.id);
+      }
+
+      _isLoadingFavorites = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoadingFavorites = false;
+      notifyListeners();
+    }
+  }
+
+  /// Vérifie le statut favori d'un article (sans charger tous les favoris)
+  Future<bool> checkFavoriteStatus(String itemId) async {
+    if (_token == null) return false;
+
+    try {
+      final isFav = await _favoriteService.isFavorite(
+        token: _token!,
+        itemId: itemId,
+      );
+
+      if (isFav) {
+        _favoriteItemIds.add(itemId);
+        notifyListeners();
+      }
+
+      return isFav;
+    } catch (e) {
+      return false;
     }
   }
 }

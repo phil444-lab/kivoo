@@ -13,6 +13,7 @@ import '../../components/category_item.dart';
 import '../../components/item_card.dart';
 import '../../screens/home/category_screen.dart';
 import '../../screens/home/item_detail_screen.dart';
+import '../../screens/home/favorites_screen.dart';
 import '../auth/profile_screen.dart';
 import '../sell/sell_screen.dart';
 import '../../providers/auth_provider.dart';
@@ -237,12 +238,16 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Column(
               children: [
-                if (_currentNavIndex != 4) _buildHeader(context, themeProvider),
-                if (_currentNavIndex != 4) _buildSearchBar(),
+                if (_currentNavIndex != 1 && _currentNavIndex != 4) _buildHeader(context, themeProvider),
+                if (_currentNavIndex != 1 && _currentNavIndex != 4) _buildSearchBar(),
                 Expanded(
                   child: _currentNavIndex == 4
                       ? const ProfileScreen(showAppBar: false)
-                      : RefreshIndicator(
+                      : _currentNavIndex == 1
+                          ? FavoritesScreen(
+                              onBack: () => setState(() => _currentNavIndex = 0),
+                            )
+                          : RefreshIndicator(
                           onRefresh: _refreshData,
                           color: AppTheme.primaryBlue,
                           backgroundColor: isDark ? AppTheme.darkCard : AppTheme.lightCard,
@@ -521,7 +526,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   const crossAxisCount = 2;
                                                   const spacing = 12.0;
                                                   final itemWidth = (constraints.maxWidth - spacing) / crossAxisCount;
-                                                  final aspectRatio = itemWidth / 245.0;
+                                                  // Hauteur totale : image 150px (grille) + contenu ~190px
+                                                  final aspectRatio = itemWidth / 340.0;
 
                                                   return GridView.builder(
                                                     shrinkWrap: true,
@@ -538,6 +544,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       return ItemCard(
                                                         item: item,
                                                         isDark: isDark,
+                                                        imageHeight: 150,
+                                                        fillHeight: true,
                                                         onTap: () => Navigator.push(
                                                           context,
                                                           MaterialPageRoute(
@@ -724,6 +732,28 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _handleNavTap(int index) {
+    // Onglets protégés : Favoris (1), Vendre (2), Discussions (3)
+    const protectedIndexes = [1, 2, 3];
+    final isAuthenticated = context.read<AuthProvider>().isAuthenticated;
+    if (protectedIndexes.contains(index) && !isAuthenticated) {
+      // Rediriger vers l'onglet Profil (index 4) qui affiche l'écran de connexion/inscription
+      setState(() => _currentNavIndex = 4);
+      return;
+    }
+
+    // Bouton Vendre → ouvrir la page de vente
+    if (index == 2) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const SellScreen()),
+      );
+      return;
+    }
+
+    setState(() => _currentNavIndex = index);
+  }
+
   Widget _buildFloatingBottomNav() {
     final items = [
       _NavItem(FontAwesomeIcons.house, 'Accueil', 0),
@@ -766,84 +796,44 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: items.map((item) {
                 final isSelected = _currentNavIndex == item.index;
-                final isSell = item.index == 2;
 
                 return GestureDetector(
-                  onTap: () {
-                    // Bouton Vendre → ouvrir la page de vente
-                    if (item.index == 2) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const SellScreen()),
-                      );
-                      return;
-                    }
-                    const protectedIndexes = [1, 3];
-                    final isAuthenticated = context.read<AuthProvider>().isAuthenticated;
-                    if (protectedIndexes.contains(item.index) && !isAuthenticated) {
-                      setState(() => _currentNavIndex = 4);
-                      return;
-                    }
-                    setState(() => _currentNavIndex = item.index);
-                  },
-                  child: isSell
-                      ? Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-                            ),
+                  onTap: () => _handleNavTap(item.index),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FaIcon(
+                        item.icon,
+                        color: isSelected
+                            ? AppTheme.primaryBlue
+                            : (isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted),
+                        size: 20,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        item.label,
+                        style: TextStyle(
+                          color: isSelected
+                              ? AppTheme.primaryBlue
+                              : (isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted),
+                          fontSize: Responsive.fontSize(context, 10),
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        ),
+                      ),
+                      if (isSelected)
+                        Container(
+                          width: 4,
+                          height: 4,
+                          margin: const EdgeInsets.only(top: 2),
+                          decoration: const BoxDecoration(
+                            color: AppTheme.primaryBlue,
                             shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.primaryBlue.withOpacity(0.4),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Center(
-                            child: FaIcon(FontAwesomeIcons.plus, color: Colors.white, size: 20),
                           ),
                         )
-                      : Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            FaIcon(
-                              item.icon,
-                              color: isSelected
-                                  ? AppTheme.primaryBlue
-                                  : (isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted),
-                              size: 20,
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              item.label,
-                              style: TextStyle(
-                                color: isSelected
-                                    ? AppTheme.primaryBlue
-                                    : (isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted),
-                                fontSize: Responsive.fontSize(context, 10),
-                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                              ),
-                            ),
-                            if (isSelected)
-                              Container(
-                                width: 4,
-                                height: 4,
-                                margin: const EdgeInsets.only(top: 2),
-                                decoration: const BoxDecoration(
-                                  color: AppTheme.primaryBlue,
-                                  shape: BoxShape.circle,
-                                ),
-                              )
-                            else
-                              const SizedBox(height: 6),
-                          ],
-                        ),
+                      else
+                        const SizedBox(height: 6),
+                    ],
+                  ),
                 );
               }).toList(),
             ),

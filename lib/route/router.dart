@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../screens/home/home_screen.dart';
+import '../screens/home/favorites_screen.dart';
+import '../screens/auth/login_screen.dart';
+import '../screens/auth/register_screen.dart';
 import '../theme/theme_provider.dart';
 import '../theme/app_theme.dart';
 import 'route_constants.dart';
@@ -11,6 +14,12 @@ class AppRouter {
       case RouteConstants.home:
         return MaterialPageRoute(
           builder: (context) => const HomeScreen(),
+          settings: settings,
+        );
+      
+      case RouteConstants.favorites:
+        return MaterialPageRoute(
+          builder: (context) => const FavoritesScreen(),
           settings: settings,
         );
       
@@ -35,6 +44,18 @@ class AppRouter {
       case RouteConstants.profile:
         return MaterialPageRoute(
           builder: (context) => const PlaceholderScreen(title: 'Profile'),
+          settings: settings,
+        );
+      
+      case RouteConstants.login:
+        return MaterialPageRoute(
+          builder: (context) => const LoginScreen(),
+          settings: settings,
+        );
+      
+      case RouteConstants.signup:
+        return MaterialPageRoute(
+          builder: (context) => const RegisterScreen(),
           settings: settings,
         );
       

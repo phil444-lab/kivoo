@@ -1,6 +1,7 @@
 class RouteConstants {
   // Routes
   static const String home = '/home';
+  static const String favorites = '/favorites';
   static const String saved = '/saved';
   static const String sell = '/sell';
   static const String messages = '/messages';

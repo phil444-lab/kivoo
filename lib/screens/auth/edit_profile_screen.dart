@@ -285,11 +285,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Modifier le profil',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w700,
+            fontSize: Responsive.fontSize(context, 18),
           ),
         ),
         backgroundColor: AppTheme.darkBlue,
@@ -297,9 +298,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           onPressed: () {
             Navigator.pop(context);
           },
-          icon: const FaIcon(
+          icon: FaIcon(
             FontAwesomeIcons.arrowLeft,
-            color: Colors.white,
+            size: Responsive.iconSize(context, 18), 
+            color: Colors.white
           ),
         ),
       ),

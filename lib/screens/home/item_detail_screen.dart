@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../models/item_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../theme/theme_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/responsive.dart';
@@ -17,7 +18,6 @@ class ItemDetailScreen extends StatefulWidget {
 
 class _ItemDetailScreenState extends State<ItemDetailScreen> {
   int _currentImageIndex = 0;
-  bool _isFavorite = false;
 
   @override
   Widget build(BuildContext context) {
@@ -76,20 +76,58 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                       ),
                     ),
                     // Favori
-                    Container(
-                      margin: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        icon: FaIcon(
-                          FontAwesomeIcons.heart,
-                          color: _isFavorite ? Colors.redAccent : Colors.white,
-                          size: 20,
-                        ),
-                        onPressed: () => setState(() => _isFavorite = !_isFavorite),
-                      ),
+                    Consumer<AuthProvider>(
+                      builder: (context, authProvider, _) {
+                        final isFav = authProvider.isFavorite(item.id);
+                        final isAuthenticated = authProvider.isAuthenticated;
+                        
+                        return Container(
+                          margin: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            icon: FaIcon(
+                              isFav ? FontAwesomeIcons.solidHeart : FontAwesomeIcons.heart,
+                              color: isFav ? Colors.redAccent : Colors.white,
+                              size: 20,
+                            ),
+                            onPressed: () async {
+                              if (!isAuthenticated) {
+                                // Rediriger vers la connexion si non authentifié
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Connectez-vous pour ajouter aux favoris'),
+                                    backgroundColor: Colors.orange,
+                                    behavior: SnackBarBehavior.floating,
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                                return;
+                              }
+                              
+                              final wasFavorite = isFav;
+                              await authProvider.toggleFavorite(item.id);
+                              
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      !wasFavorite
+                                          ? 'Ajouté aux favoris'
+                                          : 'Retiré des favoris',
+                                    ),
+                                    backgroundColor: Colors.green,
+                                    behavior: SnackBarBehavior.floating,
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        );
+                      },
                     ),
                   ],
                   flexibleSpace: FlexibleSpaceBar(

@@ -651,35 +651,47 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
         }
         return false;
       },
-      child: GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.65,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-        ),
-        itemCount: _items.length + (_hasMore ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index == _items.length) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: CircularProgressIndicator(color: AppTheme.primaryBlue),
-              ),
-            );
-          }
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const crossAxisCount = 2;
+          const spacing = 12.0;
+          final itemWidth = (constraints.maxWidth - spacing) / crossAxisCount;
+          // Hauteur totale : image 150px (grille) + contenu ~190px
+          final aspectRatio = itemWidth / 340.0;
 
-          final item = _items[index];
-          return ItemCard(
-            item: item,
-            isDark: isDark,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ItemDetailScreen(item: item),
-              ),
+          return GridView.builder(
+            padding: const EdgeInsets.all(16),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              childAspectRatio: aspectRatio,
+              crossAxisSpacing: spacing,
+              mainAxisSpacing: spacing,
             ),
+            itemCount: _items.length + (_hasMore ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index == _items.length) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: CircularProgressIndicator(color: AppTheme.primaryBlue),
+                  ),
+                );
+              }
+
+              final item = _items[index];
+              return ItemCard(
+                item: item,
+                isDark: isDark,
+                imageHeight: 150,
+                fillHeight: true,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ItemDetailScreen(item: item),
+                  ),
+                ),
+              );
+            },
           );
         },
       ),

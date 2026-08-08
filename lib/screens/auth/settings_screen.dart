@@ -108,19 +108,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Paramètres',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w700,
+            fontSize: Responsive.fontSize(context, 18),
           ),
         ),
         backgroundColor: AppTheme.darkBlue,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const FaIcon(
+          icon: FaIcon(
             FontAwesomeIcons.arrowLeft,
-            color: Colors.white,
+            size: Responsive.iconSize(context, 18), 
+            color: Colors.white
           ),
         ),
       ),

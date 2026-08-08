@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/home/home_screen.dart';
+import 'route/router.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 import 'providers/auth_provider.dart';
@@ -33,6 +34,7 @@ class KivooApp extends StatelessWidget {
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
             home: const AuthWrapper(),
+            onGenerateRoute: AppRouter.generateRoute,
           );
         },
       ),
