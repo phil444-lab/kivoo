@@ -21,6 +21,9 @@ dependencies:
   font_awesome_flutter: ^11.0.0
   http_parser: ^4.0.2
   mime: ^1.0.5
+  firebase_core: ^4.13.0
+  firebase_messaging: ^16.5.0
+  flutter_local_notifications: ^19.4.0
 
 dev_dependencies:
   flutter_test:

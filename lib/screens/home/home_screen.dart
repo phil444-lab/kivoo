@@ -15,13 +15,17 @@ import '../../screens/home/category_screen.dart';
 import '../../screens/home/item_detail_screen.dart';
 import '../../screens/home/favorites_screen.dart';
 import '../../screens/home/feature_items_screen.dart';
+import '../../screens/home/conversations_screen.dart';
 import '../auth/profile_screen.dart';
 import '../sell/sell_screen.dart';
+import 'notifications_screen.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../../services/location_service.dart';
 import '../../services/category_service.dart';
 import '../../services/feature_card_service.dart';
 import '../../services/item_service.dart';
+import '../../services/conversation_service.dart';
 
 import '../../utils/responsive.dart';
 
@@ -32,6 +36,9 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+// Global key pour accéder au HomeScreen depuis d'autres écrans
+final homeScreenKey = GlobalKey<_HomeScreenState>();
+
 class _HomeScreenState extends State<HomeScreen> {
   bool isDark = true;
   String selectedLocation = 'Localisation';
@@ -40,11 +47,14 @@ class _HomeScreenState extends State<HomeScreen> {
   String activeFilter = 'Tout';
   bool isListView = true;
   int _currentNavIndex = 0;
+  bool _wasAuthenticated = false;
 
   final _locationService = LocationService();
   final _categoryService = CategoryService();
   final _featureCardService = FeatureCardService();
   final _itemService = ItemService();
+  final _conversationService = ConversationService();
+  int _unreadCount = 0;
   List<CategoryModel> _categories = [];
   List<FeatureCardModel> _featureCards = [];
   List<ItemModel> _trendingItems = [];
@@ -61,7 +71,51 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadData();
+    // Charger le compteur de messages non lus immédiatement
+    // Ne pas attendre mounted car initState() est appelé avant le premier build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUnreadCount();
+    });
+    
+    // Écouter les changements d'authentification
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final authProvider = context.read<AuthProvider>();
+        authProvider.addListener(_onAuthChanged);
+      }
+    });
   }
+  
+  @override
+  void dispose() {
+    // Nettoyer le listener
+    final authProvider = context.read<AuthProvider>();
+    authProvider.removeListener(_onAuthChanged);
+    super.dispose();
+  }
+  
+  /// Callback appelé quand l'état d'authentification change
+  void _onAuthChanged() {
+    if (!mounted) return;
+    
+    final authProvider = context.read<AuthProvider>();
+    final isAuthenticated = authProvider.isAuthenticated;
+    
+    // Si l'utilisateur vient de se déconnecter, réinitialiser le compteur
+    if (_wasAuthenticated && !isAuthenticated) {
+      setState(() {
+        _unreadCount = 0;
+      });
+    }
+    // Si l'utilisateur vient de se connecter, charger le compteur
+    else if (!_wasAuthenticated && isAuthenticated) {
+      _loadUnreadCount();
+    }
+    
+    // Mettre à jour l'état précédent
+    _wasAuthenticated = isAuthenticated;
+  }
+
 
   Future<void> _loadData() async {
     final results = await Future.wait([
@@ -81,19 +135,29 @@ class _HomeScreenState extends State<HomeScreen> {
     if (countries.isNotEmpty) {
       final country = countries.first;
       final deps = await _locationService.getDepartments(country.id);
-      if (mounted) setState(() { _country = country; _departments = deps; });
+      if (mounted)
+        setState(() {
+          _country = country;
+          _departments = deps;
+        });
     }
 
     // Trier les articles du plus récent au plus ancien
     final sorted = List<ItemModel>.of(trending);
     sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-    if (mounted) setState(() {
-      _categories = cats;
-      _featureCards = cards;
-      _trendingItems = sorted;
-      _trendingLoading = false;
-    });
+    if (mounted)
+      setState(() {
+        _categories = cats;
+        _featureCards = cards;
+        _trendingItems = sorted;
+        _trendingLoading = false;
+      });
+    
+    // Charger le compteur de messages non lus après le chargement des données
+    if (mounted) {
+      await _loadUnreadCount();
+    }
   }
 
   Future<void> _refreshData() async {
@@ -112,6 +176,30 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     } catch (e) {
       if (mounted) setState(() => _trendingLoading = false);
+    }
+    // Rafraîchir aussi le compteur de messages non lus
+    await _loadUnreadCount();
+  }
+
+  Future<int> _loadUnreadCount() async {
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isAuthenticated) return 0;
+    
+    final token = authProvider.token;
+    if (token == null) return 0;
+    
+    try {
+      final conversations = await _conversationService.getConversations(token: token);
+      int total = 0;
+      for (final conv in conversations) {
+        total += conv.getUnreadCount(authProvider.user?.id ?? '');
+      }
+      if (mounted) {
+        setState(() => _unreadCount = total);
+      }
+      return total;
+    } catch (e) {
+      return 0;
     }
   }
 
@@ -210,7 +298,9 @@ class _HomeScreenState extends State<HomeScreen> {
     // Filtre par localisation
     if (selectedLocation != 'Localisation' && selectedLocation.isNotEmpty) {
       final query = selectedLocation.toLowerCase();
-      items = items.where((item) => item.location.toLowerCase().contains(query)).toList();
+      items = items
+          .where((item) => item.location.toLowerCase().contains(query))
+          .toList();
     }
 
     // Filtre par recherche texte
@@ -232,354 +322,507 @@ class _HomeScreenState extends State<HomeScreen> {
     isDark = themeProvider.isDark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
+      backgroundColor:
+          isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
       body: SafeArea(
         bottom: false,
         child: Stack(
           children: [
             Column(
               children: [
-                if (_currentNavIndex != 1 && _currentNavIndex != 4) _buildHeader(context, themeProvider),
-                if (_currentNavIndex != 1 && _currentNavIndex != 4) _buildSearchBar(),
+                if (_currentNavIndex != 1 &&
+                    _currentNavIndex != 3 &&
+                    _currentNavIndex != 4)
+                  _buildHeader(context, themeProvider),
+                if (_currentNavIndex != 1 &&
+                    _currentNavIndex != 3 &&
+                    _currentNavIndex != 4)
+                  _buildSearchBar(),
                 Expanded(
                   child: _currentNavIndex == 4
                       ? const ProfileScreen(showAppBar: false)
                       : _currentNavIndex == 1
                           ? FavoritesScreen(
-                              onBack: () => setState(() => _currentNavIndex = 0),
+                              onBack: () =>
+                                  setState(() => _currentNavIndex = 0),
                             )
-                          : RefreshIndicator(
-                          onRefresh: _refreshData,
-                          color: AppTheme.primaryBlue,
-                          backgroundColor: isDark ? AppTheme.darkCard : AppTheme.lightCard,
-                          child: SingleChildScrollView(
-                            physics: const ClampingScrollPhysics(),
-                            child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 20),
+                          : _currentNavIndex == 3
+                              ? ConversationsScreen(
+                                  onBack: () =>
+                                      setState(() => _currentNavIndex = 0),
+                                )
+                              : RefreshIndicator(
+                                  onRefresh: _refreshData,
+                                  color: AppTheme.primaryBlue,
+                                  backgroundColor: isDark
+                                      ? AppTheme.darkCard
+                                      : AppTheme.lightCard,
+                                  child: SingleChildScrollView(
+                                    physics: const ClampingScrollPhysics(),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(height: 20),
 
-                              // Featured section
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: Responsive.padding(context, 16)),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'En Vedette',
-                                      style: TextStyle(
-                                        color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                                        fontSize: Responsive.fontSize(context, 15),
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                                        SizedBox(
+                                          height: 180,
+                                          child: _featureCards.isEmpty
+                                              ? ListView.builder(
+                                                  scrollDirection:
+                                                      Axis.horizontal,
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 16),
+                                                  itemCount: 4,
+                                                  itemBuilder: (_, __) =>
+                                                      Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            right: 12),
+                                                    child: Container(
+                                                      width: 155,
+                                                      decoration: BoxDecoration(
+                                                        color: isDark
+                                                            ? const Color(
+                                                                0xFF232b34)
+                                                            : const Color(
+                                                                0xFFf0f2f5),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(16),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                )
+                                              : ListView.builder(
+                                                  scrollDirection:
+                                                      Axis.horizontal,
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 16),
+                                                  itemCount:
+                                                      _featureCards.length,
+                                                  itemBuilder:
+                                                      (context, index) =>
+                                                          Padding(
+                                                    padding: EdgeInsets.only(
+                                                      right: index <
+                                                              _featureCards
+                                                                      .length -
+                                                                  1
+                                                          ? 12
+                                                          : 0,
+                                                    ),
+                                                    child: FeatureCard(
+                                                      card:
+                                                          _featureCards[index],
+                                                      isDark: isDark,
+                                                      onTap: () {
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (_) =>
+                                                                FeatureItemsScreen(
+                                                              feature:
+                                                                  _featureCards[
+                                                                      index],
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
+                                                    ),
+                                                  ),
+                                                ),
+                                        ),
 
-                              const SizedBox(height: 12),
+                                        const SizedBox(height: 24),
 
-                              SizedBox(
-                                height: 180,
-                                child: _featureCards.isEmpty
-                                    ? ListView.builder(
-                                        scrollDirection: Axis.horizontal,
-                                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                                        itemCount: 4,
-                                        itemBuilder: (_, __) => Padding(
-                                          padding: const EdgeInsets.only(right: 12),
-                                          child: Container(
-                                            width: 155,
-                                            decoration: BoxDecoration(
-                                              color: isDark ? const Color(0xFF232b34) : const Color(0xFFf0f2f5),
-                                              borderRadius: BorderRadius.circular(16),
-                                            ),
+                                        // Categories section
+                                        Padding(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: Responsive.padding(
+                                                  context, 16)),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                'Catégories',
+                                                style: TextStyle(
+                                                  color: isDark
+                                                      ? AppTheme.darkText
+                                                      : AppTheme.lightText,
+                                                  fontSize: Responsive.fontSize(
+                                                      context, 15),
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                      )
-                                    : ListView.builder(
-                                        scrollDirection: Axis.horizontal,
-                                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                                        itemCount: _featureCards.length,
-                                        itemBuilder: (context, index) => Padding(
-                                          padding: EdgeInsets.only(
-                                            right: index < _featureCards.length - 1 ? 12 : 0,
+
+                                        const SizedBox(height: 12),
+
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 16),
+                                          child: LayoutBuilder(
+                                            builder: (context, constraints) {
+                                              const crossAxisCount = 4;
+                                              const spacing = 12.0;
+                                              const totalSpacing = spacing *
+                                                  (crossAxisCount - 1);
+                                              final itemWidth =
+                                                  (constraints.maxWidth -
+                                                          totalSpacing) /
+                                                      crossAxisCount;
+                                              // hauteur totale = card carrée (itemWidth) + 4 spacing + 36 texte
+                                              // Protéger contre les largeurs <= 0 (premier frame) qui rendraient l'aspectRatio négatif
+                                              final aspectRatio = itemWidth > 0
+                                                  ? itemWidth / (itemWidth + 40)
+                                                  : 1.0;
+
+                                              return GridView.builder(
+                                                shrinkWrap: true,
+                                                physics:
+                                                    const NeverScrollableScrollPhysics(),
+                                                gridDelegate:
+                                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                                  crossAxisCount:
+                                                      crossAxisCount,
+                                                  crossAxisSpacing: spacing,
+                                                  mainAxisSpacing: spacing,
+                                                  childAspectRatio: aspectRatio,
+                                                ),
+                                                itemCount: _categories.isEmpty
+                                                    ? 8
+                                                    : _categories.length,
+                                                itemBuilder: (context, index) {
+                                                  if (_categories.isEmpty) {
+                                                    return Container(
+                                                      decoration: BoxDecoration(
+                                                        color: isDark
+                                                            ? const Color(
+                                                                0xFF232b34)
+                                                            : const Color(
+                                                                0xFFf0f2f5),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(12),
+                                                      ),
+                                                    );
+                                                  }
+                                                  return GestureDetector(
+                                                    onTap: () => Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (_) =>
+                                                            CategoryScreen(
+                                                                category:
+                                                                    _categories[
+                                                                        index]),
+                                                      ),
+                                                    ),
+                                                    child: CategoryItem(
+                                                      category:
+                                                          _categories[index],
+                                                      isDark: isDark,
+                                                    ),
+                                                  );
+                                                },
+                                              );
+                                            },
                                           ),
-                                          child: FeatureCard(
-                                            card: _featureCards[index],
-                                            isDark: isDark,
-                                            onTap: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) => FeatureItemsScreen(
-                                                    feature: _featureCards[index],
+                                        ),
+
+                                        const SizedBox(height: 24),
+
+                                        // News/Actualités section
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 16),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    'Actualités',
+                                                    style: TextStyle(
+                                                      color: isDark
+                                                          ? AppTheme.darkText
+                                                          : AppTheme.lightText,
+                                                      fontSize:
+                                                          Responsive.fontSize(
+                                                              context, 15),
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+
+                                              // View toggle
+                                              Container(
+                                                decoration: BoxDecoration(
+                                                  color: isDark
+                                                      ? AppTheme.darkCard
+                                                      : AppTheme.lightCard,
+                                                  borderRadius:
+                                                      BorderRadius.circular(24),
+                                                  border: Border.all(
+                                                    color: isDark
+                                                        ? const Color(
+                                                            0xFF3d4752)
+                                                        : const Color(
+                                                                0xFF000000)
+                                                            .withValues(
+                                                                alpha: 0.08),
+                                                    width: 1,
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    IconButton(
+                                                      onPressed: () => setState(
+                                                          () => isListView =
+                                                              true),
+                                                      icon: FaIcon(
+                                                        FontAwesomeIcons.list,
+                                                        size: 14,
+                                                        color: isListView
+                                                            ? Colors.white
+                                                            : (isDark
+                                                                ? AppTheme
+                                                                    .darkTextMuted
+                                                                : AppTheme
+                                                                    .lightTextMuted),
+                                                      ),
+                                                      style:
+                                                          IconButton.styleFrom(
+                                                        backgroundColor:
+                                                            isListView
+                                                                ? AppTheme
+                                                                    .primaryBlue
+                                                                : Colors
+                                                                    .transparent,
+                                                      ),
+                                                    ),
+                                                    IconButton(
+                                                      onPressed: () => setState(
+                                                          () => isListView =
+                                                              false),
+                                                      icon: FaIcon(
+                                                        FontAwesomeIcons.grip,
+                                                        size: 14,
+                                                        color: !isListView
+                                                            ? Colors.white
+                                                            : (isDark
+                                                                ? AppTheme
+                                                                    .darkTextMuted
+                                                                : AppTheme
+                                                                    .lightTextMuted),
+                                                      ),
+                                                      style:
+                                                          IconButton.styleFrom(
+                                                        backgroundColor:
+                                                            !isListView
+                                                                ? AppTheme
+                                                                    .primaryBlue
+                                                                : Colors
+                                                                    .transparent,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+
+                                        const SizedBox(height: 12),
+
+                                        // Filter pills
+                                        SizedBox(
+                                          height: 36,
+                                          child: ListView.builder(
+                                            scrollDirection: Axis.horizontal,
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 16),
+                                            itemCount: _filters.length,
+                                            itemBuilder: (context, index) {
+                                              final filter = _filters[index];
+                                              final isActive =
+                                                  activeFilter == filter;
+                                              return Padding(
+                                                padding: EdgeInsets.only(
+                                                    right: index <
+                                                            _filters.length - 1
+                                                        ? 8
+                                                        : 0),
+                                                child: FilterChip(
+                                                  label: Text(filter),
+                                                  onSelected: (_) => setState(
+                                                      () => activeFilter =
+                                                          filter),
+                                                  selected: isActive,
+                                                  backgroundColor: isDark
+                                                      ? AppTheme.darkCard
+                                                      : AppTheme.lightCard,
+                                                  selectedColor:
+                                                      AppTheme.primaryBlue,
+                                                  labelStyle: TextStyle(
+                                                    color: isActive
+                                                        ? Colors.white
+                                                        : (isDark
+                                                            ? AppTheme
+                                                                .darkTextMuted
+                                                            : AppTheme
+                                                                .lightTextMuted),
+                                                    fontSize:
+                                                        Responsive.fontSize(
+                                                            context, 12),
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                  side: BorderSide(
+                                                    color: isDark
+                                                        ? const Color(
+                                                            0xFF3d4752)
+                                                        : const Color(
+                                                                0xFF000000)
+                                                            .withValues(
+                                                                alpha: 0.08),
+                                                    width: 1,
                                                   ),
                                                 ),
                                               );
                                             },
                                           ),
                                         ),
-                                      ),
-                              ),
 
-                              const SizedBox(height: 24),
+                                        const SizedBox(height: 16),
 
-                              // Categories section
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: Responsive.padding(context, 16)),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Catégories',
-                                      style: TextStyle(
-                                        color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                                        fontSize: Responsive.fontSize(context, 15),
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                                        // Items list/grid (filtrés selon la catégorie active)
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 16),
+                                          child: _trendingLoading
+                                              ? _buildTrendingSkeleton()
+                                              : _filteredItems.isEmpty
+                                                  ? const SizedBox(
+                                                      height: 120,
+                                                      child: Center(
+                                                        child: Text(
+                                                          'Aucun article dans cette catégorie',
+                                                          style: TextStyle(
+                                                              color:
+                                                                  Colors.grey),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  : isListView
+                                                      ? Column(
+                                                          children:
+                                                              _filteredItems
+                                                                  .map((item) =>
+                                                                      Padding(
+                                                                        padding: const EdgeInsets
+                                                                            .only(
+                                                                            bottom:
+                                                                                12),
+                                                                        child:
+                                                                            ItemCard(
+                                                                          item:
+                                                                              item,
+                                                                          isDark:
+                                                                              isDark,
+                                                                          onTap: () =>
+                                                                              Navigator.push(
+                                                                                context,
+                                                                                MaterialPageRoute(
+                                                                                  builder: (_) => ItemDetailScreen(item: item),
+                                                                                ),
+                                                                              ),
+                                                                        ),
+                                                                      ))
+                                                                  .toList(),
+                                                        )
+                                                      : LayoutBuilder(
+                                                          builder: (context,
+                                                              constraints) {
+                                                            const crossAxisCount =
+                                                                2;
+                                                            const spacing =
+                                                                12.0;
+                                                            final itemWidth =
+                                                                (constraints.maxWidth -
+                                                                        spacing) /
+                                                                    crossAxisCount;
+                                                            // Hauteur totale : image 150px (grille) + contenu ~190px
+                                                            // Protéger contre les largeurs <= 0 (premier frame) qui rendraient l'aspectRatio négatif
+                                                            final aspectRatio =
+                                                                itemWidth > 0
+                                                                    ? itemWidth /
+                                                                        340.0
+                                                                    : 1.0;
 
-                              const SizedBox(height: 12),
-
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                child: LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    const crossAxisCount = 4;
-                                    const spacing = 12.0;
-                                    const totalSpacing = spacing * (crossAxisCount - 1);
-                                    final itemWidth = (constraints.maxWidth - totalSpacing) / crossAxisCount;
-                                    // hauteur totale = card carrée (itemWidth) + 4 spacing + 36 texte
-                                    // Protéger contre les largeurs <= 0 (premier frame) qui rendraient l'aspectRatio négatif
-                                    final aspectRatio = itemWidth > 0 ? itemWidth / (itemWidth + 40) : 1.0;
-
-                                    return GridView.builder(
-                                      shrinkWrap: true,
-                                      physics: const NeverScrollableScrollPhysics(),
-                                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: crossAxisCount,
-                                        crossAxisSpacing: spacing,
-                                        mainAxisSpacing: spacing,
-                                        childAspectRatio: aspectRatio,
-                                      ),
-                                      itemCount: _categories.isEmpty ? 8 : _categories.length,
-                                      itemBuilder: (context, index) {
-                                        if (_categories.isEmpty) {
-                                          return Container(
-                                            decoration: BoxDecoration(
-                                              color: isDark ? const Color(0xFF232b34) : const Color(0xFFf0f2f5),
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                          );
-                                        }
-                                        return GestureDetector(
-                                          onTap: () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => CategoryScreen(category: _categories[index]),
-                                            ),
-                                          ),
-                                          child: CategoryItem(
-                                            category: _categories[index],
-                                            isDark: isDark,
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                              ),
-
-                              const SizedBox(height: 24),
-
-                              // News/Actualités section
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          'Actualités',
-                                          style: TextStyle(
-                                            color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                                            fontSize: Responsive.fontSize(context, 15),
-                                            fontWeight: FontWeight.w700,
-                                          ),
+                                                            return GridView
+                                                                .builder(
+                                                              shrinkWrap: true,
+                                                              physics:
+                                                                  const NeverScrollableScrollPhysics(),
+                                                              gridDelegate:
+                                                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                                                crossAxisCount:
+                                                                    crossAxisCount,
+                                                                crossAxisSpacing:
+                                                                    spacing,
+                                                                mainAxisSpacing:
+                                                                    spacing,
+                                                                childAspectRatio:
+                                                                    aspectRatio,
+                                                              ),
+                                                              itemCount:
+                                                                  _filteredItems
+                                                                      .length,
+                                                              itemBuilder:
+                                                                  (context,
+                                                                      index) {
+                                                                final item =
+                                                                    _filteredItems[
+                                                                        index];
+                                                                return ItemCard(
+                                                                  item: item,
+                                                                  isDark:
+                                                                      isDark,
+                                                                  imageHeight:
+                                                                      150,
+                                                                  fillHeight:
+                                                                      true,
+                                                                  onTap: () =>
+                                                                      Navigator
+                                                                          .push(
+                                                                    context,
+                                                                    MaterialPageRoute(
+                                                                      builder: (_) =>
+                                                                          ItemDetailScreen(
+                                                                              item: item),
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              },
+                                                            );
+                                                          },
+                                                        ),
                                         ),
+
+                                        const SizedBox(height: 100),
                                       ],
                                     ),
-
-                                    // View toggle
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
-                                        borderRadius: BorderRadius.circular(24),
-                                        border: Border.all(
-                                          color: isDark
-                                              ? const Color(0xFF3d4752)
-                                              : const Color(0xFF000000).withValues(alpha: 0.08),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          IconButton(
-                                            onPressed: () => setState(() => isListView = true),
-                                            icon: FaIcon(
-                                              FontAwesomeIcons.list,
-                                              size: 14,
-                                              color: isListView
-                                                  ? Colors.white
-                                                  : (isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted),
-                                            ),
-                                            style: IconButton.styleFrom(
-                                              backgroundColor: isListView ? AppTheme.primaryBlue : Colors.transparent,
-                                            ),
-                                          ),
-                                          IconButton(
-                                            onPressed: () => setState(() => isListView = false),
-                                            icon: FaIcon(
-                                              FontAwesomeIcons.grip,
-                                              size: 14,
-                                              color: !isListView
-                                                  ? Colors.white
-                                                  : (isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted),
-                                            ),
-                                            style: IconButton.styleFrom(
-                                              backgroundColor: !isListView ? AppTheme.primaryBlue : Colors.transparent,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-
-                              const SizedBox(height: 12),
-
-                              // Filter pills
-                              SizedBox(
-                                height: 36,
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  itemCount: _filters.length,
-                                  itemBuilder: (context, index) {
-                                    final filter = _filters[index];
-                                    final isActive = activeFilter == filter;
-                                    return Padding(
-                                      padding: EdgeInsets.only(right: index < _filters.length - 1 ? 8 : 0),
-                                      child: FilterChip(
-                                        label: Text(filter),
-                                        onSelected: (_) => setState(() => activeFilter = filter),
-                                        selected: isActive,
-                                        backgroundColor: isDark ? AppTheme.darkCard : AppTheme.lightCard,
-                                        selectedColor: AppTheme.primaryBlue,
-                                        labelStyle: TextStyle(
-                                          color: isActive
-                                              ? Colors.white
-                                              : (isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted),
-                                          fontSize: Responsive.fontSize(context, 12),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        side: BorderSide(
-                                          color: isDark
-                                              ? const Color(0xFF3d4752)
-                                              : const Color(0xFF000000).withValues(alpha: 0.08),
-                                          width: 1,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-
-                              const SizedBox(height: 16),
-
-                              // Items list/grid (filtrés selon la catégorie active)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                child: _trendingLoading
-                                    ? _buildTrendingSkeleton()
-                                    : _filteredItems.isEmpty
-                                        ? const SizedBox(
-                                            height: 120,
-                                            child: Center(
-                                              child: Text(
-                                                'Aucun article dans cette catégorie',
-                                                style: TextStyle(color: Colors.grey),
-                                              ),
-                                            ),
-                                          )
-                                        : isListView
-                                            ? Column(
-                                                children: _filteredItems
-                                                    .map((item) => Padding(
-                                                          padding: const EdgeInsets.only(bottom: 12),
-                                                          child: ItemCard(
-                                                            item: item,
-                                                            isDark: isDark,
-                                                            onTap: () => Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                builder: (_) => ItemDetailScreen(item: item),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ))
-                                                    .toList(),
-                                              )
-                                            : LayoutBuilder(
-                                                builder: (context, constraints) {
-                                                  const crossAxisCount = 2;
-                                                  const spacing = 12.0;
-                                                  final itemWidth = (constraints.maxWidth - spacing) / crossAxisCount;
-                                                  // Hauteur totale : image 150px (grille) + contenu ~190px
-                                                  // Protéger contre les largeurs <= 0 (premier frame) qui rendraient l'aspectRatio négatif
-                                                  final aspectRatio = itemWidth > 0 ? itemWidth / 340.0 : 1.0;
-
-                                                  return GridView.builder(
-                                                    shrinkWrap: true,
-                                                    physics: const NeverScrollableScrollPhysics(),
-                                                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                                      crossAxisCount: crossAxisCount,
-                                                      crossAxisSpacing: spacing,
-                                                      mainAxisSpacing: spacing,
-                                                      childAspectRatio: aspectRatio,
-                                                    ),
-                                                    itemCount: _filteredItems.length,
-                                                    itemBuilder: (context, index) {
-                                                      final item = _filteredItems[index];
-                                                      return ItemCard(
-                                                        item: item,
-                                                        isDark: isDark,
-                                                        imageHeight: 150,
-                                                        fillHeight: true,
-                                                        onTap: () => Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                            builder: (_) => ItemDetailScreen(item: item),
-                                                          ),
-                                                        ),
-                                                      );
-                                                    },
-                                                  );
-                                                },
-                                              ),
-                              ),
-
-                              const SizedBox(height: 100),
-                            ],
-                          ),
-                        ),
-                      ),
                 ),
               ],
             ),
@@ -603,13 +846,13 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1D4ED8).withOpacity(0.4),
+            color: const Color(0xFF1D4ED8).withValues(alpha: 0.4),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
         ],
       ),
-          padding: EdgeInsets.fromLTRB(16, isSmallScreen ? 8 : 12, 16, 12),
+      padding: EdgeInsets.fromLTRB(16, isSmallScreen ? 8 : 12, 16, 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -622,16 +865,74 @@ class _HomeScreenState extends State<HomeScreen> {
               letterSpacing: 1.5,
             ),
           ),
-          IconButton(
-            onPressed: themeProvider.cycleTheme,
-            icon: Icon(
-              themeProvider.icon,
-              color: Colors.white,
-              size: isSmallScreen ? 18 : 20,
-            ),
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.white.withValues(alpha: 0.18),
-            ),
+          Row(
+            children: [
+              // Bouton notifications avec badge
+              Consumer<NotificationProvider>(
+                builder: (context, notificationProvider, _) {
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const NotificationsScreen(),
+                            ),
+                          );
+                        },
+                        icon: FaIcon(
+                          FontAwesomeIcons.bell,
+                          color: Colors.white,
+                          size: isSmallScreen ? 18 : 20,
+                        ),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.18),
+                        ),
+                      ),
+                      if (notificationProvider.unreadCount > 0)
+                        Positioned(
+                          top: -2,
+                          right: -2,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 18,
+                              minHeight: 18,
+                            ),
+                            child: Text(
+                              '${notificationProvider.unreadCount}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                onPressed: themeProvider.cycleTheme,
+                icon: Icon(
+                  themeProvider.icon,
+                  color: Colors.white,
+                  size: isSmallScreen ? 18 : 20,
+                ),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white.withValues(alpha: 0.18),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -653,13 +954,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF3d4752) : const Color(0xFFd1d5db),
+                  color: isDark
+                      ? const Color(0xFF3d4752)
+                      : const Color(0xFFd1d5db),
                 ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const FaIcon(FontAwesomeIcons.locationDot, size: 13, color: AppTheme.primaryBlue),
+                  const FaIcon(FontAwesomeIcons.locationDot,
+                      size: 13, color: AppTheme.primaryBlue),
                   const SizedBox(width: 5),
                   Text(
                     selectedLocation,
@@ -673,7 +977,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   FaIcon(
                     FontAwesomeIcons.chevronDown,
                     size: 10,
-                    color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                    color: isDark
+                        ? AppTheme.darkTextMuted
+                        : AppTheme.lightTextMuted,
                   ),
                 ],
               ),
@@ -693,7 +999,8 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: InputDecoration(
                 hintText: 'Je recherche...',
                 hintStyle: TextStyle(
-                  color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                  color:
+                      isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                   fontSize: Responsive.fontSize(context, 13),
                 ),
                 prefixIcon: Align(
@@ -702,7 +1009,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: FaIcon(
                     FontAwesomeIcons.magnifyingGlass,
                     size: 15,
-                    color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                    color: isDark
+                        ? AppTheme.darkTextMuted
+                        : AppTheme.lightTextMuted,
                   ),
                 ),
                 filled: true,
@@ -711,18 +1020,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
-                    color: isDark ? const Color(0xFF3d4752) : const Color(0xFFd1d5db),
+                    color: isDark
+                        ? const Color(0xFF3d4752)
+                        : const Color(0xFFd1d5db),
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
-                    color: isDark ? const Color(0xFF3d4752) : const Color(0xFFd1d5db),
+                    color: isDark
+                        ? const Color(0xFF3d4752)
+                        : const Color(0xFFd1d5db),
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 1.5),
+                  borderSide:
+                      const BorderSide(color: AppTheme.primaryBlue, width: 1.5),
                 ),
               ),
             ),
@@ -733,18 +1047,21 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTrendingSkeleton() {
-    final skeletonColor = isDark ? const Color(0xFF232b34) : const Color(0xFFf0f2f5);
+    final skeletonColor =
+        isDark ? const Color(0xFF232b34) : const Color(0xFFf0f2f5);
     return Column(
-      children: List.generate(3, (_) => Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Container(
-          height: 130,
-          decoration: BoxDecoration(
-            color: skeletonColor,
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-      )),
+      children: List.generate(
+          3,
+          (_) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  height: 130,
+                  decoration: BoxDecoration(
+                    color: skeletonColor,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              )),
     );
   }
 
@@ -779,12 +1096,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Méthode publique pour rafraîchir le compteur de messages non lus
+  /// Peut être appelée depuis d'autres écrans (ex: après envoi de message)
+  Future<void> refreshUnreadCount() async {
+    await _loadUnreadCount();
+  }
+
   Widget _buildFloatingBottomNav() {
     final items = [
       _NavItem(FontAwesomeIcons.house, 'Accueil', 0),
       _NavItem(FontAwesomeIcons.heart, 'Favoris', 1),
       _NavItem(FontAwesomeIcons.plusCircle, 'Vendre', 2),
-      _NavItem(FontAwesomeIcons.comment, 'Discussions', 3),
+      _NavItem(FontAwesomeIcons.comment, 'Discussions', 3, badgeCount: _unreadCount),
       _NavItem(FontAwesomeIcons.user, 'Profil', 4),
     ];
 
@@ -800,18 +1123,18 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
             decoration: BoxDecoration(
               color: isDark
-                  ? Colors.white.withOpacity(0.07)
-                  : Colors.white.withOpacity(0.6),
+                  ? Colors.white.withValues(alpha: 0.07)
+                  : Colors.white.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
                 color: isDark
-                    ? Colors.white.withOpacity(0.12)
-                    : Colors.white.withOpacity(0.8),
+                    ? Colors.white.withValues(alpha: 0.12)
+                    : Colors.white.withValues(alpha: 0.8),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
                   blurRadius: 32,
                   offset: const Offset(0, 8),
                 ),
@@ -827,12 +1150,38 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      FaIcon(
-                        item.icon,
-                        color: isSelected
-                            ? AppTheme.primaryBlue
-                            : (isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted),
-                        size: 20,
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          FaIcon(
+                            item.icon,
+                            color: isSelected
+                                ? AppTheme.primaryBlue
+                                : (isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted),
+                            size: 20,
+                          ),
+                          if (item.badgeCount > 0)
+                            Positioned(
+                              right: -8,
+                              top: -8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: isDark ? AppTheme.darkBackground : Colors.white, width: 2),
+                                ),
+                                child: Text(
+                                  item.badgeCount > 99 ? '99+' : item.badgeCount.toString(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 3),
                       Text(
@@ -873,8 +1222,9 @@ class _NavItem {
   final FaIconData icon;
   final String label;
   final int index;
+  final int badgeCount;
 
-  const _NavItem(this.icon, this.label, this.index);
+  const _NavItem(this.icon, this.label, this.index, {this.badgeCount = 0});
 }
 
 class _LocationPickerSheet extends StatelessWidget {
@@ -910,8 +1260,10 @@ class _LocationPickerSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final bg = isDark ? AppTheme.darkCard : Colors.white;
     final textColor = isDark ? AppTheme.darkText : AppTheme.lightText;
-    final mutedColor = isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted;
-    final borderColor = isDark ? const Color(0xFF3d4752) : const Color(0xFFd1d5db);
+    final mutedColor =
+        isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted;
+    final borderColor =
+        isDark ? const Color(0xFF3d4752) : const Color(0xFFd1d5db);
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.65,
@@ -922,10 +1274,11 @@ class _LocationPickerSheet extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            width: 40, height: 4,
+            width: 40,
+            height: 4,
             margin: const EdgeInsets.only(top: 12, bottom: 12),
             decoration: BoxDecoration(
-              color: mutedColor.withOpacity(0.4),
+              color: mutedColor.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -934,15 +1287,24 @@ class _LocationPickerSheet extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
               children: [
-                const FaIcon(FontAwesomeIcons.earthAfrica, size: 13, color: AppTheme.primaryBlue),
+                const FaIcon(FontAwesomeIcons.earthAfrica,
+                    size: 13, color: AppTheme.primaryBlue),
                 const SizedBox(width: 8),
                 Text(countryName,
-                    style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.w700)),
+                    style: TextStyle(
+                        color: textColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700)),
                 const Spacer(),
                 TextButton.icon(
                   onPressed: onReset,
-                  icon: const FaIcon(FontAwesomeIcons.rotateLeft, size: 12, color: AppTheme.primaryBlue),
-                  label: const Text('Tout', style: TextStyle(color: AppTheme.primaryBlue, fontSize: 12, fontWeight: FontWeight.w600)),
+                  icon: const FaIcon(FontAwesomeIcons.rotateLeft,
+                      size: 12, color: AppTheme.primaryBlue),
+                  label: const Text('Tout',
+                      style: TextStyle(
+                          color: AppTheme.primaryBlue,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600)),
                 ),
               ],
             ),
@@ -955,25 +1317,39 @@ class _LocationPickerSheet extends StatelessWidget {
                 _PickerColumn(
                   title: 'Département',
                   items: departments.map((d) => d.name).toList(),
-                  selectedIndex: selectedDepartment != null ? departments.indexOf(selectedDepartment!) : -1,
+                  selectedIndex: selectedDepartment != null
+                      ? departments.indexOf(selectedDepartment!)
+                      : -1,
                   onTap: (i) => onDepartmentSelected(departments[i]),
-                  isDark: isDark, textColor: textColor, mutedColor: mutedColor, borderColor: borderColor,
+                  isDark: isDark,
+                  textColor: textColor,
+                  mutedColor: mutedColor,
+                  borderColor: borderColor,
                 ),
                 VerticalDivider(width: 1, thickness: 1, color: borderColor),
                 _PickerColumn(
                   title: 'Ville',
                   items: cities.map((c) => c.name).toList(),
-                  selectedIndex: selectedCity != null ? cities.indexOf(selectedCity!) : -1,
+                  selectedIndex:
+                      selectedCity != null ? cities.indexOf(selectedCity!) : -1,
                   onTap: (i) => onCitySelected(cities[i]),
-                  isDark: isDark, textColor: textColor, mutedColor: mutedColor, borderColor: borderColor,
+                  isDark: isDark,
+                  textColor: textColor,
+                  mutedColor: mutedColor,
+                  borderColor: borderColor,
                 ),
                 VerticalDivider(width: 1, thickness: 1, color: borderColor),
                 _PickerColumn(
                   title: 'Quartier',
                   items: districts.map((d) => d.name).toList(),
-                  selectedIndex: selectedDistrict != null ? districts.indexOf(selectedDistrict!) : -1,
+                  selectedIndex: selectedDistrict != null
+                      ? districts.indexOf(selectedDistrict!)
+                      : -1,
                   onTap: (i) => onDistrictSelected(districts[i]),
-                  isDark: isDark, textColor: textColor, mutedColor: mutedColor, borderColor: borderColor,
+                  isDark: isDark,
+                  textColor: textColor,
+                  mutedColor: mutedColor,
+                  borderColor: borderColor,
                 ),
               ],
             ),
@@ -1014,7 +1390,10 @@ class _PickerColumn extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             child: Text(title,
-                style: TextStyle(color: mutedColor, fontSize: 11, fontWeight: FontWeight.w600)),
+                style: TextStyle(
+                    color: mutedColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600)),
           ),
           Divider(color: borderColor, height: 1),
           Expanded(
@@ -1027,16 +1406,20 @@ class _PickerColumn extends StatelessWidget {
                       return GestureDetector(
                         onTap: () => onTap(i),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 10),
                           color: isSelected
-                              ? AppTheme.primaryBlue.withOpacity(0.12)
+                              ? AppTheme.primaryBlue.withValues(alpha: 0.12)
                               : Colors.transparent,
                           child: Text(
                             items[i],
                             style: TextStyle(
-                              color: isSelected ? AppTheme.primaryBlue : textColor,
+                              color:
+                                  isSelected ? AppTheme.primaryBlue : textColor,
                               fontSize: 12,
-                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                              fontWeight: isSelected
+                                  ? FontWeight.w700
+                                  : FontWeight.w400,
                             ),
                           ),
                         ),

@@ -6,6 +6,7 @@ import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/google_auth_service.dart';
 import '../services/favorite_service.dart';
+import '../services/notification_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -179,6 +180,17 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    // Désenregistrer le token FCM avant de se déconnecter
+    try {
+      final notificationService = NotificationService();
+      final fcmToken = await notificationService.getToken();
+      if (fcmToken != null) {
+        await notificationService.unregisterToken(fcmToken);
+      }
+    } catch (e) {
+      debugPrint('Erreur lors du désenregistrement du token FCM: $e');
+    }
+
     if (_token != null) {
       try {
         await _authService.logout(_token!);

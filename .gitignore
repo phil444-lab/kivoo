@@ -77,6 +77,11 @@ app.*.map.json
 backend/.env
 backend/dist/
 backend/prisma/migrations/
+backend/*firebase-adminsdk*.json
+backend/*.json
+!backend/package.json
+!backend/package-lock.json
+!backend/tsconfig.json
 
 # Web related
 lib/generated_plugin_registrant.dart

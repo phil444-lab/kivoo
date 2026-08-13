@@ -244,11 +244,15 @@ export const socialLogin = async (
       }
     } else {
       const hashedPassword = await bcrypt.hash(Math.random().toString(36).slice(-12), 12);
+      
+      // Générer un numéro de téléphone unique pour les comptes sociaux
+      const uniquePhone = `social_${providerId.slice(0, 8)}_${Date.now()}`;
+      
       user = await prisma.user.create({
         data: {
           name,
           email,
-          phone: `social_${providerId.slice(0, 10)}`,
+          phone: uniquePhone,
           password: hashedPassword,
           photo,
           verified: true,

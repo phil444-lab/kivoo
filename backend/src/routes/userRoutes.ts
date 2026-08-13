@@ -5,6 +5,7 @@ import {
   getUserReviews,
   updateUserProfile,
   deleteAccount,
+  searchSellers,
 } from '../controllers/userController.js';
 import { uploadProfilePhoto } from '../controllers/uploadController.js';
 import { protect } from '../middleware/auth.js';
@@ -14,6 +15,7 @@ import { upload } from '../middleware/upload.js';
 
 const router: Router = Router();
 
+router.get('/sellers/search', protect, searchSellers);
 router.get('/:id', getUserProfile);
 router.get('/:id/items', getUserItems);
 router.get('/:id/reviews', getUserReviews);

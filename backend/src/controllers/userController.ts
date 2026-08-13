@@ -240,6 +240,85 @@ export const deleteAccount = async (
   }
 };
 
+export const searchSellers = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const query = req.query.search as string || '';
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.limit as string, 10) || 20;
+    const skip = (page - 1) * limit;
+
+    // Chercher des utilisateurs qui ont au moins un item actif
+    const where: any = {
+      items: {
+        some: {
+          status: 'active',
+        },
+      },
+      id: {
+        not: req.user.id, // Exclure l'utilisateur actuel
+      },
+    };
+
+    if (query) {
+      where.OR = [
+        { name: { contains: query } },
+        { email: { contains: query } },
+      ];
+    }
+
+    const [users, totalItems] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          photo: true,
+          rating: true,
+          ratingCount: true,
+          verified: true,
+          location: true,
+          joinedAt: true,
+          _count: {
+            select: {
+              items: {
+                where: { status: 'active' },
+              },
+            },
+          },
+        },
+        orderBy: { name: 'asc' },
+        skip,
+        take: limit,
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limit);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        users,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalItems,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const updateUserProfile = async (
   req: AuthRequest,
   res: Response,

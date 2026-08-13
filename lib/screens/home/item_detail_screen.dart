@@ -8,7 +8,10 @@ import '../../theme/app_theme.dart';
 import '../../utils/responsive.dart';
 import '../../components/fullscreen_image_viewer.dart';
 import '../../components/phone_number_dialog.dart';
+import '../../services/conversation_service.dart';
 import 'seller_profile_screen.dart';
+import 'conversation_detail_screen.dart';
+import 'share_item_screen.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   final ItemModel item;
@@ -26,7 +29,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   Widget build(BuildContext context) {
     final isDark = Provider.of<ThemeProvider>(context).isDark;
     final textColor = isDark ? AppTheme.darkText : AppTheme.lightText;
-    final mutedColor = isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted;
+    final mutedColor =
+        isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted;
     final cardColor = isDark ? AppTheme.darkCard : AppTheme.lightCard;
     final borderColor = isDark
         ? const Color(0xFF3d4752)
@@ -35,7 +39,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final images = item.imageUrls;
 
     return Scaffold(
-      backgroundColor: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
+      backgroundColor:
+          isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
       body: SafeArea(
         bottom: false,
         child: Stack(
@@ -47,7 +52,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 SliverAppBar(
                   expandedHeight: 320,
                   pinned: true,
-                  backgroundColor: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
+                  backgroundColor: isDark
+                      ? AppTheme.darkBackground
+                      : AppTheme.lightBackground,
                   foregroundColor: textColor,
                   elevation: 0,
                   leading: Container(
@@ -57,7 +64,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
-                      icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Colors.white, size: 20),
+                      icon: const FaIcon(FontAwesomeIcons.arrowLeft,
+                          color: Colors.white, size: 20),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
@@ -70,12 +78,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
-                        icon: const FaIcon(FontAwesomeIcons.share, color: Colors.white, size: 20),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Fonctionnalité de partage bientôt disponible')),
-                          );
-                        },
+                        icon: const FaIcon(FontAwesomeIcons.share,
+                            color: Colors.white, size: 20),
+                        onPressed: () => _shareItem(),
                       ),
                     ),
                     // Favori
@@ -83,7 +88,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                       builder: (context, authProvider, _) {
                         final isFav = authProvider.isFavorite(item.id);
                         final isAuthenticated = authProvider.isAuthenticated;
-                        
+
                         return Container(
                           margin: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
@@ -92,7 +97,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           ),
                           child: IconButton(
                             icon: FaIcon(
-                              isFav ? FontAwesomeIcons.solidHeart : FontAwesomeIcons.heart,
+                              isFav
+                                  ? FontAwesomeIcons.solidHeart
+                                  : FontAwesomeIcons.heart,
                               color: isFav ? Colors.redAccent : Colors.white,
                               size: 20,
                             ),
@@ -101,7 +108,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                 // Rediriger vers la connexion si non authentifié
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Connectez-vous pour ajouter aux favoris'),
+                                    content: Text(
+                                        'Connectez-vous pour ajouter aux favoris'),
                                     backgroundColor: Colors.orange,
                                     behavior: SnackBarBehavior.floating,
                                     duration: Duration(seconds: 2),
@@ -109,10 +117,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                 );
                                 return;
                               }
-                              
+
                               final wasFavorite = isFav;
                               await authProvider.toggleFavorite(item.id);
-                              
+
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
@@ -141,7 +149,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 // Contenu
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: Responsive.padding(context, 16)),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: Responsive.padding(context, 16)),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -163,9 +172,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                             ),
                             if (item.priceType.isNotEmpty)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                                  color: AppTheme.primaryBlue
+                                      .withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
@@ -196,19 +207,25 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                         // Localisation + temps
                         Row(
                           children: [
-                            FaIcon(FontAwesomeIcons.locationDot, size: 13, color: mutedColor),
+                            FaIcon(FontAwesomeIcons.locationDot,
+                                size: 13, color: mutedColor),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 item.location,
-                                style: TextStyle(color: mutedColor, fontSize: Responsive.fontSize(context, 13)),
+                                style: TextStyle(
+                                    color: mutedColor,
+                                    fontSize: Responsive.fontSize(context, 13)),
                               ),
                             ),
-                            FaIcon(FontAwesomeIcons.clock, size: 13, color: mutedColor),
+                            FaIcon(FontAwesomeIcons.clock,
+                                size: 13, color: mutedColor),
                             const SizedBox(width: 4),
                             Text(
                               item.time,
-                              style: TextStyle(color: mutedColor, fontSize: Responsive.fontSize(context, 13)),
+                              style: TextStyle(
+                                  color: mutedColor,
+                                  fontSize: Responsive.fontSize(context, 13)),
                             ),
                           ],
                         ),
@@ -218,7 +235,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                         // Badge vedette si présent
                         if (item.featured) ...[
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                 begin: Alignment.topLeft,
@@ -230,10 +248,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const FaIcon(FontAwesomeIcons.crown, size: 12, color: Colors.white),
+                                const FaIcon(FontAwesomeIcons.crown,
+                                    size: 12, color: Colors.white),
                                 const SizedBox(width: 6),
                                 Text(
-                                  item.featureTitle.isEmpty ? 'En vedette' : item.featureTitle,
+                                  item.featureTitle.isEmpty
+                                      ? 'En vedette'
+                                      : item.featureTitle,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 12,
@@ -253,7 +274,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           borderColor: borderColor,
                           title: 'Description',
                           child: Text(
-                            item.description.isEmpty ? 'Aucune description fournie.' : item.description,
+                            item.description.isEmpty
+                                ? 'Aucune description fournie.'
+                                : item.description,
                             style: TextStyle(
                               color: mutedColor,
                               fontSize: Responsive.fontSize(context, 13),
@@ -272,20 +295,29 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           child: Column(
                             children: [
                               _buildCharacteristicRow('État', item.condition),
-                              if (item.brand.isNotEmpty) _buildCharacteristicRow('Marque', item.brand),
-                              if (item.model.isNotEmpty) _buildCharacteristicRow('Modèle', item.model),
-                              if (item.year > 0) _buildCharacteristicRow('Année', item.year.toString()),
-                              if (item.color.isNotEmpty) _buildCharacteristicRow('Couleur', item.color),
-                              if (item.categoryName.isNotEmpty) _buildCharacteristicRow('Catégorie', item.categoryName),
+                              if (item.brand.isNotEmpty)
+                                _buildCharacteristicRow('Marque', item.brand),
+                              if (item.model.isNotEmpty)
+                                _buildCharacteristicRow('Modèle', item.model),
+                              if (item.year > 0)
+                                _buildCharacteristicRow(
+                                    'Année', item.year.toString()),
+                              if (item.color.isNotEmpty)
+                                _buildCharacteristicRow('Couleur', item.color),
+                              if (item.categoryName.isNotEmpty)
+                                _buildCharacteristicRow(
+                                    'Catégorie', item.categoryName),
                               if (item.subcategoryName.isNotEmpty)
-                                _buildCharacteristicRow('Sous-catégorie', item.subcategoryName),
+                                _buildCharacteristicRow(
+                                    'Sous-catégorie', item.subcategoryName),
                             ],
                           ),
                         ),
                         const SizedBox(height: 12),
 
                         // Vendeur
-                        _buildSellerCard(isDark, cardColor, borderColor, textColor, mutedColor),
+                        _buildSellerCard(isDark, cardColor, borderColor,
+                            textColor, mutedColor),
 
                         const SizedBox(height: 120),
                       ],
@@ -294,9 +326,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 ),
               ],
             ),
-
-            // Barre d'action en bas
-            _buildBottomBar(isDark, cardColor, borderColor),
           ],
         ),
       ),
@@ -304,16 +333,18 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 
   Widget _buildImageCarousel(List<String> images) {
-      if (images.isEmpty) {
-        return Container(
-          color: isDarkFromContext ? AppTheme.darkSurface : AppTheme.lightSurface,
-          child: FaIcon(
-            FontAwesomeIcons.image,
-            size: 48,
-            color: isDarkFromContext ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-          ),
-        );
-      }
+    if (images.isEmpty) {
+      return Container(
+        color: isDarkFromContext ? AppTheme.darkSurface : AppTheme.lightSurface,
+        child: FaIcon(
+          FontAwesomeIcons.image,
+          size: 48,
+          color: isDarkFromContext
+              ? AppTheme.darkTextMuted
+              : AppTheme.lightTextMuted,
+        ),
+      );
+    }
 
     return Stack(
       children: [
@@ -333,16 +364,21 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             },
             child: PageView.builder(
               itemCount: images.length,
-              onPageChanged: (index) => setState(() => _currentImageIndex = index),
+              onPageChanged: (index) =>
+                  setState(() => _currentImageIndex = index),
               itemBuilder: (context, index) => Image.network(
                 images[index],
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
-                  color: isDarkFromContext ? AppTheme.darkSurface : AppTheme.lightSurface,
+                  color: isDarkFromContext
+                      ? AppTheme.darkSurface
+                      : AppTheme.lightSurface,
                   child: FaIcon(
                     FontAwesomeIcons.image,
                     size: 48,
-                    color: isDarkFromContext ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                    color: isDarkFromContext
+                        ? AppTheme.darkTextMuted
+                        : AppTheme.lightTextMuted,
                   ),
                 ),
               ),
@@ -363,7 +399,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               ),
               child: Text(
                 '${_currentImageIndex + 1}/${images.length}',
-                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -383,7 +422,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   height: 8,
                   margin: const EdgeInsets.symmetric(horizontal: 3),
                   decoration: BoxDecoration(
-                    color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.4),
+                    color: isActive
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 );
@@ -409,7 +450,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             child: Text(
               label,
               style: TextStyle(
-                color: isDarkFromContext ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                color: isDarkFromContext
+                    ? AppTheme.darkTextMuted
+                    : AppTheme.lightTextMuted,
                 fontSize: Responsive.fontSize(context, 13),
                 fontWeight: FontWeight.w500,
               ),
@@ -419,7 +462,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             child: Text(
               value,
               style: TextStyle(
-                color: isDarkFromContext ? AppTheme.darkText : AppTheme.lightText,
+                color:
+                    isDarkFromContext ? AppTheme.darkText : AppTheme.lightText,
                 fontSize: Responsive.fontSize(context, 13),
                 fontWeight: FontWeight.w600,
               ),
@@ -474,7 +518,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     ? Image.network(
                         item.sellerPhoto,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(isDark),
+                        errorBuilder: (context, error, stackTrace) =>
+                            _buildDefaultAvatar(isDark),
                       )
                     : _buildDefaultAvatar(isDark),
               ),
@@ -488,7 +533,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                       children: [
                         Flexible(
                           child: Text(
-                            item.sellerName.isEmpty ? 'Vendeur Kivoo' : item.sellerName,
+                            item.sellerName.isEmpty
+                                ? 'Vendeur Kivoo'
+                                : item.sellerName,
                             style: TextStyle(
                               color: textColor,
                               fontSize: Responsive.fontSize(context, 14),
@@ -520,9 +567,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                               );
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                                color:
+                                    AppTheme.primaryBlue.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -554,11 +603,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          const FaIcon(FontAwesomeIcons.star, size: 12, color: Color(0xFFF59E0B)),
+                          const FaIcon(FontAwesomeIcons.star,
+                              size: 12, color: Color(0xFFF59E0B)),
                           const SizedBox(width: 4),
                           Text(
                             item.sellerRating.toStringAsFixed(1),
-                            style: TextStyle(color: mutedColor, fontSize: Responsive.fontSize(context, 12)),
+                            style: TextStyle(
+                                color: mutedColor,
+                                fontSize: Responsive.fontSize(context, 12)),
                           ),
                         ],
                       ),
@@ -574,11 +626,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Messagerie bientôt disponible')),
-                    );
-                  },
+                  onPressed: _startConversation,
                   icon: const FaIcon(FontAwesomeIcons.comment, size: 14),
                   label: const Text('Contacter'),
                 ),
@@ -588,10 +636,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () {
                     if (item.sellerPhone.isNotEmpty) {
-                      showPhoneNumberDialog(context, phoneNumber: item.sellerPhone);
+                      showPhoneNumberDialog(context,
+                          phoneNumber: item.sellerPhone);
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Numéro de téléphone non disponible')),
+                        const SnackBar(
+                            content:
+                                Text('Numéro de téléphone non disponible')),
                       );
                     }
                   },
@@ -621,58 +672,66 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
-  Widget _buildBottomBar(bool isDark, Color cardColor, Color borderColor) {
-    return Positioned(
-      left: 0,
-      right: 0,
-      bottom: 0,
-      child: Container(
-        padding: EdgeInsets.fromLTRB(
-          Responsive.padding(context, 16),
-          12,
-          Responsive.padding(context, 16),
-          MediaQuery.of(context).padding.bottom + 12,
+  Future<void> _shareItem() async {
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Connectez-vous pour partager cet item'),
+          backgroundColor: Colors.orange,
         ),
-        decoration: BoxDecoration(
-          color: cardColor,
-          border: Border(
-            top: BorderSide(color: borderColor, width: 1),
-          ),
-        ),
-        child: Row(
-          children: [
-            // Prix
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.item.price,
-                    style: TextStyle(
-                      color: AppTheme.primaryBlue,
-                      fontSize: Responsive.fontSize(context, 18),
-                      fontWeight: FontWeight.w800,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            // Bouton contacter
-            ElevatedButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Messagerie bientôt disponible')),
-                );
-              },
-              icon: const FaIcon(FontAwesomeIcons.paperPlane, size: 14),
-              label: const Text('Contacter'),
-            ),
-          ],
-        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ShareItemScreen(item: widget.item),
       ),
     );
+  }
+
+  Future<void> _startConversation() async {
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Connectez-vous pour contacter ce vendeur')),
+      );
+      return;
+    }
+
+    final token = authProvider.token;
+    if (token == null || widget.item.sellerId.isEmpty) return;
+
+    try {
+      final response = await ConversationService().createConversation(
+        token: token,
+        participantId: widget.item.sellerId,
+      );
+
+      if (mounted && response != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ConversationDetailScreen(
+              conversation: response.conversation,
+              otherUserId: widget.item.sellerId,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error creating conversation: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erreur lors de la création de la conversation'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
 

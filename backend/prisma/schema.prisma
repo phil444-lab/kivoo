@@ -34,6 +34,7 @@ enum MessageType {
   image
   location
   contact
+  item_share
 }
 
 enum NotificationType {
@@ -75,6 +76,7 @@ model User {
   conversationParticipants ConversationParticipant[]
   messages      Message[]
   notifications Notification[]
+  pushTokens    PushToken[]
   reports       Report[]  @relation("Reporter")
   reportedIn    Report[] @relation("ReportedUser")
   reviewsModerated Report[] @relation("ReviewedBy")
@@ -285,6 +287,19 @@ model Notification {
   @@index([userId, createdAt])
   @@index([userId, read])
   @@map("notifications")
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String   @db.VarChar(25)
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @db.VarChar(200) @unique
+  platform  String   @default("android") @db.VarChar(20)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("push_tokens")
 }
 
 model Country {

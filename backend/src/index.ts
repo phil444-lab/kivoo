@@ -21,6 +21,7 @@ import conversationRoutes from './routes/conversationRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
 import featuredRoutes from './routes/featuredRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 const app = express() as Express;
 const httpServer = createServer(app);
@@ -65,6 +66,7 @@ app.use('/api/conversations', conversationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/featured', featuredRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Error handler
 app.use(errorHandler);

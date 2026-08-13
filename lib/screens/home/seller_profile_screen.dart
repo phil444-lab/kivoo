@@ -3,12 +3,15 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../models/item_model.dart';
 import '../../services/public_profile_service.dart';
+import '../../services/conversation_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/theme_provider.dart';
 import '../../utils/responsive.dart';
 import '../../components/item_card.dart';
 import '../../components/phone_number_dialog.dart';
+import '../../providers/auth_provider.dart';
 import 'item_detail_screen.dart';
+import 'conversation_detail_screen.dart';
 
 class SellerProfileScreen extends StatefulWidget {
   final String sellerId;
@@ -26,6 +29,7 @@ class SellerProfileScreen extends StatefulWidget {
 
 class _SellerProfileScreenState extends State<SellerProfileScreen> {
   final PublicProfileService _service = PublicProfileService();
+  final ConversationService _conversationService = ConversationService();
   PublicSellerProfile? _profile;
   List<ItemModel> _items = [];
   bool _loading = true;
@@ -59,6 +63,58 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
       _loadingItems = false;
       _hasError = _profile == null;
     });
+  }
+
+  Future<void> _startConversation() async {
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Connectez-vous pour contacter ce vendeur')),
+      );
+      return;
+    }
+
+    if (_items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ce vendeur n\'a aucune annonce active')),
+      );
+      return;
+    }
+
+    final token = authProvider.token;
+    if (token == null) return;
+
+    // Get the first item
+    final item = _items.first;
+
+    try {
+      final response = await _conversationService.createConversation(
+        token: token,
+        participantId: widget.sellerId,
+      );
+
+      if (mounted && response != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ConversationDetailScreen(
+              conversation: response.conversation,
+              otherUserId: widget.sellerId,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error creating conversation: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erreur lors de la création de la conversation'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -283,11 +339,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Messagerie bientôt disponible')),
-                      );
-                    },
+                    onPressed: _startConversation,
                     icon: const FaIcon(FontAwesomeIcons.comment, size: 14),
                     label: const Text('Contacter'),
                   ),

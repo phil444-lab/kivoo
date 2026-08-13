@@ -1,7 +1,8 @@
 import { Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { AuthRequest } from '../middleware/auth.js';
-import { NotFoundError, ForbiddenError } from '../utils/ApiError.js';
+import { NotFoundError, ForbiddenError, ApiError } from '../utils/ApiError.js';
+import { createAndSendNotification } from '../services/fcmService.js';
 
 export const getConversations = async (
   req: AuthRequest,
@@ -13,6 +14,9 @@ export const getConversations = async (
       where: {
         participants: {
           some: { userId: req.user.id },
+        },
+        lastMessageContent: {
+          not: null,
         },
       },
       include: {
@@ -102,10 +106,9 @@ export const createConversation = async (
   try {
     const { participantId, itemId, message } = req.body;
 
-    // Check if conversation already exists
+    // Check if conversation already exists (without itemId to have one conversation per seller)
     const existing = await prisma.conversation.findFirst({
       where: {
-        itemId,
         AND: [
           {
             participants: {
@@ -122,43 +125,58 @@ export const createConversation = async (
       include: { participants: true },
     });
 
+    let newMessage = null;
+
     if (existing) {
-      const newMessage = await prisma.message.create({
-        data: {
-          conversationId: existing.id,
-          senderId: req.user.id,
-          content: message,
-        },
-      });
+      if (message) {
+        newMessage = await prisma.message.create({
+          data: {
+            conversationId: existing.id,
+            senderId: req.user.id,
+            content: message,
+          },
+        });
 
-      const unreadCount: any = (existing.unreadCount as any) || {};
-      unreadCount[participantId] = (unreadCount[participantId] || 0) + 1;
+        const unreadCount: any = (existing.unreadCount as any) || {};
+        unreadCount[participantId] = (unreadCount[participantId] || 0) + 1;
 
-      const conversation = await prisma.conversation.update({
+        await prisma.conversation.update({
+          where: { id: existing.id },
+          data: {
+            lastMessageContent: message,
+            lastMessageSenderId: req.user.id,
+            lastMessageSentAt: new Date(),
+            unreadCount,
+          },
+        });
+      }
+
+      const conversationWithParticipants = await prisma.conversation.findUnique({
         where: { id: existing.id },
-        data: {
-          lastMessageContent: message,
-          lastMessageSenderId: req.user.id,
-          lastMessageSentAt: new Date(),
-          unreadCount,
+        include: {
+          participants: {
+            include: { user: { select: { id: true, name: true, photo: true } } },
+          },
+          item: { select: { id: true, title: true, price: true, images: true } },
         },
       });
 
       res.status(200).json({
         success: true,
-        data: { conversation, message: newMessage },
+        data: { conversation: conversationWithParticipants, message: newMessage },
       });
       return;
     }
 
-    // Create new conversation
+    // Create new conversation (without itemId to have one conversation per seller)
     const conversation = await prisma.conversation.create({
       data: {
-        itemId,
-        lastMessageContent: message,
-        lastMessageSenderId: req.user.id,
-        lastMessageSentAt: new Date(),
-        unreadCount: { [participantId]: 1 },
+        ...(message ? {
+          lastMessageContent: message,
+          lastMessageSenderId: req.user.id,
+          lastMessageSentAt: new Date(),
+          unreadCount: { [participantId]: 1 },
+        } : {}),
         participants: {
           create: [
             { userId: req.user.id },
@@ -168,17 +186,29 @@ export const createConversation = async (
       },
     });
 
-    const newMessage = await prisma.message.create({
-      data: {
-        conversationId: conversation.id,
-        senderId: req.user.id,
-        content: message,
+    if (message) {
+      newMessage = await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          senderId: req.user.id,
+          content: message,
+        },
+      });
+    }
+
+    const conversationWithParticipants = await prisma.conversation.findUnique({
+      where: { id: conversation.id },
+      include: {
+        participants: {
+          include: { user: { select: { id: true, name: true, photo: true } } },
+        },
+        item: { select: { id: true, title: true, price: true, images: true } },
       },
     });
 
     res.status(201).json({
       success: true,
-      data: { conversation, message: newMessage },
+      data: { conversation: conversationWithParticipants, message: newMessage },
     });
   } catch (error) {
     next(error);
@@ -192,7 +222,7 @@ export const sendMessage = async (
 ): Promise<void> => {
   try {
     const id = req.params.id as string;
-    const { content, type = 'text' } = req.body;
+    const { content, type = 'text', attachments } = req.body;
 
     const conversation = await prisma.conversation.findUnique({
       where: { id },
@@ -217,9 +247,31 @@ export const sendMessage = async (
         senderId: req.user.id,
         content,
         type: type as any,
+        ...(attachments ? { attachments: attachments as any } : {}),
       },
       include: { sender: { select: { id: true, name: true, photo: true } } },
     });
+
+    // Envoyer une notification push aux autres participants
+    const otherParticipants = conversation.participants.filter(
+      (p: any) => p.userId !== req.user.id
+    );
+
+    for (const participant of otherParticipants) {
+      const senderName = message.sender?.name || 'Quelqu\'un';
+      await createAndSendNotification(
+        participant.userId,
+        'message',
+        senderName,
+        content.length > 100 ? content.substring(0, 100) + '...' : content,
+        {
+          conversationId: id,
+          messageId: message.id,
+          senderId: req.user.id,
+          type: 'conversation',
+        }
+      );
+    }
 
     const unreadCount: any = (conversation.unreadCount as any) || {};
     conversation.participants.forEach((p: any) => {
@@ -232,6 +284,99 @@ export const sendMessage = async (
       where: { id },
       data: {
         lastMessageContent: content,
+        lastMessageSenderId: req.user.id,
+        lastMessageSentAt: new Date(),
+        unreadCount,
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      data: message,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const uploadMessageImage = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+
+    if (!req.file) {
+      throw new ApiError(400, 'Aucune image fournie');
+    }
+
+    const conversation = await prisma.conversation.findUnique({
+      where: { id },
+      include: { participants: { select: { userId: true } } },
+    });
+
+    if (!conversation) {
+      throw new NotFoundError('Conversation');
+    }
+
+    const isParticipant = conversation.participants.some(
+      (p: any) => p.userId === req.user.id
+    );
+
+    if (!isParticipant) {
+      throw new ForbiddenError('Not a participant of this conversation');
+    }
+
+    // Le fichier est déjà sauvegardé sur le disque par multer
+    const fileName = req.file.filename;
+
+    // Créer un message de type image avec l'attachment
+    const message = await prisma.message.create({
+      data: {
+        conversationId: id,
+        senderId: req.user.id,
+        content: '📷 Photo',
+        type: 'image',
+        attachments: {
+          image: fileName,
+        },
+      },
+      include: { sender: { select: { id: true, name: true, photo: true } } },
+    });
+
+    // Envoyer une notification push aux autres participants
+    const otherParticipants = conversation.participants.filter(
+      (p: any) => p.userId !== req.user.id
+    );
+
+    for (const participant of otherParticipants) {
+      const senderName = message.sender?.name || 'Quelqu\'un';
+      await createAndSendNotification(
+        participant.userId,
+        'message',
+        senderName,
+        '📷 Photo',
+        {
+          conversationId: id,
+          messageId: message.id,
+          senderId: req.user.id,
+          type: 'conversation',
+        }
+      );
+    }
+
+    const unreadCount: any = (conversation.unreadCount as any) || {};
+    conversation.participants.forEach((p: any) => {
+      if (p.userId !== req.user.id) {
+        unreadCount[p.userId] = (unreadCount[p.userId] || 0) + 1;
+      }
+    });
+
+    await prisma.conversation.update({
+      where: { id },
+      data: {
+        lastMessageContent: '📷 Photo',
         lastMessageSenderId: req.user.id,
         lastMessageSentAt: new Date(),
         unreadCount,

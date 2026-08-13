@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "694202781524",
+    "project_id": "kivoo-d8521",
+    "storage_bucket": "kivoo-d8521.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:694202781524:android:972574f708e460f0c002c1",
+        "android_client_info": {
+          "package_name": "com.example.kivoo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6GxVAUPIZqo0WKszbbq2cPeC2zpxNclQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/responsive.dart';
+import '../../screens/home/home_screen.dart' as home;
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -404,6 +405,13 @@ class _LoginScreenState extends State<LoginScreen> {
             duration: Duration(seconds: 2),
           ),
         );
+        // Rafraîchir le compteur de messages non lus
+        try {
+          final homeState = home.homeScreenKey.currentState;
+          await homeState?.refreshUnreadCount();
+        } catch (e) {
+          debugPrint('Error refreshing unread count: $e');
+        }
         // Retourner à l'écran précédent (ProfileScreen)
         Navigator.pop(context);
       }
@@ -443,6 +451,13 @@ class _LoginScreenState extends State<LoginScreen> {
             duration: Duration(seconds: 2),
           ),
         );
+        // Rafraîchir le compteur de messages non lus
+        try {
+          final homeState = home.homeScreenKey.currentState;
+          await homeState?.refreshUnreadCount();
+        } catch (e) {
+          debugPrint('Error refreshing unread count: $e');
+        }
         // Retourner à l'écran précédent (ProfileScreen) qui se reconstruira
         // avec l'état authentifié grâce à AuthProvider
         Navigator.pop(context);
