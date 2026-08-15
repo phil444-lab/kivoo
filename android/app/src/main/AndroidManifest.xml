@@ -44,6 +44,16 @@
             android:name="com.google.android.gms.oauth2.CLIENT_ID"
             android:value="329144921089-3lkhb9dv7umhbtnolfjitd1fvaar0q1t.apps.googleusercontent.com" />
         
+        <!-- Icône de notification par défaut (Monochrome + Fond Transparent) -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+
+        <!-- Couleur d'accentuation du badge (ex: le bleu) -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_color" />
+
         <!-- Firebase Messaging Service -->
         <service
             android:name="com.google.firebase.messaging.FirebaseMessagingService"

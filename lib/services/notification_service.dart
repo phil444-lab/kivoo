@@ -93,7 +93,7 @@ class NotificationService {
   /// Initialise le plugin de notifications locales
   Future<void> _initLocalNotifications() async {
     // Créer le canal de notification Android (requis pour Android 8.0+)
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings('ic_notification');
     const initSettings = InitializationSettings(
       android: androidSettings,
       iOS: DarwinInitializationSettings(),
