@@ -22,6 +22,7 @@ import userRoutes from './routes/userRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
 import featuredRoutes from './routes/featuredRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import { startCleanupJobs } from './jobs/cleanupJob.js';
 
 const app = express() as Express;
 const httpServer = createServer(app);
@@ -104,6 +105,9 @@ prisma
       console.log(`Server running on port ${config.port}`);
       console.log(`Environment: ${config.nodeEnv}`);
     });
+
+    // Démarrer les jobs de nettoyage (sessions expirées, notifications >90j)
+    startCleanupJobs();
   })
   .catch((error: any) => {
     console.error('Database connection error:', error);
