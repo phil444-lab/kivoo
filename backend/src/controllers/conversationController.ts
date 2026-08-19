@@ -3,6 +3,7 @@ import prisma from '../lib/prisma.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { NotFoundError, ForbiddenError, ApiError } from '../utils/ApiError.js';
 import { createAndSendNotification } from '../services/fcmService.js';
+import { uploadToCloudinary } from '../services/cloudinaryService.js';
 
 export const getConversations = async (
   req: AuthRequest,
@@ -328,8 +329,11 @@ export const uploadMessageImage = async (
       throw new ForbiddenError('Not a participant of this conversation');
     }
 
-    // Le fichier est déjà sauvegardé sur le disque par multer
-    const fileName = req.file.filename;
+    // Uploader l'image vers Cloudinary
+    const { secureUrl } = await uploadToCloudinary(
+      req.file.buffer,
+      'kivoo/messages'
+    );
 
     // Créer un message de type image avec l'attachment
     const message = await prisma.message.create({
@@ -339,7 +343,7 @@ export const uploadMessageImage = async (
         content: '📷 Photo',
         type: 'image',
         attachments: {
-          image: fileName,
+          image: secureUrl,
         },
       },
       include: { sender: { select: { id: true, name: true, photo: true } } },

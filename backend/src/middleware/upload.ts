@@ -1,25 +1,9 @@
 import multer from 'multer';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { ValidationError } from '../utils/ApiError.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Configuration de multer pour sauvegarder les fichiers sur le disque
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../../uploads');
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    // Générer un nom unique avec timestamp et UUID
-    const timestamp = Date.now();
-    const ext = path.extname(file.originalname).toLowerCase();
-    const uniqueName = `${timestamp}-${crypto.randomUUID()}${ext}`;
-    cb(null, uniqueName);
-  },
-});
+// Configuration de multer pour garder les fichiers en mémoire
+// (ils seront uploadés vers Cloudinary par les contrôleurs)
+const storage = multer.memoryStorage();
 
 const fileFilter = (
   _req: any,

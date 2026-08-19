@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import prisma from '../lib/prisma.js';
 import { NotFoundError, ApiError, ValidationError } from '../utils/ApiError.js';
 import { AuthRequest } from '../middleware/auth.js';
-import { deleteUploadedFile, deleteUploadedFiles, extractImageNames } from '../utils/fileCleanup.js';
+import { deleteFromCloudinary, deleteManyFromCloudinary, extractCloudinaryImageIds } from '../services/cloudinaryService.js';
 
 export const getUserProfile = async (
   req: Request,
@@ -173,15 +173,15 @@ export const deleteAccount = async (
       select: { images: true },
     });
 
-    // Supprimer la photo de profil physique
+    // Supprimer la photo de profil Cloudinary
     if (user?.photo) {
-      deleteUploadedFile(user.photo);
+      await deleteFromCloudinary(user.photo);
     }
 
-    // Supprimer les fichiers physiques des images de tous les items
+    // Supprimer les images Cloudinary de tous les items
     for (const item of userItems) {
-      const imageNames = extractImageNames(item.images);
-      deleteUploadedFiles(imageNames);
+      const imageNames = extractCloudinaryImageIds(item.images);
+      await deleteManyFromCloudinary(imageNames);
     }
 
     // Supprimer toutes les données liées à l'utilisateur

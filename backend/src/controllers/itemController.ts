@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { ApiError, NotFoundError, ForbiddenError } from '../utils/ApiError.js';
-import { deleteUploadedFiles, extractImageNames } from '../utils/fileCleanup.js';
+import { uploadToCloudinary, deleteManyFromCloudinary, extractCloudinaryImageIds } from '../services/cloudinaryService.js';
 
 export const getMyItems = async (
   req: AuthRequest,
@@ -280,7 +280,12 @@ export const createItem = async (
     if (files.length < 3) {
       throw new ApiError(400, 'Au moins 3 photos sont requises');
     }
-    const images = files.map((f) => f.filename);
+
+    // Uploader les images vers Cloudinary
+    const uploadedImages = await Promise.all(
+      files.map((file) => uploadToCloudinary(file.buffer, 'kivoo/items'))
+    );
+    const images = uploadedImages.map((img) => img.secureUrl);
 
     // Convertir les champs numériques reçus en string (multipart/form-data)
     const price = rest.price !== undefined ? Number(rest.price) : undefined;
@@ -361,7 +366,12 @@ export const updateItem = async (
     // - keepImages : liste des images existantes à conserver (JSON string ou array)
     // - files : nouvelles images uploadées
     const files = (req.files as Express.Multer.File[]) || [];
-    const newImages = files.map((f) => f.filename);
+
+    // Uploader les nouvelles images vers Cloudinary
+    const newImages = await Promise.all(
+      files.map((file) => uploadToCloudinary(file.buffer, 'kivoo/items'))
+    );
+    const newImageUrls = newImages.map((img) => img.secureUrl);
 
     // Décoder keepImages (peut être un JSON string en multipart, ou un array en JSON)
     let keptImages: string[] = [];
@@ -378,16 +388,16 @@ export const updateItem = async (
 
     // Images finales = conservées + nouvelles
     let images: string[] | null = null;
-    if (keptImages.length > 0 || newImages.length > 0) {
-      images = [...keptImages, ...newImages];
+    if (keptImages.length > 0 || newImageUrls.length > 0) {
+      images = [...keptImages, ...newImageUrls];
     }
 
-    // Supprimer les fichiers physiques des anciennes images qui ne sont plus conservées
-    const oldImageNames = extractImageNames(item.images);
+    // Supprimer les anciennes images Cloudinary qui ne sont plus conservées
+    const oldImageNames = extractCloudinaryImageIds(item.images);
     const imagesToDelete = oldImageNames.filter(
       (oldImg) => !keptImages.includes(oldImg)
     );
-    deleteUploadedFiles(imagesToDelete);
+    await deleteManyFromCloudinary(imagesToDelete);
 
     const updated = await prisma.item.update({
       where: { id: req.params.id as string },
@@ -437,9 +447,9 @@ export const deleteItem = async (
 
     const itemId = req.params.id as string;
 
-    // Supprimer les fichiers physiques des images de l'item
-    const imageNames = extractImageNames(item.images);
-    deleteUploadedFiles(imageNames);
+    // Supprimer les images Cloudinary de l'item
+    const imageNames = extractCloudinaryImageIds(item.images);
+    await deleteManyFromCloudinary(imageNames);
 
     // Supprimer explicitement toutes les dépendances liées à l'item
     // (les contraintes onDelete: Cascade ne sont pas toujours appliquées en base)
