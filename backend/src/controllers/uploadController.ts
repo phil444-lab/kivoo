@@ -4,6 +4,7 @@ import prisma from '../lib/prisma.js';
 import { upload } from '../middleware/upload.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { ApiError } from '../utils/ApiError.js';
+import { deleteUploadedFile } from '../utils/fileCleanup.js';
 
 export const uploadProfilePhoto = async (
   req: AuthRequest,
@@ -41,6 +42,12 @@ export const uploadProfilePhoto = async (
     console.log('📸 Photo uploadée:', fileName);
     console.log('📸 MIME type:', mimeType);
 
+    // Récupérer l'ancienne photo pour la supprimer après mise à jour
+    const existingUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: { photo: true },
+    });
+
     // Mettre à jour la photo de l'utilisateur avec le nom du fichier
     const user = await prisma.user.update({
       where: { id: req.user!.id },
@@ -59,6 +66,11 @@ export const uploadProfilePhoto = async (
         preferences: true,
       },
     });
+
+    // Supprimer l'ancienne photo de profil physique (si elle existe et est différente)
+    if (existingUser?.photo && existingUser.photo !== fileName) {
+      deleteUploadedFile(existingUser.photo);
+    }
 
     res.status(200).json({
       success: true,

@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import prisma from '../lib/prisma.js';
 import { NotFoundError, ApiError, ValidationError } from '../utils/ApiError.js';
 import { AuthRequest } from '../middleware/auth.js';
+import { deleteUploadedFile, deleteUploadedFiles, extractImageNames } from '../utils/fileCleanup.js';
 
 export const getUserProfile = async (
   req: Request,
@@ -160,6 +161,28 @@ export const deleteAccount = async (
 ): Promise<void> => {
   try {
     const userId = req.user!.id;
+
+    // Récupérer l'utilisateur et ses items pour supprimer les fichiers physiques
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { photo: true },
+    });
+
+    const userItems = await prisma.item.findMany({
+      where: { sellerId: userId },
+      select: { images: true },
+    });
+
+    // Supprimer la photo de profil physique
+    if (user?.photo) {
+      deleteUploadedFile(user.photo);
+    }
+
+    // Supprimer les fichiers physiques des images de tous les items
+    for (const item of userItems) {
+      const imageNames = extractImageNames(item.images);
+      deleteUploadedFiles(imageNames);
+    }
 
     // Supprimer toutes les données liées à l'utilisateur
     // L'ordre est important pour respecter les contraintes de clés étrangères

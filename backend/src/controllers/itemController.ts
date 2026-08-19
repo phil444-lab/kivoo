@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { ApiError, NotFoundError, ForbiddenError } from '../utils/ApiError.js';
+import { deleteUploadedFiles, extractImageNames } from '../utils/fileCleanup.js';
 
 export const getMyItems = async (
   req: AuthRequest,
@@ -381,6 +382,13 @@ export const updateItem = async (
       images = [...keptImages, ...newImages];
     }
 
+    // Supprimer les fichiers physiques des anciennes images qui ne sont plus conservées
+    const oldImageNames = extractImageNames(item.images);
+    const imagesToDelete = oldImageNames.filter(
+      (oldImg) => !keptImages.includes(oldImg)
+    );
+    deleteUploadedFiles(imagesToDelete);
+
     const updated = await prisma.item.update({
       where: { id: req.params.id as string },
       data: {
@@ -428,6 +436,10 @@ export const deleteItem = async (
     }
 
     const itemId = req.params.id as string;
+
+    // Supprimer les fichiers physiques des images de l'item
+    const imageNames = extractImageNames(item.images);
+    deleteUploadedFiles(imageNames);
 
     // Supprimer explicitement toutes les dépendances liées à l'item
     // (les contraintes onDelete: Cascade ne sont pas toujours appliquées en base)
