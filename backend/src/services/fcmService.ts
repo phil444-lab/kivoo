@@ -15,7 +15,6 @@ async function initFirebase() {
   const serviceAccountPath = config.firebase.serviceAccountPath;
 
   if (!serviceAccountJson && !serviceAccountPath) {
-    console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_JSON ou FIREBASE_SERVICE_ACCOUNT_PATH non défini. Les notifications push sont désactivées.');
     return;
   }
 
@@ -39,7 +38,6 @@ async function initFirebase() {
         : path.resolve(__dirname, '../../', serviceAccountPath);
 
       if (!fs.existsSync(absolutePath)) {
-        console.error(`❌ Fichier de service account non trouvé: ${absolutePath}`);
         return;
       }
 
@@ -50,9 +48,8 @@ async function initFirebase() {
       credential: cert(serviceAccount),
     });
     initialized = true;
-    console.log('🔥 Firebase Admin SDK initialisé');
   } catch (error) {
-    console.error('❌ Erreur lors de l\'initialisation de Firebase Admin SDK:', error);
+    // Erreur silencieuse - Firebase est best-effort
   }
 }
 
@@ -93,7 +90,6 @@ export async function sendPushNotification(
   await initFirebase();
 
   if (!initialized) {
-    console.warn('⚠️ Firebase non initialisé, notification non envoyée');
     return;
   }
 
@@ -105,7 +101,6 @@ export async function sendPushNotification(
     });
 
     if (tokens.length === 0) {
-      console.log(`📭 Aucun token push pour l'utilisateur ${userId} (notification "${title}" non envoyée)`);
       return;
     }
 
@@ -130,8 +125,6 @@ export async function sendPushNotification(
 
     const response = await getMessaging().sendEachForMulticast(message);
 
-    console.log(`🔥 Notification envoyée: ${response.successCount} succès, ${response.failureCount} échecs`);
-
     // Supprimer les tokens invalides
     if (response.failureCount > 0) {
       const invalidTokens: string[] = [];
@@ -145,11 +138,10 @@ export async function sendPushNotification(
         await prisma.pushToken.deleteMany({
           where: { token: { in: invalidTokens } },
         });
-        console.log(`🗑️ ${invalidTokens.length} tokens invalides supprimés`);
       }
     }
   } catch (error) {
-    console.error('❌ Erreur lors de l\'envoi de la notification push:', error);
+    // Erreur silencieuse - les notifications push sont best-effort
   }
 }
 
@@ -185,6 +177,6 @@ export async function createAndSendNotification(
 
     await sendPushNotification(userId, title, message, pushData);
   } catch (error) {
-    console.error('❌ Erreur lors de la création de la notification:', error);
+    // Erreur silencieuse - la création de notification est best-effort
   }
 }

@@ -24,16 +24,31 @@ const hashToken = (token: string): string => {
   return crypto.createHash('sha256').update(token).digest('hex');
 };
 
+// Convertit une durée JWT (ex: '15m', '1h', '7d') en millisecondes
+const parseDurationToMs = (duration: string): number => {
+  const match = duration.match(/^(\d+)([smhd])$/);
+  if (!match) return 15 * 60 * 1000; // défaut : 15 minutes
+  
+  const value = parseInt(match[1], 10);
+  const unit = match[2];
+  
+  switch (unit) {
+    case 's': return value * 1000;
+    case 'm': return value * 60 * 1000;
+    case 'h': return value * 60 * 60 * 1000;
+    case 'd': return value * 24 * 60 * 60 * 1000;
+    default: return 15 * 60 * 1000;
+  }
+};
+
 const getTokenExpiry = (): Date => {
   const expiry = config.jwt.expiresIn as string;
-  const days = parseInt(expiry) || 7;
-  return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  return new Date(Date.now() + parseDurationToMs(expiry));
 };
 
 const getRefreshTokenExpiry = (): Date => {
   const expiry = config.jwt.refreshExpiresIn as string;
-  const days = parseInt(expiry) || 30;
-  return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  return new Date(Date.now() + parseDurationToMs(expiry));
 };
 
 const createSession = async (userId: string, token: string, refreshToken: string, req: Request) => {
@@ -414,7 +429,6 @@ export const updateProfile = async (
         },
       });
       if (existingEmail) {
-        console.log('❌ Email déjà utilisé:', email);
         throw new ValidationError('Cet email est déjà utilisé par un autre compte');
       }
     }
@@ -428,7 +442,6 @@ export const updateProfile = async (
         },
       });
       if (existingPhone) {
-        console.log('❌ Téléphone déjà utilisé:', phone);
         throw new ValidationError('Ce numéro de téléphone est déjà utilisé par un autre compte');
       }
     }
@@ -455,15 +468,9 @@ export const updateProfile = async (
       data: user,
     });
   } catch (error: any) {
-    console.error('❌ Erreur updateProfile:', error);
-    console.error('Error code:', error.code);
-    console.error('Error message:', error.message);
-    
     // Gérer les erreurs Prisma de contrainte unique
     if (error.code === 'P2002') {
-      console.log('⚠️ Contrainte unique violée');
       const field = error.meta?.target?.[0] || 'champ';
-      console.log('📋 Champ en conflit:', field);
       
       if (field === 'email') {
         return next(new ValidationError('Cet email est déjà utilisé par un autre compte'));

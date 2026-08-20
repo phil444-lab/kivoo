@@ -46,7 +46,6 @@ export const uploadToCloudinary = async (
       uploadOptions,
       (error, result) => {
         if (error) {
-          console.error('❌ Erreur Cloudinary upload:', error);
           reject(new ApiError(500, 'Erreur lors de l\'upload vers Cloudinary'));
           return;
         }
@@ -54,7 +53,6 @@ export const uploadToCloudinary = async (
           reject(new ApiError(500, 'Erreur Cloudinary: aucun résultat'));
           return;
         }
-        console.log('✅ Cloudinary upload réussi:', result.secure_url);
         resolve({
           secureUrl: result.secure_url,
           publicId: result.public_id,
@@ -73,7 +71,6 @@ export const deleteFromCloudinary = async (
   publicIdOrUrl: string
 ): Promise<void> => {
   if (!config.cloudinary.cloudName || !config.cloudinary.apiKey || !config.cloudinary.apiSecret) {
-    console.warn('⚠️ Cloudinary non configuré, suppression ignorée');
     return;
   }
 
@@ -93,14 +90,9 @@ export const deleteFromCloudinary = async (
   }
 
   try {
-    const result = await cloudinary.uploader.destroy(publicId);
-    if (result.result === 'ok') {
-      console.log(`🗑️ Cloudinary suppression réussie: ${publicId}`);
-    } else {
-      console.warn(`⚠️ Cloudinary suppression (${result.result}): ${publicId}`);
-    }
+    await cloudinary.uploader.destroy(publicId);
   } catch (error) {
-    console.error(`❌ Erreur Cloudinary suppression (${publicId}):`, error);
+    // Erreur silencieuse - la suppression Cloudinary est best-effort
   }
 };
 

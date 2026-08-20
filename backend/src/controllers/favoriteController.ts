@@ -86,7 +86,7 @@ export const addFavorite = async (
     });
 
     if (existing) {
-      throw new ValidationError('Item already in favorites');
+      throw new ValidationError('Cette annonce est déjà dans vos favoris');
     }
 
     await prisma.favorite.create({
@@ -100,7 +100,7 @@ export const addFavorite = async (
 
     res.status(201).json({
       success: true,
-      message: 'Item added to favorites',
+      message: 'Annonce ajoutée aux favoris',
     });
   } catch (error) {
     next(error);
@@ -134,7 +134,7 @@ export const removeFavorite = async (
 
     res.status(200).json({
       success: true,
-      message: 'Item removed from favorites',
+      message: 'Annonce retirée des favoris',
     });
   } catch (error) {
     next(error);

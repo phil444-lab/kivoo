@@ -14,10 +14,9 @@ export const deleteUploadedFile = (fileName: string): void => {
   try {
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
-      console.log(`🗑️ Fichier supprimé: ${safeName}`);
     }
   } catch (error) {
-    console.error(`❌ Erreur suppression ${safeName}:`, error);
+    // Erreur silencieuse - la suppression de fichier est best-effort
   }
 };
 

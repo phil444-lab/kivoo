@@ -26,21 +26,13 @@ const fileFilter = (
   const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif', '.bmp', '.tiff'];
   const fileExtension = file.originalname.toLowerCase().substring(file.originalname.lastIndexOf('.'));
 
-  console.log('📁 Uploaded file MIME type:', file.mimetype);
-  console.log('📁 File name:', file.originalname);
-  console.log('📁 File extension:', fileExtension);
-  console.log('✅ Allowed types:', allowedTypes);
-  console.log('✅ Allowed extensions:', allowedExtensions);
-
   const hasValidMimeType = allowedTypes.includes(file.mimetype);
   const hasValidExtension = allowedExtensions.includes(fileExtension);
 
   if (hasValidMimeType || hasValidExtension) {
-    console.log('✅ File accepted');
     cb(null, true);
   } else {
-    console.log('❌ File rejected - MIME type not allowed:', file.mimetype);
-    cb(new ValidationError(`Only JPEG, PNG, WebP and GIF images are allowed. Received MIME: ${file.mimetype}, Extension: ${fileExtension}`));
+    cb(new ValidationError(`Seules les images JPEG, PNG, WebP et GIF sont autorisées. Reçu : ${file.mimetype}`));
   }
 };
 

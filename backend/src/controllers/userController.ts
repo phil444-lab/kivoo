@@ -28,7 +28,7 @@ export const getUserProfile = async (
     });
 
     if (!user) {
-      throw new NotFoundError('User');
+      throw new NotFoundError('Utilisateur');
     }
 
     const [itemsListed, itemsSold] = await Promise.all([
@@ -67,6 +67,10 @@ export const getUserItems = async (
 
     const where: any = { sellerId: userId };
     if (status !== 'all') where.status = status;
+    // Ne pas exposer les annonces en attente ou expirées aux autres utilisateurs
+    if (status === 'all') {
+      where.status = { in: ['active', 'sold'] };
+    }
 
     const [items, totalItems] = await Promise.all([
       prisma.item.findMany({
@@ -257,8 +261,7 @@ export const deleteAccount = async (
       success: true,
       message: 'Compte supprimé avec succès',
     });
-  } catch (error: any) {
-    console.error('❌ Erreur deleteAccount:', error);
+  } catch (error) {
     next(error);
   }
 };
@@ -383,7 +386,6 @@ export const updateUserProfile = async (
         },
       });
       if (existingEmail) {
-        console.log('❌ Email déjà utilisé:', email);
         throw new ValidationError('Cet email est déjà utilisé par un autre compte');
       }
     }
@@ -397,7 +399,6 @@ export const updateUserProfile = async (
         },
       });
       if (existingPhone) {
-        console.log('❌ Téléphone déjà utilisé:', phone);
         throw new ValidationError('Ce numéro de téléphone est déjà utilisé par un autre compte');
       }
     }
@@ -451,15 +452,9 @@ export const updateUserProfile = async (
       data: updatedUser,
     });
   } catch (error: any) {
-    console.error('❌ Erreur updateUserProfile:', error);
-    console.error('Error code:', error.code);
-    console.error('Error message:', error.message);
-    
     // Gérer les erreurs Prisma de contrainte unique
     if (error.code === 'P2002') {
-      console.log('⚠️ Contrainte unique violée');
       const field = error.meta?.target?.[0] || 'champ';
-      console.log('📋 Champ en conflit:', field);
       
       if (field === 'email') {
         return next(new ValidationError('Cet email est déjà utilisé par un autre compte'));

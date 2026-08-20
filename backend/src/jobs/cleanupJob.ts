@@ -7,10 +7,9 @@ const prisma = new PrismaClient();
  */
 async function cleanupSessions() {
   const now = new Date();
-  const deleted = await prisma.session.deleteMany({
+  await prisma.session.deleteMany({
     where: { expiresAt: { lt: now } },
   });
-  console.log(`[cleanup] Sessions expirées supprimées : ${deleted.count}`);
 }
 
 /**
@@ -19,10 +18,9 @@ async function cleanupSessions() {
 async function cleanupNotifications() {
   const ninetyDaysAgo = new Date();
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-  const deleted = await prisma.notification.deleteMany({
+  await prisma.notification.deleteMany({
     where: { createdAt: { lt: ninetyDaysAgo } },
   });
-  console.log(`[cleanup] Notifications anciennes (>90j) supprimées : ${deleted.count}`);
 }
 
 /**
@@ -33,7 +31,7 @@ async function runCleanup() {
     await cleanupSessions();
     await cleanupNotifications();
   } catch (error) {
-    console.error('[cleanup] Erreur pendant le nettoyage :', error);
+    // Erreur silencieuse - le nettoyage est best-effort
   }
 }
 
@@ -46,6 +44,4 @@ export function startCleanupJobs() {
 
   // Puis toutes les heures (3 600 000 ms)
   setInterval(runCleanup, 3_600_000);
-
-  console.log('[cleanup] Jobs de nettoyage planifiés (toutes les heures)');
 }

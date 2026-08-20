@@ -65,7 +65,7 @@ export const getMessages = async (
     );
 
     if (!isParticipant) {
-      throw new ForbiddenError('Not a participant of this conversation');
+      throw new ForbiddenError('Vous n\'êtes pas autorisé à accéder à cette conversation');
     }
 
     const [messages, totalItems] = await Promise.all([
@@ -239,7 +239,7 @@ export const sendMessage = async (
     );
 
     if (!isParticipant) {
-      throw new ForbiddenError('Not a participant of this conversation');
+      throw new ForbiddenError('Vous n\'êtes pas autorisé à envoyer un message dans cette conversation');
     }
 
     const message = await prisma.message.create({
@@ -326,7 +326,7 @@ export const uploadMessageImage = async (
     );
 
     if (!isParticipant) {
-      throw new ForbiddenError('Not a participant of this conversation');
+      throw new ForbiddenError('Vous n\'êtes pas autorisé à envoyer une image dans cette conversation');
     }
 
     // Uploader l'image vers Cloudinary
@@ -406,10 +406,20 @@ export const markAsRead = async (
 
     const conversation = await prisma.conversation.findUnique({
       where: { id },
+      include: { participants: { select: { userId: true } } },
     });
 
     if (!conversation) {
       throw new NotFoundError('Conversation');
+    }
+
+    // Vérifier que l'utilisateur est bien participant
+    const isParticipant = conversation.participants.some(
+      (p: any) => p.userId === req.user.id
+    );
+
+    if (!isParticipant) {
+      throw new ForbiddenError('Vous n\'êtes pas autorisé à accéder à cette conversation');
     }
 
     const unreadCount: any = (conversation.unreadCount as any) || {};
@@ -434,7 +444,7 @@ export const markAsRead = async (
 
     res.status(200).json({
       success: true,
-      message: 'Messages marked as read',
+      message: 'Messages marqués comme lus',
     });
   } catch (error) {
     next(error);

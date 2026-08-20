@@ -11,25 +11,25 @@ export class ApiError extends Error {
 }
 
 export class NotFoundError extends ApiError {
-  constructor(resource: string = 'Resource') {
-    super(404, `${resource} not found`);
+  constructor(resource: string = 'Ressource') {
+    super(404, `${resource} introuvable`);
   }
 }
 
 export class UnauthorizedError extends ApiError {
-  constructor(message: string = 'Unauthorized access') {
+  constructor(message: string = 'Accès non autorisé') {
     super(401, message);
   }
 }
 
 export class ForbiddenError extends ApiError {
-  constructor(message: string = 'Forbidden access') {
+  constructor(message: string = 'Accès refusé') {
     super(403, message);
   }
 }
 
 export class ValidationError extends ApiError {
-  constructor(message: string = 'Validation failed') {
+  constructor(message: string = 'Erreur de validation') {
     super(400, message);
   }
 }

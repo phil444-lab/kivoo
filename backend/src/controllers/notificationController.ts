@@ -74,7 +74,7 @@ export const markNotificationAsRead = async (
 
     res.status(200).json({
       success: true,
-      message: 'Notification marked as read',
+      message: 'Notification marquée comme lue',
     });
   } catch (error) {
     next(error);
@@ -97,7 +97,7 @@ export const markAllNotificationsAsRead = async (
 
     res.status(200).json({
       success: true,
-      message: 'All notifications marked as read',
+      message: 'Toutes les notifications ont été marquées comme lues',
     });
   } catch (error) {
     next(error);

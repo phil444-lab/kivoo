@@ -17,8 +17,6 @@ const io = new Server(httpServer, {
 
 // Socket.io connection handling
 io.on('connection', (socket: any) => {
-  console.log('User connected:', socket.id);
-
   socket.on('join-conversation', (conversationId: string) => {
     socket.join(`conversation:${conversationId}`);
   });
@@ -35,7 +33,7 @@ io.on('connection', (socket: any) => {
   });
 
   socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
+    // Déconnexion silencieuse
   });
 });
 
@@ -43,17 +41,15 @@ io.on('connection', (socket: any) => {
 prisma
   .$connect()
   .then(() => {
-    console.log('Connected to MySQL database');
     httpServer.listen(config.port, () => {
-      console.log(`Server running on port ${config.port}`);
-      console.log(`Environment: ${config.nodeEnv}`);
+      console.log(`Kivoo API démarrée sur le port ${config.port} (${config.nodeEnv})`);
     });
 
     // Démarrer les jobs de nettoyage (sessions expirées, notifications >90j)
     startCleanupJobs();
   })
   .catch((error: any) => {
-    console.error('Database connection error:', error);
+    console.error('Erreur de connexion à la base de données:', error);
     process.exit(1);
   });
 

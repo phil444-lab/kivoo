@@ -20,8 +20,6 @@ export const uploadProfilePhoto = async (
       'kivoo/profiles'
     );
 
-    console.log('📸 Photo uploadée vers Cloudinary:', secureUrl);
-
     // Récupérer l'ancienne photo pour la supprimer après mise à jour
     const existingUser = await prisma.user.findUnique({
       where: { id: req.user!.id },

@@ -244,9 +244,8 @@ export const getItem = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const item = await prisma.item.update({
+    const item = await prisma.item.findUnique({
       where: { id: req.params.id as string },
-      data: { views: { increment: 1 } },
       include: {
         category: { select: { id: true, name: true } },
         subcategory: { select: { id: true, name: true } },
@@ -257,6 +256,24 @@ export const getItem = async (
         district: { select: { id: true, name: true } },
       },
     });
+
+    if (!item) {
+      throw new NotFoundError('Annonce');
+    }
+
+    // Ne pas exposer les annonces en attente ou expirées aux utilisateurs non propriétaires
+    const isOwner = (req as any).user?.id === item.sellerId;
+    if (!isOwner && item.status !== 'active' && item.status !== 'sold') {
+      throw new NotFoundError('Annonce');
+    }
+
+    // Incrémenter les vues uniquement pour les annonces actives
+    if (item.status === 'active') {
+      await prisma.item.update({
+        where: { id: item.id },
+        data: { views: { increment: 1 } },
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -346,11 +363,11 @@ export const updateItem = async (
     });
 
     if (!item) {
-      throw new NotFoundError('Item');
+      throw new NotFoundError('Annonce');
     }
 
     if (item.sellerId !== req.user.id) {
-      throw new ForbiddenError('Not authorized to update this item');
+      throw new ForbiddenError('Vous n\'êtes pas autorisé à modifier cette annonce');
     }
 
     const { featureId, keepImages, ...rest } = req.body;
@@ -438,11 +455,11 @@ export const deleteItem = async (
     });
 
     if (!item) {
-      throw new NotFoundError('Item');
+      throw new NotFoundError('Annonce');
     }
 
     if (item.sellerId !== req.user.id) {
-      throw new ForbiddenError('Not authorized to delete this item');
+      throw new ForbiddenError('Vous n\'êtes pas autorisé à supprimer cette annonce');
     }
 
     const itemId = req.params.id as string;
@@ -494,11 +511,11 @@ export const deactivateItem = async (
     });
 
     if (!item) {
-      throw new NotFoundError('Item');
+      throw new NotFoundError('Annonce');
     }
 
     if (item.sellerId !== req.user.id) {
-      throw new ForbiddenError('Not authorized to deactivate this item');
+      throw new ForbiddenError('Vous n\'êtes pas autorisé à désactiver cette annonce');
     }
 
     // Changer le statut de 'active' à 'pending'
@@ -532,11 +549,11 @@ export const activateItem = async (
     });
 
     if (!item) {
-      throw new NotFoundError('Item');
+      throw new NotFoundError('Annonce');
     }
 
     if (item.sellerId !== req.user.id) {
-      throw new ForbiddenError('Not authorized to activate this item');
+      throw new ForbiddenError('Vous n\'êtes pas autorisé à activer cette annonce');
     }
 
     // Changer le statut de 'pending' à 'active'
@@ -571,11 +588,11 @@ export const boostItem = async (
     });
 
     if (!item) {
-      throw new NotFoundError('Item');
+      throw new NotFoundError('Annonce');
     }
 
     if (item.sellerId !== req.user.id) {
-      throw new ForbiddenError('Not authorized to boost this item');
+      throw new ForbiddenError('Vous n\'êtes pas autorisé à booster cette annonce');
     }
 
     const boostUntil = new Date(Date.now() + duration * 24 * 60 * 60 * 1000);
