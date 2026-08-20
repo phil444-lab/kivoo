@@ -85,6 +85,7 @@ backend/*.json
 !backend/package.json
 !backend/package-lock.json
 !backend/tsconfig.json
+!backend/vercel.json
 
 # Web related
 lib/generated_plugin_registrant.dart

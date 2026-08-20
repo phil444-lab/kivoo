@@ -1,39 +1,50 @@
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import prisma from '../lib/prisma.js';
 import config from '../config/index.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Initialiser Firebase Admin SDK
 let initialized = false;
 
-function initFirebase() {
+async function initFirebase() {
   if (initialized) return;
 
+  // Supporte à la fois FIREBASE_SERVICE_ACCOUNT_JSON (contenu JSON) 
+  // et FIREBASE_SERVICE_ACCOUNT_PATH (chemin de fichier, pour le dev local)
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   const serviceAccountPath = config.firebase.serviceAccountPath;
-  if (!serviceAccountPath) {
-    console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_PATH non défini. Les notifications push sont désactivées.');
+
+  if (!serviceAccountJson && !serviceAccountPath) {
+    console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_JSON ou FIREBASE_SERVICE_ACCOUNT_PATH non défini. Les notifications push sont désactivées.');
     return;
   }
 
   try {
-    // Résoudre le chemin (relatif par rapport au dossier backend/)
-    const absolutePath = path.isAbsolute(serviceAccountPath)
-      ? serviceAccountPath
-      : path.resolve(__dirname, '../../', serviceAccountPath);
+    let serviceAccount: any;
 
-    if (!fs.existsSync(absolutePath)) {
-      console.error(`❌ Fichier de service account non trouvé: ${absolutePath}`);
-      return;
+    if (serviceAccountJson) {
+      // Mode Vercel : le JSON est passé en variable d'environnement
+      serviceAccount = JSON.parse(serviceAccountJson);
+    } else {
+      // Mode développement local : charger depuis le fichier
+      const fs = await import('fs');
+      const path = await import('path');
+      const { fileURLToPath } = await import('url');
+      
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = path.dirname(__filename);
+      
+      const absolutePath = path.isAbsolute(serviceAccountPath)
+        ? serviceAccountPath
+        : path.resolve(__dirname, '../../', serviceAccountPath);
+
+      if (!fs.existsSync(absolutePath)) {
+        console.error(`❌ Fichier de service account non trouvé: ${absolutePath}`);
+        return;
+      }
+
+      serviceAccount = JSON.parse(fs.readFileSync(absolutePath, 'utf8'));
     }
-
-    // Charger le fichier JSON
-    const serviceAccount = JSON.parse(fs.readFileSync(absolutePath, 'utf8'));
 
     initializeApp({
       credential: cert(serviceAccount),
@@ -79,7 +90,7 @@ export async function sendPushNotification(
   body: string,
   data?: Record<string, string>
 ): Promise<void> {
-  initFirebase();
+  await initFirebase();
 
   if (!initialized) {
     console.warn('⚠️ Firebase non initialisé, notification non envoyée');
