@@ -13,7 +13,7 @@
 Vercel est **serverless** (sans serveur persistant). Cela signifie :
 
 1. **Socket.io ne fonctionnera PAS** - les conversations temps réel ne fonctionneront pas en production. Il faudra utiliser un service externe (Pusher, Ably, etc.) ou un polling.
-2. **Les jobs de nettoyage (`setInterval`)** sont remplacés par **Vercel Cron Jobs** (configurés dans `vercel.json`, toutes les heures) ✅
+2. **Les jobs de nettoyage (`setInterval`)** sont remplacés par **Vercel Cron Jobs** (configurés dans `vercel.json`, 1x/jour à minuit - limite du plan Hobby) ✅
 3. **Le stockage local des fichiers** ne fonctionne pas - c'est déjà géré via Cloudinary ✅
 
 ## 🛠️ Fichiers déjà préparés
@@ -128,10 +128,11 @@ npm run dev
 - Solution future : utiliser Pusher/Ably ou un serveur dédié (Railway, Render, Fly.io)
 
 ### Cron Jobs
-- Les jobs de nettoyage sont configurés via `vercel.json` (toutes les heures)
+- Les jobs de nettoyage sont configurés via `vercel.json` (1x/jour à minuit UTC)
+- ⚠️ Le plan **Hobby** (gratuit) limite les cron jobs à **1 exécution par jour**
 - L'endpoint `/api/cron/cleanup` est sécurisé par le header `Authorization: Bearer <CRON_SECRET>`
-- Vercel Cron Jobs nécessite le plan **Hobby** (gratuit) ou supérieur
 - Pour tester manuellement : `curl -H "Authorization: Bearer <CRON_SECRET>" https://votre-backend.vercel.app/api/cron/cleanup`
+- Pour exécuter plus souvent (toutes les heures), il faut passer au plan **Pro** ($20/mois)
 
 ## 📝 Notes importantes
 
