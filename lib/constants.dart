@@ -85,7 +85,8 @@ class AppConstants {
   static const Duration hapticFeedbackDuration = Duration(milliseconds: 10);
 
   // API
-  static const String baseUrl = 'http://192.168.100.50:5000/api';
+  //static const String baseUrl = 'http://192.168.100.50:5000/api';
+  static const String baseUrl = 'http://192.168.223.14:5000/api';
   static const String registerEndpoint = '/auth/register';
   static const String loginEndpoint = '/auth/login';
   static const String logoutEndpoint = '/auth/logout';

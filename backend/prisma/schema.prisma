@@ -57,7 +57,7 @@ model User {
   email     String   @db.VarChar(191) @unique
   password  String   @db.VarChar(191)
   name      String   @db.VarChar(100)
-  phone     String   @db.VarChar(20) @unique
+  phone     String   @db.VarChar(50) @unique
   photo     String?  @db.VarChar(191)
   location  Json?
   verified  Boolean  @default(false)

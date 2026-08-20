@@ -482,6 +482,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     Color mutedColor,
   ) {
     final item = widget.item;
+    final authProvider = context.read<AuthProvider>();
+    final isOwnItem = authProvider.user?.id == item.sellerId;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -620,42 +622,44 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          // Boutons
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _startConversation,
-                  icon: const FaIcon(FontAwesomeIcons.comment, size: 14),
-                  label: const Text('Contacter'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    if (item.sellerPhone.isNotEmpty) {
-                      showPhoneNumberDialog(context,
-                          phoneNumber: item.sellerPhone);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content:
-                                Text('Numéro de téléphone non disponible')),
-                      );
-                    }
-                  },
-                  icon: const FaIcon(FontAwesomeIcons.phone, size: 14),
-                  label: const Text('Appeler'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.primaryBlue,
-                    side: const BorderSide(color: AppTheme.primaryBlue),
+          // Boutons (masqués si c'est le vendeur lui-même)
+          if (!isOwnItem) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _startConversation,
+                    icon: const FaIcon(FontAwesomeIcons.comment, size: 14),
+                    label: const Text('Contacter'),
                   ),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      if (item.sellerPhone.isNotEmpty) {
+                        showPhoneNumberDialog(context,
+                            phoneNumber: item.sellerPhone);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content:
+                                  Text('Numéro de téléphone non disponible')),
+                        );
+                      }
+                    },
+                    icon: const FaIcon(FontAwesomeIcons.phone, size: 14),
+                    label: const Text('Appeler'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.primaryBlue,
+                      side: const BorderSide(color: AppTheme.primaryBlue),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
