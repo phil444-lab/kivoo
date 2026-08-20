@@ -53,12 +53,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Provider.of<ThemeProvider>(context).isDark;
+    final authProvider = context.watch<AuthProvider>();
+    final favoriteCount = authProvider.favoriteItemIds.length;
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
       appBar: AppBar(
         title: Text(
-          'Mes favoris',
+          favoriteCount > 0 ? 'Mes favoris ($favoriteCount)' : 'Mes favoris',
           style: TextStyle(
             color: Colors.white,
             fontSize: Responsive.fontSize(context, 18),
@@ -182,70 +184,59 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const crossAxisCount = 2;
-        const spacing = 12.0;
-        final itemWidth = (constraints.maxWidth - spacing) / crossAxisCount;
-        // Hauteur totale : image 150px (grille) + contenu ~190px
-        // Protéger contre les largeurs <= 0 (premier frame) qui rendraient l'aspectRatio négatif
-        final aspectRatio = itemWidth > 0 ? itemWidth / 340.0 : 1.0;
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: favoriteIds.length,
+      itemBuilder: (context, index) {
+        final itemId = favoriteIds.elementAt(index);
 
-        return GridView.builder(
-          padding: const EdgeInsets.all(16),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            childAspectRatio: aspectRatio,
-            crossAxisSpacing: spacing,
-            mainAxisSpacing: spacing,
-          ),
-          itemCount: favoriteIds.length,
-          itemBuilder: (context, index) {
-            final itemId = favoriteIds.elementAt(index);
-            
-            return FutureBuilder<ItemModel?>(
-              future: _getItemDetails(itemId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: AppTheme.primaryBlue),
+        return FutureBuilder<ItemModel?>(
+          future: _getItemDetails(itemId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Center(
+                  child: CircularProgressIndicator(color: AppTheme.primaryBlue),
+                ),
+              );
+            }
+
+            if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+              return const SizedBox.shrink();
+            }
+
+            final item = snapshot.data!;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+            child: ItemCard(
+                item: item,
+                isDark: isDark,
+                imageHeight: 300,
+                fillHeight: false,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ItemDetailScreen(item: item),
+                    ),
                   );
-                }
-
-                if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-                  return const SizedBox.shrink();
-                }
-
-                final item = snapshot.data!;
-                return ItemCard(
-                  item: item,
-                  isDark: isDark,
-                  imageHeight: 150,
-                  fillHeight: true,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ItemDetailScreen(item: item),
+                },
+                onFavoriteToggle: () async {
+                  final success = await authProvider.removeFromFavorites(item.id);
+                  if (success && mounted) {
+                    setState(() {});
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Retiré des favoris'),
+                        backgroundColor: Colors.green,
+                        behavior: SnackBarBehavior.floating,
+                        duration: Duration(seconds: 2),
                       ),
                     );
-                  },
-                  onFavoriteToggle: () async {
-                    final success = await authProvider.removeFromFavorites(item.id);
-                    if (success && mounted) {
-                      setState(() {});
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Retiré des favoris'),
-                          backgroundColor: Colors.green,
-                          behavior: SnackBarBehavior.floating,
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  },
-                );
-              },
+                  }
+                },
+              ),
             );
           },
         );

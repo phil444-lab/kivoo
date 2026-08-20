@@ -225,45 +225,41 @@ class ItemCard extends StatelessWidget {
                       ),
                       const Spacer(),
                       const SizedBox(height: 6),
-                      // Nom du vendeur (à gauche, non tronqué) + Durée (à droite)
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      // Nom du vendeur (au-dessus) + Durée (en dessous) - alignés à droite
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           // Nom du vendeur (complet, non tronqué)
                           if (item.sellerName.isNotEmpty) ...[
-                            Expanded(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 2),
-                                    child: FaIcon(
-                                      FontAwesomeIcons.user,
-                                      size: 10,
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                FaIcon(
+                                  FontAwesomeIcons.user,
+                                  size: 10,
+                                  color: isDark
+                                      ? AppTheme.darkTextMuted
+                                      : AppTheme.lightTextMuted,
+                                ),
+                                const SizedBox(width: 2),
+                                Flexible(
+                                  child: Text(
+                                    item.sellerName,
+                                    style: TextStyle(
                                       color: isDark
                                           ? AppTheme.darkTextMuted
                                           : AppTheme.lightTextMuted,
+                                      fontSize: Responsive.fontSize(context, 12),
+                                      height: 1.3,
                                     ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(width: 2),
-                                  Expanded(
-                                    child: Text(
-                                      item.sellerName,
-                                      style: TextStyle(
-                                        color: isDark
-                                            ? AppTheme.darkTextMuted
-                                            : AppTheme.lightTextMuted,
-                                        fontSize: Responsive.fontSize(context, 12),
-                                        height: 1.3,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(height: 2),
                           ],
-                          // Durée de publication (à droite)
+                          // Durée de publication (en dessous)
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -298,14 +294,55 @@ class ItemCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Prix (en premier)
-                    Text(
-                      item.price,
-                      style: TextStyle(
-                        color: AppTheme.primaryBlue,
-                        fontSize: Responsive.fontSize(context, 16),
-                        fontWeight: FontWeight.w800,
-                      ),
+                    // Prix (à gauche) + Localisation (à l'extrémité droite)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            item.price,
+                            style: TextStyle(
+                              color: AppTheme.primaryBlue,
+                              fontSize: Responsive.fontSize(context, 16),
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Localisation (collée au bord droit)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: FaIcon(
+                                FontAwesomeIcons.locationDot,
+                                size: 12,
+                                color: isDark
+                                    ? AppTheme.darkTextMuted
+                                    : AppTheme.lightTextMuted,
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            Flexible(
+                              child: Text(
+                                item.location,
+                                style: TextStyle(
+                                  color: isDark
+                                      ? AppTheme.darkTextMuted
+                                      : AppTheme.lightTextMuted,
+                                  fontSize: Responsive.fontSize(context, 12),
+                                  height: 1.3,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     // Nom du produit
@@ -319,38 +356,6 @@ class ItemCard extends StatelessWidget {
                       ),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    // Localisation complète (non tronquée)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: FaIcon(
-                            FontAwesomeIcons.locationDot,
-                            size: 12,
-                            color: isDark
-                                ? AppTheme.darkTextMuted
-                                : AppTheme.lightTextMuted,
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        Expanded(
-                          child: Text(
-                            item.location,
-                            style: TextStyle(
-                              color: isDark
-                                  ? AppTheme.darkTextMuted
-                                  : AppTheme.lightTextMuted,
-                              fontSize: Responsive.fontSize(context, 12),
-                              height: 1.3,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
                     ),
                     const SizedBox(height: 6),
                     // Nom du vendeur (à gauche, non tronqué) + Durée (à droite)
