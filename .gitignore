@@ -80,7 +80,6 @@ ios/Runner/GoogleService-Info.plist
 # Backend
 backend/.env
 backend/dist/
-backend/prisma/migrations/
 backend/*firebase-adminsdk*.json
 backend/*.json
 !backend/package.json
