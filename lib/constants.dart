@@ -86,12 +86,13 @@ class AppConstants {
 
   // API
   //static const String baseUrl = 'http://192.168.100.50:5000/api';
-  static const String baseUrl = 'http://192.168.223.14:5000/api';
+  //static const String baseUrl = 'http://192.168.223.14:5000/api';
+  static const String baseUrl = 'https://kivoo-api.vercel.app/api';
   static const String registerEndpoint = '/auth/register';
   static const String loginEndpoint = '/auth/login';
   static const String logoutEndpoint = '/auth/logout';
   static const String refreshTokenEndpoint = '/auth/refresh-token';
   static const String socialLoginEndpoint = '/auth/social-login';
   static const String uploadPhotoEndpoint = '/auth/upload-photo';
-  static const String uploadsBaseUrl = 'http://192.168.100.50:5000/uploads';
+  static const String uploadsBaseUrl = 'https://kivoo-api.vercel.app/uploads';
 }
