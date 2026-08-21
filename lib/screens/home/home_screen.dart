@@ -132,9 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final cats = await catsFuture;
     final cards = await cardsFuture;
     final trendingResult = await trendingFuture;
-    final trending = (trendingResult?['items'] as List? ?? [])
-        .map((e) => ItemModel.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final trending = (trendingResult?['items'] as List<ItemModel>?) ?? [];
 
     if (!mounted) return;
 
