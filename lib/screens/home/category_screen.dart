@@ -6,6 +6,7 @@ import '../../providers/data_cache_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/theme_provider.dart';
 import '../../utils/responsive.dart';
+import '../../components/skeleton_card.dart';
 import 'items_list_screen.dart';
 
 class CategoryScreen extends StatefulWidget {
@@ -41,7 +42,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Provider.of<ThemeProvider>(context).isDark;
-    final iconColor = Color(int.parse(widget.category.color.replaceFirst('#', '0xFF')));
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
@@ -73,10 +73,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           children: [
             if (_loading)
-              const Center(child: Padding(
-                padding: EdgeInsets.all(24.0),
-                child: CircularProgressIndicator(color: AppTheme.primaryBlue),
-              ))
+              ...List.generate(6, (index) => _buildSubcategorySkeleton(isDark))
             else if (_subcategories.isEmpty)
               Center(
                 child: Column(
@@ -165,6 +162,73 @@ class _CategoryScreenState extends State<CategoryScreen> {
               }),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Skeleton d'une ligne de sous-catégorie
+  Widget _buildSubcategorySkeleton(bool isDark) {
+    final baseColor = isDark
+        ? const Color(0xFF2a2f35)
+        : const Color(0xFFE0E0E0);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+      child: Row(
+        children: [
+          // Icône
+          SkeletonPulse(
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: baseColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          // Texte
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonPulse(
+                  child: Container(
+                    width: 140,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: baseColor,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                SkeletonPulse(
+                  child: Container(
+                    width: 80,
+                    height: 11,
+                    decoration: BoxDecoration(
+                      color: baseColor,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Flèche
+          SkeletonPulse(
+            child: Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: baseColor,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

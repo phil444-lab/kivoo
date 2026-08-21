@@ -9,6 +9,7 @@ import '../../utils/responsive.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/conversation_service.dart';
 import '../../services/user_search_service.dart';
+import '../../components/skeleton_card.dart';
 import 'conversation_detail_screen.dart';
 
 class ConversationsScreen extends StatefulWidget {
@@ -114,29 +115,45 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
-      appBar: AppBar(
-        title: Text(
-          'Discussions',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: Responsive.fontSize(context, 18),
-          ),
-        ),
-        backgroundColor: AppTheme.darkBlue,
-        leading: IconButton(
-          onPressed: widget.onBack ?? () => Navigator.pop(context),
-          icon: FaIcon(
-            FontAwesomeIcons.arrowLeft,
-            size: Responsive.iconSize(context, 18),
-            color: Colors.white,
-          ),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            _buildHeader(isDark),
+            _buildSearchBar(isDark),
+            Expanded(
+              child: _buildBody(isDark),
+            ),
+          ],
         ),
       ),
-      body: Column(
+    );
+  }
+
+  /// Header avec titre et bouton retour (remplace l'AppBar)
+  Widget _buildHeader(bool isDark) {
+    final textColor = isDark ? AppTheme.darkText : AppTheme.lightText;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
+      child: Row(
         children: [
-          _buildSearchBar(isDark),
-          Expanded(
-            child: _buildBody(isDark),
+          IconButton(
+            onPressed: widget.onBack ?? () => Navigator.pop(context),
+            icon: FaIcon(
+              FontAwesomeIcons.arrowLeft,
+              size: Responsive.iconSize(context, 18),
+              color: textColor,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            'Discussions',
+            style: TextStyle(
+              color: textColor,
+              fontSize: Responsive.fontSize(context, 20),
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),
@@ -200,9 +217,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
 
   Widget _buildBody(bool isDark) {
     if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppTheme.primaryBlue),
-      );
+      return _buildConversationsSkeleton(isDark);
     }
 
     final authProvider = context.watch<AuthProvider>();
@@ -241,9 +256,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
     }
 
     if (_isSearchingUsers) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppTheme.primaryBlue),
-      );
+      return _buildConversationsSkeleton(isDark);
     }
 
     if (_searchQuery.isNotEmpty && _searchResults.isNotEmpty) {
@@ -294,6 +307,89 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
           return _buildConversationTile(conversation, isDark);
         },
       ),
+    );
+  }
+
+  /// Skeleton des conversations pendant le chargement
+  Widget _buildConversationsSkeleton(bool isDark) {
+    final baseColor = isDark
+        ? const Color(0xFF2a2f35)
+        : const Color(0xFFE0E0E0);
+
+    return ListView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: 8,
+      itemBuilder: (context, index) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isDark ? const Color(0xFF3d4752) : const Color(0xFFd1d5db),
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              // Avatar circulaire
+              SkeletonPulse(
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: baseColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Contenu texte
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Nom
+                    SkeletonPulse(
+                      child: Container(
+                        width: 140,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: baseColor,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Dernier message
+                    SkeletonPulse(
+                      child: Container(
+                        width: double.infinity,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: baseColor,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Heure
+              SkeletonPulse(
+                child: Container(
+                  width: 50,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: baseColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

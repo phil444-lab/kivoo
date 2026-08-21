@@ -10,6 +10,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/theme_provider.dart';
 import '../../utils/responsive.dart';
 import '../../components/item_card.dart';
+import '../../components/skeleton_card.dart';
 import 'item_detail_screen.dart';
 
 class ItemsListScreen extends StatefulWidget {
@@ -40,7 +41,6 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
   bool _loading = true;
   bool _loadingMore = false;
   int _currentPage = 1;
-  int _totalPages = 1;
   bool _hasMore = false;
 
   // Filtres
@@ -169,8 +169,12 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
       departmentId: _selectedDepartment?.id,
       cityId: _selectedCity?.id,
       districtId: _selectedDistrict?.id,
-      color: _colorController.text.isNotEmpty ? _colorController.text.trim() : null,
-      brand: _brandController.text.isNotEmpty ? _brandController.text.trim() : null,
+      color: _colorController.text.isNotEmpty
+          ? _colorController.text.trim()
+          : null,
+      brand: _brandController.text.isNotEmpty
+          ? _brandController.text.trim()
+          : null,
       priceType: _selectedPriceType,
     );
 
@@ -189,7 +193,6 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
             _items.addAll(itemsList);
           }
           _currentPage = pagination['currentPage'] as int;
-          _totalPages = pagination['totalPages'] as int;
           _hasMore = pagination['hasNext'] as bool;
           _loading = false;
           _loadingMore = false;
@@ -234,10 +237,12 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Provider.of<ThemeProvider>(context).isDark;
-    final categoryColor = Color(int.parse(widget.category.color.replaceFirst('#', '0xFF')));
+    final categoryColor =
+        Color(int.parse(widget.category.color.replaceFirst('#', '0xFF')));
 
     return Scaffold(
-      backgroundColor: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
+      backgroundColor:
+          isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
       appBar: AppBar(
         backgroundColor: categoryColor,
         foregroundColor: Colors.white,
@@ -256,7 +261,8 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
           maxLines: 3,
         ),
         leading: IconButton(
-          icon: FaIcon(FontAwesomeIcons.arrowLeft, size: Responsive.iconSize(context, 18), color: Colors.white),
+          icon: FaIcon(FontAwesomeIcons.arrowLeft,
+              size: Responsive.iconSize(context, 18), color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -294,7 +300,9 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
                     decoration: InputDecoration(
                       hintText: 'Rechercher...',
                       hintStyle: TextStyle(
-                        color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                        color: isDark
+                            ? AppTheme.darkTextMuted
+                            : AppTheme.lightTextMuted,
                         fontSize: Responsive.fontSize(context, 14),
                       ),
                       prefixIcon: Icon(
@@ -304,7 +312,8 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
                       ),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
-                              icon: FaIcon(FontAwesomeIcons.circleXmark, size: Responsive.iconSize(context, 18)),
+                              icon: FaIcon(FontAwesomeIcons.circleXmark,
+                                  size: Responsive.iconSize(context, 18)),
                               onPressed: () {
                                 _searchController.clear();
                                 _loadItems(reset: true);
@@ -312,7 +321,8 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
                             )
                           : null,
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                     ),
                     onSubmitted: (_) => _loadItems(reset: true),
                   ),
@@ -367,7 +377,8 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
                             value: condition,
                             child: Text(
                               _conditionLabels[condition]!,
-                              style: TextStyle(fontSize: Responsive.fontSize(context, 13)),
+                              style: TextStyle(
+                                  fontSize: Responsive.fontSize(context, 13)),
                             ),
                           ),
                         ),
@@ -392,7 +403,8 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
                             value: option['value'],
                             child: Text(
                               option['label']!,
-                              style: TextStyle(fontSize: Responsive.fontSize(context, 13)),
+                              style: TextStyle(
+                                  fontSize: Responsive.fontSize(context, 13)),
                             ),
                           ),
                         ),
@@ -411,10 +423,13 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
                             controller: _minPriceController,
                             keyboardType: TextInputType.number,
                             style: TextStyle(
-                              color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                              color: isDark
+                                  ? AppTheme.darkText
+                                  : AppTheme.lightText,
                               fontSize: Responsive.fontSize(context, 13),
                             ),
-                            decoration: _filterDecoration('Prix min (FCFA)', isDark),
+                            decoration:
+                                _filterDecoration('Prix min (FCFA)', isDark),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -423,10 +438,13 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
                             controller: _maxPriceController,
                             keyboardType: TextInputType.number,
                             style: TextStyle(
-                              color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                              color: isDark
+                                  ? AppTheme.darkText
+                                  : AppTheme.lightText,
                               fontSize: Responsive.fontSize(context, 13),
                             ),
-                            decoration: _filterDecoration('Prix max (FCFA)', isDark),
+                            decoration:
+                                _filterDecoration('Prix max (FCFA)', isDark),
                           ),
                         ),
                       ],
@@ -447,7 +465,8 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
                             value: dept,
                             child: Text(
                               dept.name,
-                              style: TextStyle(fontSize: Responsive.fontSize(context, 13)),
+                              style: TextStyle(
+                                  fontSize: Responsive.fontSize(context, 13)),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -472,7 +491,8 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
                               value: city,
                               child: Text(
                                 city.name,
-                                style: TextStyle(fontSize: Responsive.fontSize(context, 13)),
+                                style: TextStyle(
+                                    fontSize: Responsive.fontSize(context, 13)),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -497,7 +517,8 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
                               value: district,
                               child: Text(
                                 district.name,
-                                style: TextStyle(fontSize: Responsive.fontSize(context, 13)),
+                                style: TextStyle(
+                                    fontSize: Responsive.fontSize(context, 13)),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -516,7 +537,8 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
                         color: isDark ? AppTheme.darkText : AppTheme.lightText,
                         fontSize: Responsive.fontSize(context, 13),
                       ),
-                      decoration: _filterDecoration('Couleur (ex: Noir)', isDark),
+                      decoration:
+                          _filterDecoration('Couleur (ex: Noir)', isDark),
                     ),
                     const SizedBox(height: 12),
 
@@ -527,7 +549,8 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
                         color: isDark ? AppTheme.darkText : AppTheme.lightText,
                         fontSize: Responsive.fontSize(context, 13),
                       ),
-                      decoration: _filterDecoration('Marque (ex: Apple)', isDark),
+                      decoration:
+                          _filterDecoration('Marque (ex: Apple)', isDark),
                     ),
                     const SizedBox(height: 16),
 
@@ -604,14 +627,34 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
     );
   }
 
+  /// Skeleton de la grille d'items pendant le chargement
+  Widget _buildItemsSkeleton(bool isDark) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const crossAxisCount = 2;
+        const spacing = 12.0;
+        final itemWidth = (constraints.maxWidth - spacing) / crossAxisCount;
+        final aspectRatio = itemWidth > 0 ? itemWidth / 340.0 : 1.0;
+
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            childAspectRatio: aspectRatio,
+            crossAxisSpacing: spacing,
+            mainAxisSpacing: spacing,
+          ),
+          itemCount: 6,
+          itemBuilder: (context, index) => SkeletonGridCard(isDark: isDark),
+        );
+      },
+    );
+  }
+
   Widget _buildBody(bool isDark) {
     if (_loading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24.0),
-          child: CircularProgressIndicator(color: AppTheme.primaryBlue),
-        ),
-      );
+      return _buildItemsSkeleton(isDark);
     }
 
     if (_items.isEmpty) {
@@ -628,7 +671,8 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
             Text(
               'Aucun article trouvé',
               style: TextStyle(
-                color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                color:
+                    isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                 fontSize: Responsive.fontSize(context, 16),
                 fontWeight: FontWeight.w500,
               ),
@@ -637,7 +681,8 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
             Text(
               'Essayez de modifier vos filtres',
               style: TextStyle(
-                color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                color:
+                    isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                 fontSize: Responsive.fontSize(context, 14),
               ),
             ),
@@ -676,7 +721,8 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
                 return const Center(
                   child: Padding(
                     padding: EdgeInsets.all(16.0),
-                    child: CircularProgressIndicator(color: AppTheme.primaryBlue),
+                    child:
+                        CircularProgressIndicator(color: AppTheme.primaryBlue),
                   ),
                 );
               }

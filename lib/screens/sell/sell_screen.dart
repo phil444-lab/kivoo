@@ -15,6 +15,7 @@ import '../../services/item_service.dart';
 import '../../services/cloudinary_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/data_cache_provider.dart';
+import '../../components/skeleton_card.dart';
 import '../../utils/responsive.dart';
 
 class SellScreen extends StatefulWidget {
@@ -442,6 +443,143 @@ class _SellScreenState extends State<SellScreen> {
     );
   }
 
+  /// Skeleton du formulaire Vendre pendant le chargement des données
+  Widget _buildFormSkeleton(bool isDark, Color cardBg, Color borderColor) {
+    final baseColor = isDark
+        ? const Color(0xFF2a2f35)
+        : const Color(0xFFE0E0E0);
+
+    Widget skeletonBlock({double? width, required double height, double radius = 8}) {
+      return SkeletonPulse(
+        child: Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: baseColor,
+            borderRadius: BorderRadius.circular(radius),
+          ),
+        ),
+      );
+    }
+
+    Widget skeletonField({required double height}) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor, width: 1),
+        ),
+        child: skeletonBlock(height: height),
+      );
+    }
+
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Titre section Photos
+          skeletonBlock(width: 180, height: 16),
+          const SizedBox(height: 12),
+          // Zone photos
+          Container(
+            height: 120,
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: borderColor, width: 1),
+            ),
+            child: Center(
+              child: skeletonBlock(width: 60, height: 60, radius: 12),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Titre
+          skeletonBlock(width: 60, height: 16),
+          const SizedBox(height: 8),
+          skeletonField(height: 48),
+          const SizedBox(height: 20),
+
+          // Catégorie
+          skeletonBlock(width: 100, height: 16),
+          const SizedBox(height: 8),
+          skeletonField(height: 48),
+          const SizedBox(height: 20),
+
+          // Marque / Couleur
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    skeletonBlock(width: 60, height: 16),
+                    const SizedBox(height: 8),
+                    skeletonField(height: 48),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    skeletonBlock(width: 70, height: 16),
+                    const SizedBox(height: 8),
+                    skeletonField(height: 48),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // État
+          skeletonBlock(width: 60, height: 16),
+          const SizedBox(height: 8),
+          skeletonField(height: 48),
+          const SizedBox(height: 20),
+
+          // Type de prix
+          skeletonBlock(width: 110, height: 16),
+          const SizedBox(height: 8),
+          skeletonField(height: 48),
+          const SizedBox(height: 20),
+
+          // Prix
+          skeletonBlock(width: 100, height: 16),
+          const SizedBox(height: 8),
+          skeletonField(height: 48),
+          const SizedBox(height: 20),
+
+          // Description
+          skeletonBlock(width: 120, height: 16),
+          const SizedBox(height: 8),
+          skeletonField(height: 100),
+          const SizedBox(height: 20),
+
+          // Localisation
+          skeletonBlock(width: 110, height: 16),
+          const SizedBox(height: 8),
+          skeletonField(height: 48),
+          const SizedBox(height: 20),
+
+          // Mise en avant
+          skeletonBlock(width: 120, height: 16),
+          const SizedBox(height: 8),
+          skeletonField(height: 48),
+          const SizedBox(height: 24),
+
+          // Bouton soumettre
+          skeletonBlock(width: double.infinity, height: 52, radius: 12),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -471,7 +609,7 @@ class _SellScreenState extends State<SellScreen> {
         color: AppTheme.primaryBlue,
         backgroundColor: isDark ? AppTheme.darkCard : AppTheme.lightCard,
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? _buildFormSkeleton(isDark, cardBg, borderColor)
             : SingleChildScrollView(
                 padding: EdgeInsets.all(Responsive.padding(context, 16)),
                 child: Form(

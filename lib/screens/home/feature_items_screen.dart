@@ -8,6 +8,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/theme_provider.dart';
 import '../../utils/responsive.dart';
 import '../../components/item_card.dart';
+import '../../components/skeleton_card.dart';
 import 'item_detail_screen.dart';
 
 class FeatureItemsScreen extends StatefulWidget {
@@ -117,12 +118,7 @@ class _FeatureItemsScreenState extends State<FeatureItemsScreen> {
 
   Widget _buildBody(bool isDark, Color featureColor) {
     if (_loading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24.0),
-          child: CircularProgressIndicator(color: AppTheme.primaryBlue),
-        ),
-      );
+      return _buildItemsSkeleton(isDark);
     }
 
     if (_items.isEmpty) {
@@ -213,6 +209,31 @@ class _FeatureItemsScreenState extends State<FeatureItemsScreen> {
           );
         },
       ),
+    );
+  }
+
+  /// Skeleton de la grille d'articles en vedette pendant le chargement
+  Widget _buildItemsSkeleton(bool isDark) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const crossAxisCount = 2;
+        const spacing = 12.0;
+        final itemWidth = (constraints.maxWidth - spacing) / crossAxisCount;
+        final aspectRatio = itemWidth > 0 ? itemWidth / 340.0 : 1.0;
+
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            childAspectRatio: aspectRatio,
+            crossAxisSpacing: spacing,
+            mainAxisSpacing: spacing,
+          ),
+          itemCount: 6,
+          itemBuilder: (context, index) => SkeletonGridCard(isDark: isDark),
+        );
+      },
     );
   }
 }

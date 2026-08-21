@@ -10,6 +10,7 @@ import '../../theme/theme_provider.dart';
 import '../../utils/responsive.dart';
 import '../../components/item_card.dart';
 import '../../components/phone_number_dialog.dart';
+import '../../components/skeleton_card.dart';
 import '../../providers/auth_provider.dart';
 import 'item_detail_screen.dart';
 import 'conversation_detail_screen.dart';
@@ -50,20 +51,31 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
       _hasError = false;
     });
 
-    final results = await Future.wait([
-      _service.getSellerProfile(widget.sellerId),
-      _service.getSellerItems(widget.sellerId),
-    ]);
+    try {
+      final results = await Future.wait([
+        _service.getSellerProfile(widget.sellerId),
+        _service.getSellerItems(widget.sellerId),
+      ]);
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() {
-      _profile = results[0] as PublicSellerProfile?;
-      _items = results[1] as List<ItemModel>;
-      _loading = false;
-      _loadingItems = false;
-      _hasError = _profile == null;
-    });
+      setState(() {
+        _profile = results[0] as PublicSellerProfile?;
+        _items = results[1] as List<ItemModel>;
+        _loading = false;
+        _loadingItems = false;
+        _hasError = _profile == null;
+      });
+    } catch (e) {
+      print('Error loading seller profile: $e');
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _loadingItems = false;
+          _hasError = true;
+        });
+      }
+    }
   }
 
   Future<void> _startConversation() async {
@@ -84,9 +96,6 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
 
     final token = authProvider.token;
     if (token == null) return;
-
-    // Get the first item
-    final item = _items.first;
 
     try {
       final response = await _conversationService.createConversation(
@@ -146,7 +155,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
         ),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? _buildSkeleton(isDark, cardColor, borderColor)
           : _hasError
               ? _buildErrorState(isDark, textColor)
               : RefreshIndicator(
@@ -164,10 +173,19 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                         ),
                       ),
                       if (_loadingItems)
-                        const SliverToBoxAdapter(
-                          child: Padding(
-                            padding: EdgeInsets.all(32),
-                            child: Center(child: CircularProgressIndicator()),
+                        SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          sliver: SliverGrid(
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: Responsive.isTablet(context) ? 3 : 2,
+                              mainAxisSpacing: 12,
+                              crossAxisSpacing: 12,
+                              mainAxisExtent: Responsive.isTablet(context) ? 260 : 290,
+                            ),
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) => SkeletonGridCard(isDark: isDark),
+                              childCount: 4,
+                            ),
                           ),
                         )
                       else if (_items.isEmpty)
@@ -210,6 +228,156 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                     ],
                   ),
                 ),
+    );
+  }
+
+  /// Skeleton affiché pendant le chargement du profil
+  Widget _buildSkeleton(bool isDark, Color cardColor, Color borderColor) {
+    final baseColor = isDark
+        ? const Color(0xFF2a2f35)
+        : const Color(0xFFE0E0E0);
+
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Carte profil skeleton
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: borderColor, width: 1),
+            ),
+            child: Column(
+              children: [
+                // Avatar circulaire
+                SkeletonPulse(
+                  child: Container(
+                    width: 90,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      color: baseColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Nom
+                SkeletonPulse(
+                  child: Container(
+                    width: 160,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: baseColor,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Localisation
+                SkeletonPulse(
+                  child: Container(
+                    width: 120,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: baseColor,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Stats
+                Row(
+                  children: [
+                    Expanded(
+                      child: SkeletonPulse(
+                        child: Container(
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: baseColor,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SkeletonPulse(
+                        child: Container(
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: baseColor,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Boutons
+                Row(
+                  children: [
+                    Expanded(
+                      child: SkeletonPulse(
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: baseColor,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SkeletonPulse(
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: baseColor,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Titre section
+          SkeletonPulse(
+            child: Container(
+              width: 200,
+              height: 20,
+              decoration: BoxDecoration(
+                color: baseColor,
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Grille d'items skeleton
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: Responsive.isTablet(context) ? 3 : 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              mainAxisExtent: Responsive.isTablet(context) ? 260 : 290,
+            ),
+            itemCount: 4,
+            itemBuilder: (context, index) => SkeletonGridCard(isDark: isDark),
+          ),
+        ],
+      ),
     );
   }
 
