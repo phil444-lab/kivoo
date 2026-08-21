@@ -10,12 +10,11 @@ import '../../models/category_model.dart';
 import '../../models/location_model.dart';
 import '../../models/feature_card_model.dart';
 import '../../models/item_model.dart';
-import '../../services/category_service.dart';
-import '../../services/location_service.dart';
 import '../../services/feature_card_service.dart';
 import '../../services/item_service.dart';
 import '../../services/cloudinary_service.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/data_cache_provider.dart';
 import '../../utils/responsive.dart';
 
 class SellScreen extends StatefulWidget {
@@ -36,8 +35,6 @@ class _SellScreenState extends State<SellScreen> {
   final _brandController = TextEditingController();
   final _colorController = TextEditingController();
 
-  final _categoryService = CategoryService();
-  final _locationService = LocationService();
   final _featureCardService = FeatureCardService();
   final _itemService = ItemService();
   final _cloudinaryService = CloudinaryService();
@@ -145,9 +142,11 @@ class _SellScreenState extends State<SellScreen> {
       _selectedDistrict = null;
       _selectedFeature = null;
     });
+    final dataCache = context.read<DataCacheProvider>();
+
     final results = await Future.wait([
-      _categoryService.getParentCategories(),
-      _locationService.getCountries(),
+      dataCache.getParentCategories(),
+      dataCache.getCountries(),
       _featureCardService.getFeaturedOptions(),
     ]);
 
@@ -158,7 +157,7 @@ class _SellScreenState extends State<SellScreen> {
     if (!mounted) return;
 
     if (countries.isNotEmpty) {
-      final deps = await _locationService.getDepartments(countries.first.id);
+      final deps = await dataCache.getDepartments(countries.first.id);
       if (mounted) setState(() => _departments = deps);
     }
 
@@ -189,7 +188,8 @@ class _SellScreenState extends State<SellScreen> {
       if (parent.isNotEmpty) {
         setState(() => _selectedParentCategory = parent.first);
         // Charger les sous-catégories
-        final subs = await _categoryService.getSubCategories(parent.first.id);
+        final dataCache = context.read<DataCacheProvider>();
+        final subs = await dataCache.getSubCategories(parent.first.id);
         if (mounted) {
           setState(() {
             _subCategories = subs;
@@ -208,7 +208,8 @@ class _SellScreenState extends State<SellScreen> {
       final dept = _departments.where((d) => d.id == item.departmentId).toList();
       if (dept.isNotEmpty) {
         setState(() => _selectedDepartment = dept.first);
-        final cities = await _locationService.getCities(dept.first.id);
+        final dataCache = context.read<DataCacheProvider>();
+        final cities = await dataCache.getCities(dept.first.id);
         if (mounted) {
           setState(() {
             _cities = cities;
@@ -221,7 +222,7 @@ class _SellScreenState extends State<SellScreen> {
           if (item.cityId.isNotEmpty) {
             final currentCity = _selectedCity;
             if (currentCity != null) {
-              final districts = await _locationService.getDistricts(currentCity.id);
+              final districts = await dataCache.getDistricts(currentCity.id);
               if (mounted) {
                 setState(() {
                   _districts = districts;
@@ -277,7 +278,8 @@ class _SellScreenState extends State<SellScreen> {
       _subCategories = [];
     });
     if (cat != null) {
-      final subs = await _categoryService.getSubCategories(cat.id);
+      final dataCache = context.read<DataCacheProvider>();
+      final subs = await dataCache.getSubCategories(cat.id);
       if (mounted) setState(() => _subCategories = subs);
     }
   }
@@ -291,7 +293,8 @@ class _SellScreenState extends State<SellScreen> {
       _districts = [];
     });
     if (dept != null) {
-      final cities = await _locationService.getCities(dept.id);
+      final dataCache = context.read<DataCacheProvider>();
+      final cities = await dataCache.getCities(dept.id);
       if (mounted) setState(() => _cities = cities);
     }
   }
@@ -303,7 +306,8 @@ class _SellScreenState extends State<SellScreen> {
       _districts = [];
     });
     if (city != null) {
-      final districts = await _locationService.getDistricts(city.id);
+      final dataCache = context.read<DataCacheProvider>();
+      final districts = await dataCache.getDistricts(city.id);
       if (mounted) setState(() => _districts = districts);
     }
   }

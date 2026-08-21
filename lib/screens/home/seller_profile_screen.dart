@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/item_model.dart';
 import '../../services/public_profile_service.dart';
 import '../../services/conversation_service.dart';
@@ -221,6 +222,8 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
     Color borderColor,
   ) {
     final profile = _profile!;
+    final authProvider = context.read<AuthProvider>();
+    final isAuthenticated = authProvider.isAuthenticated;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -248,10 +251,11 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
               ),
               child: profile.photo.isNotEmpty
                   ? ClipOval(
-                      child: Image.network(
-                        profile.photo,
+                      child: CachedNetworkImage(
+                        imageUrl: profile.photo,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => _buildFallbackAvatar(profile.name),
+                        placeholder: (context, url) => _buildFallbackAvatar(profile.name),
+                        errorWidget: (context, url, error) => _buildFallbackAvatar(profile.name),
                       ),
                     )
                   : _buildFallbackAvatar(profile.name),
@@ -332,40 +336,41 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
               ),
             ),
 
-            const SizedBox(height: 16),
-
-            // Boutons d'action
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _startConversation,
-                    icon: const FaIcon(FontAwesomeIcons.comment, size: 14),
-                    label: const Text('Contacter'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      if (profile.phone.isNotEmpty) {
-                        showPhoneNumberDialog(context, phoneNumber: profile.phone);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Numéro de téléphone non disponible')),
-                        );
-                      }
-                    },
-                    icon: const FaIcon(FontAwesomeIcons.phone, size: 14),
-                    label: const Text('Appeler'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.primaryBlue,
-                      side: const BorderSide(color: AppTheme.primaryBlue),
+            // Boutons d'action (masqués si l'utilisateur n'est pas connecté)
+            if (isAuthenticated) ...[
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _startConversation,
+                      icon: const FaIcon(FontAwesomeIcons.comment, size: 14),
+                      label: const Text('Contacter'),
                     ),
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        if (profile.phone.isNotEmpty) {
+                          showPhoneNumberDialog(context, phoneNumber: profile.phone);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Numéro de téléphone non disponible')),
+                          );
+                        }
+                      },
+                      icon: const FaIcon(FontAwesomeIcons.phone, size: 14),
+                      label: const Text('Appeler'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.primaryBlue,
+                        side: const BorderSide(color: AppTheme.primaryBlue),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

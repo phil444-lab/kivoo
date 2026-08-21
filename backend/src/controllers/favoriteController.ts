@@ -23,14 +23,24 @@ export const getFavorites = async (
         },
         include: {
           item: {
-            select: {
-              id: true,
-              title: true,
-              price: true,
-              images: true,
-              condition: true,
-              status: true,
-              seller: { select: { id: true, name: true, rating: true } },
+            include: {
+              seller: {
+                select: {
+                  id: true,
+                  name: true,
+                  phone: true,
+                  photo: true,
+                  rating: true,
+                  verified: true,
+                  location: true,
+                },
+              },
+              category: { select: { id: true, name: true } },
+              subcategory: { select: { id: true, name: true } },
+              department: { select: { id: true, name: true } },
+              city: { select: { id: true, name: true } },
+              district: { select: { id: true, name: true } },
+              feature: { select: { id: true, title: true, icon: true } },
             },
           },
         },

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +12,7 @@ import '../../models/location_model.dart';
 import '../../components/feature_card.dart';
 import '../../components/category_item.dart';
 import '../../components/item_card.dart';
+import '../../components/skeleton_card.dart';
 import '../../screens/home/category_screen.dart';
 import '../../screens/home/item_detail_screen.dart';
 import '../../screens/home/favorites_screen.dart';
@@ -21,8 +23,7 @@ import '../sell/sell_screen.dart';
 import 'notifications_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/notification_provider.dart';
-import '../../services/location_service.dart';
-import '../../services/category_service.dart';
+import '../../providers/data_cache_provider.dart';
 import '../../services/feature_card_service.dart';
 import '../../services/item_service.dart';
 import '../../services/conversation_service.dart';
@@ -48,9 +49,10 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isListView = true;
   int _currentNavIndex = 0;
   bool _wasAuthenticated = false;
+  DateTime? _lastRefreshTime;
+  Timer? _searchDebounce;
+  String _debouncedSearchQuery = '';
 
-  final _locationService = LocationService();
-  final _categoryService = CategoryService();
   final _featureCardService = FeatureCardService();
   final _itemService = ItemService();
   final _conversationService = ConversationService();
@@ -91,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Nettoyer le listener
     final authProvider = context.read<AuthProvider>();
     authProvider.removeListener(_onAuthChanged);
+    _searchDebounce?.cancel();
     super.dispose();
   }
   
@@ -118,23 +121,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
   Future<void> _loadData() async {
-    final results = await Future.wait([
-      _locationService.getCountries(),
-      _categoryService.getParentCategories(),
-      _featureCardService.getFeaturedOptions(),
-      _itemService.getTrendingItems(),
-    ]);
+    final dataCache = context.read<DataCacheProvider>();
 
-    final countries = results[0] as List<Country>;
-    final cats = results[1] as List<CategoryModel>;
-    final cards = results[2] as List<FeatureCardModel>;
-    final trending = results[3] as List<ItemModel>;
+    final countriesFuture = dataCache.getCountries();
+    final catsFuture = dataCache.getParentCategories();
+    final cardsFuture = _featureCardService.getFeaturedOptions();
+    final trendingFuture = _itemService.getTrendingItems();
+
+    final countries = await countriesFuture;
+    final cats = await catsFuture;
+    final cards = await cardsFuture;
+    final trendingResult = await trendingFuture;
+    final trending = (trendingResult?['items'] as List? ?? [])
+        .map((e) => ItemModel.fromJson(e as Map<String, dynamic>))
+        .toList();
 
     if (!mounted) return;
 
     if (countries.isNotEmpty) {
       final country = countries.first;
-      final deps = await _locationService.getDepartments(country.id);
+      final deps = await dataCache.getDepartments(country.id);
       if (mounted)
         setState(() {
           _country = country;
@@ -161,12 +167,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _refreshData() async {
+    // Éviter de recharger si le dernier refresh date de moins de 30 secondes
+    final now = DateTime.now();
+    if (_lastRefreshTime != null &&
+        now.difference(_lastRefreshTime!).inSeconds < 30 &&
+        _trendingItems.isNotEmpty) {
+      return;
+    }
+    _lastRefreshTime = now;
+
     // Recharger seulement les items, sans toucher aux catégories/localisation/featured
     // pour conserver les filtres et la sélection de localisation
     setState(() => _trendingLoading = true);
     try {
-      final trending = await _itemService.getTrendingItems();
+      final trendingResult = await _itemService.getTrendingItems();
       if (!mounted) return;
+      final trending = (trendingResult?['items'] as List<ItemModel>?) ?? [];
       // Trier les articles du plus récent au plus ancien
       final sorted = List<ItemModel>.of(trending);
       sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -223,7 +239,8 @@ class _HomeScreenState extends State<HomeScreen> {
       _districts = [];
       selectedLocation = dept.name;
     });
-    final cities = await _locationService.getCities(dept.id);
+    final dataCache = context.read<DataCacheProvider>();
+    final cities = await dataCache.getCities(dept.id);
     if (mounted) setState(() => _cities = cities);
   }
 
@@ -234,7 +251,8 @@ class _HomeScreenState extends State<HomeScreen> {
       _districts = [];
       selectedLocation = city.name;
     });
-    final districts = await _locationService.getDistricts(city.id);
+    final dataCache = context.read<DataCacheProvider>();
+    final districts = await dataCache.getDistricts(city.id);
     if (mounted) setState(() => _districts = districts);
   }
 
@@ -286,7 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Filtre dynamique combinant :
   /// - catégorie sélectionnée (_filters / activeFilter)
   /// - localisation sélectionnée (selectedLocation)
-  /// - recherche texte (searchQuery)
+  /// - recherche texte (_debouncedSearchQuery)
   List<ItemModel> get _filteredItems {
     var items = _trendingItems;
 
@@ -303,9 +321,9 @@ class _HomeScreenState extends State<HomeScreen> {
           .toList();
     }
 
-    // Filtre par recherche texte
-    if (searchQuery.isNotEmpty) {
-      final query = searchQuery.toLowerCase();
+    // Filtre par recherche texte (avec debounce)
+    if (_debouncedSearchQuery.isNotEmpty) {
+      final query = _debouncedSearchQuery.toLowerCase();
       items = items.where((item) {
         return item.title.toLowerCase().contains(query) ||
             item.location.toLowerCase().contains(query) ||
@@ -380,18 +398,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     padding:
                                                         const EdgeInsets.only(
                                                             right: 12),
-                                                    child: Container(
+                                                    child: SkeletonBlock(
+                                                      isDark: isDark,
                                                       width: 155,
-                                                      decoration: BoxDecoration(
-                                                        color: isDark
-                                                            ? const Color(
-                                                                0xFF232b34)
-                                                            : const Color(
-                                                                0xFFf0f2f5),
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(16),
-                                                      ),
+                                                      height: 180,
                                                     ),
                                                   ),
                                                 )
@@ -500,17 +510,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     : _categories.length,
                                                 itemBuilder: (context, index) {
                                                   if (_categories.isEmpty) {
-                                                    return Container(
-                                                      decoration: BoxDecoration(
-                                                        color: isDark
-                                                            ? const Color(
-                                                                0xFF232b34)
-                                                            : const Color(
-                                                                0xFFf0f2f5),
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(12),
-                                                      ),
+                                                    return SkeletonBlock(
+                                                      isDark: isDark,
+                                                      height: 100,
+                                                      borderRadius: 12,
                                                     );
                                                   }
                                                   return GestureDetector(
@@ -991,7 +994,16 @@ class _HomeScreenState extends State<HomeScreen> {
           // Search field
           Expanded(
             child: TextField(
-              onChanged: (value) => setState(() => searchQuery = value),
+              onChanged: (value) {
+                setState(() => searchQuery = value);
+                // Debounce : attendre 300ms avant de filtrer
+                _searchDebounce?.cancel();
+                _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+                  if (mounted) {
+                    setState(() => _debouncedSearchQuery = value);
+                  }
+                });
+              },
               style: TextStyle(
                 color: isDark ? AppTheme.darkText : AppTheme.lightText,
                 fontSize: Responsive.fontSize(context, 13),
@@ -1047,21 +1059,38 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTrendingSkeleton() {
-    final skeletonColor =
-        isDark ? const Color(0xFF232b34) : const Color(0xFFf0f2f5);
-    return Column(
-      children: List.generate(
-          3,
-          (_) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Container(
-                  height: 130,
-                  decoration: BoxDecoration(
-                    color: skeletonColor,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              )),
+    if (isListView) {
+      return Column(
+        children: List.generate(
+            3,
+            (_) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: SkeletonItemCard(isDark: isDark, imageHeight: 200),
+                )),
+      );
+    }
+
+    // Mode grille
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const crossAxisCount = 2;
+        const spacing = 12.0;
+        final itemWidth = (constraints.maxWidth - spacing) / crossAxisCount;
+        final aspectRatio = itemWidth > 0 ? itemWidth / 340.0 : 1.0;
+
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: spacing,
+            mainAxisSpacing: spacing,
+            childAspectRatio: aspectRatio,
+          ),
+          itemCount: 4,
+          itemBuilder: (context, index) => SkeletonGridCard(isDark: isDark),
+        );
+      },
     );
   }
 

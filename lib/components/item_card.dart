@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/item_model.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
@@ -84,22 +85,25 @@ class ItemCard extends StatelessWidget {
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(16),
                       ),
-                      child: Image.network(
-                        item.photoUrl,
+                      child: CachedNetworkImage(
+                        imageUrl: item.photoUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
+                        placeholder: (context, url) => Container(
+                          color: isDark
+                              ? AppTheme.darkSurface
+                              : AppTheme.lightSurface,
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: isDark
+                              ? AppTheme.darkSurface
+                              : AppTheme.lightSurface,
+                          child: FaIcon(
+                            FontAwesomeIcons.image,
                             color: isDark
-                                ? AppTheme.darkSurface
-                                : AppTheme.lightSurface,
-                            child: FaIcon(
-                              FontAwesomeIcons.image,
-                              color: isDark
-                                  ? AppTheme.darkTextMuted
-                                  : AppTheme.lightTextMuted,
-                            ),
-                          );
-                        },
+                                ? AppTheme.darkTextMuted
+                                : AppTheme.lightTextMuted,
+                          ),
+                        ),
                       ),
                     ),
                   ),

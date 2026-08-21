@@ -5,7 +5,8 @@ import '../models/item_model.dart';
 
 class FavoriteService {
   /// Récupère les favoris de l'utilisateur connecté
-  Future<List<ItemModel>> getFavorites({
+  /// Retourne un Map avec 'items' (List<ItemModel>) et 'pagination' (Map<String, dynamic>)
+  Future<Map<String, dynamic>?> getFavorites({
     required String token,
     int page = 1,
     int limit = 20,
@@ -28,16 +29,23 @@ class FavoriteService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final favorites = data['data']['favorites'] as List;
+        final dataMap = data['data'] as Map<String, dynamic>;
+        final favorites = dataMap['favorites'] as List;
+        final pagination = dataMap['pagination'] as Map<String, dynamic>;
         
-        return favorites
+        final items = favorites
             .map((fav) => ItemModel.fromJson(fav['item'] as Map<String, dynamic>))
             .toList();
+
+        return {
+          'items': items,
+          'pagination': pagination,
+        };
       }
-      return [];
+      return null;
     } catch (e) {
       print('⚠️ Error fetching favorites: $e');
-      return [];
+      return null;
     }
   }
 

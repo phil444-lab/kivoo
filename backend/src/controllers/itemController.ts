@@ -176,26 +176,43 @@ export const getTrending = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    const page = parseInt(req.query.page as string, 10) || 1;
     const limit = parseInt(req.query.limit as string, 10) || 10;
+    const skip = (page - 1) * limit;
 
-    const items = await prisma.item.findMany({
-      where: { status: 'active' },
-      orderBy: { views: 'desc' },
-      take: limit,
-      include: {
-        category: { select: { id: true, name: true } },
-        subcategory: { select: { id: true, name: true } },
-        seller: { select: { id: true, name: true, phone: true, photo: true, rating: true, verified: true } },
-        feature: { select: { id: true, title: true, icon: true } },
-        department: { select: { id: true, name: true } },
-        city: { select: { id: true, name: true } },
-        district: { select: { id: true, name: true } },
-      },
-    });
+    const [items, totalItems] = await Promise.all([
+      prisma.item.findMany({
+        where: { status: 'active' },
+        orderBy: { views: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          category: { select: { id: true, name: true } },
+          subcategory: { select: { id: true, name: true } },
+          seller: { select: { id: true, name: true, phone: true, photo: true, rating: true, verified: true } },
+          feature: { select: { id: true, title: true, icon: true } },
+          department: { select: { id: true, name: true } },
+          city: { select: { id: true, name: true } },
+          district: { select: { id: true, name: true } },
+        },
+      }),
+      prisma.item.count({ where: { status: 'active' } }),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limit);
 
     res.status(200).json({
       success: true,
-      data: items,
+      data: {
+        items,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalItems,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
+        },
+      },
     });
   } catch (error) {
     next(error);
@@ -208,30 +225,49 @@ export const getFeatured = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    const page = parseInt(req.query.page as string, 10) || 1;
     const limit = parseInt(req.query.limit as string, 10) || 10;
+    const skip = (page - 1) * limit;
 
-    const items = await prisma.item.findMany({
-      where: {
-        status: 'active',
-        featured: true,
-        featuredUntil: { gt: new Date() },
-      },
-      orderBy: [{ boostLevel: 'desc' }, { createdAt: 'desc' }],
-      take: limit,
-      include: {
-        category: { select: { id: true, name: true } },
-        subcategory: { select: { id: true, name: true } },
-        seller: { select: { id: true, name: true, phone: true, photo: true, rating: true, verified: true } },
-        feature: { select: { id: true, title: true, icon: true } },
-        department: { select: { id: true, name: true } },
-        city: { select: { id: true, name: true } },
-        district: { select: { id: true, name: true } },
-      },
-    });
+    const featuredWhere: any = {
+      status: 'active',
+      featured: true,
+      featuredUntil: { gt: new Date() },
+    };
+
+    const [items, totalItems] = await Promise.all([
+      prisma.item.findMany({
+        where: featuredWhere,
+        orderBy: [{ boostLevel: 'desc' }, { createdAt: 'desc' }],
+        skip,
+        take: limit,
+        include: {
+          category: { select: { id: true, name: true } },
+          subcategory: { select: { id: true, name: true } },
+          seller: { select: { id: true, name: true, phone: true, photo: true, rating: true, verified: true } },
+          feature: { select: { id: true, title: true, icon: true } },
+          department: { select: { id: true, name: true } },
+          city: { select: { id: true, name: true } },
+          district: { select: { id: true, name: true } },
+        },
+      }),
+      prisma.item.count({ where: featuredWhere }),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limit);
 
     res.status(200).json({
       success: true,
-      data: items,
+      data: {
+        items,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalItems,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
+        },
+      },
     });
   } catch (error) {
     next(error);

@@ -7,6 +7,7 @@ import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/notification_provider.dart';
+import 'providers/data_cache_provider.dart';
 
 // Import pour accéder au homeScreenKey
 import 'screens/home/home_screen.dart' as home;
@@ -39,6 +40,9 @@ class KivooApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<NotificationProvider>(
           create: (_) => NotificationProvider(),
+        ),
+        ChangeNotifierProvider<DataCacheProvider>(
+          create: (_) => DataCacheProvider()..initialize(),
         ),
       ],
       child: Consumer<ThemeProvider>(

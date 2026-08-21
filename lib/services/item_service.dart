@@ -5,7 +5,8 @@ import '../models/item_model.dart';
 
 class ItemService {
   /// Récupère les annonces de l'utilisateur connecté
-  Future<List<ItemModel>> getMyItems({required String token, int page = 1, int limit = 50}) async {
+  /// Retourne un Map avec 'items' (List<ItemModel>) et 'pagination' (Map<String, dynamic>)
+  Future<Map<String, dynamic>?> getMyItems({required String token, int page = 1, int limit = 50}) async {
     try {
       final uri = Uri.parse('${AppConstants.baseUrl}/items/mine').replace(
         queryParameters: {'page': page.toString(), 'limit': limit.toString()},
@@ -19,16 +20,20 @@ class ItemService {
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final itemsData = data['data'] as Map<String, dynamic>;
-        final itemsList = (itemsData['items'] as List)
+        final dataMap = data['data'] as Map<String, dynamic>;
+        final itemsList = (dataMap['items'] as List)
             .map((e) => ItemModel.fromJson(e as Map<String, dynamic>))
             .toList();
-        return itemsList;
+        final pagination = dataMap['pagination'] as Map<String, dynamic>;
+        return {
+          'items': itemsList,
+          'pagination': pagination,
+        };
       }
-      return [];
+      return null;
     } catch (e) {
       print('⚠️ Error fetching my items: $e');
-      return [];
+      return null;
     }
   }
 
@@ -51,23 +56,32 @@ class ItemService {
   }
 
   /// Récupère les articles tendances (triés par nombre de vues)
-  Future<List<ItemModel>> getTrendingItems({int limit = 10}) async {
+  /// Retourne un Map avec 'items' (List<ItemModel>) et 'pagination' (Map<String, dynamic>)
+  Future<Map<String, dynamic>?> getTrendingItems({int page = 1, int limit = 10}) async {
     try {
+      final uri = Uri.parse('${AppConstants.baseUrl}/items/trending').replace(
+        queryParameters: {'page': page.toString(), 'limit': limit.toString()},
+      );
       final response = await http.get(
-        Uri.parse('${AppConstants.baseUrl}/items/trending?limit=$limit'),
+        uri,
         headers: {'Content-Type': 'application/json'},
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final List<dynamic> list = data['data'] as List<dynamic>;
-        return list
+        final dataMap = data['data'] as Map<String, dynamic>;
+        final itemsList = (dataMap['items'] as List)
             .map((e) => ItemModel.fromJson(e as Map<String, dynamic>))
             .toList();
+        final pagination = dataMap['pagination'] as Map<String, dynamic>;
+        return {
+          'items': itemsList,
+          'pagination': pagination,
+        };
       }
-      return [];
+      return null;
     } catch (e) {
       print('⚠️ Error fetching trending items: $e');
-      return [];
+      return null;
     }
   }
 

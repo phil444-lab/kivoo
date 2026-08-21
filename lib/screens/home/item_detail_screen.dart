@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/item_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/theme_provider.dart';
@@ -366,10 +367,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               itemCount: images.length,
               onPageChanged: (index) =>
                   setState(() => _currentImageIndex = index),
-              itemBuilder: (context, index) => Image.network(
-                images[index],
+              itemBuilder: (context, index) => CachedNetworkImage(
+                imageUrl: images[index],
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
+                placeholder: (context, url) => Container(
+                  color: isDarkFromContext
+                      ? AppTheme.darkSurface
+                      : AppTheme.lightSurface,
+                ),
+                errorWidget: (context, url, error) => Container(
                   color: isDarkFromContext
                       ? AppTheme.darkSurface
                       : AppTheme.lightSurface,
@@ -484,6 +490,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final item = widget.item;
     final authProvider = context.read<AuthProvider>();
     final isOwnItem = authProvider.user?.id == item.sellerId;
+    final isAuthenticated = authProvider.isAuthenticated;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -517,10 +524,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: item.sellerPhoto.isNotEmpty
-                    ? Image.network(
-                        item.sellerPhoto,
+                    ? CachedNetworkImage(
+                        imageUrl: item.sellerPhoto,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
+                        placeholder: (context, url) =>
+                            _buildDefaultAvatar(isDark),
+                        errorWidget: (context, url, error) =>
                             _buildDefaultAvatar(isDark),
                       )
                     : _buildDefaultAvatar(isDark),
@@ -622,8 +631,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               ),
             ],
           ),
-          // Boutons (masqués si c'est le vendeur lui-même)
-          if (!isOwnItem) ...[
+          // Boutons (masqués si c'est le vendeur lui-même ou si l'utilisateur n'est pas connecté)
+          if (!isOwnItem && isAuthenticated) ...[
             const SizedBox(height: 16),
             Row(
               children: [

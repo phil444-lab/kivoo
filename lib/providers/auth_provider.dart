@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
+import '../models/item_model.dart';
 import '../services/auth_service.dart';
 import '../services/google_auth_service.dart';
 import '../services/favorite_service.dart';
@@ -19,6 +20,7 @@ class AuthProvider extends ChangeNotifier {
   bool _isInitialized = false;
   final FavoriteService _favoriteService = FavoriteService();
   final Set<String> _favoriteItemIds = {};
+  List<ItemModel> _favoriteItems = [];
   bool _isLoadingFavorites = false;
 
   User? get user => _user;
@@ -29,6 +31,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _token != null && _user != null;
   bool get isLoadingFavorites => _isLoadingFavorites;
   Set<String> get favoriteItemIds => Set.unmodifiable(_favoriteItemIds);
+  List<ItemModel> get favoriteItems => List.unmodifiable(_favoriteItems);
 
   AuthProvider() {
     _loadStoredAuth();
@@ -73,6 +76,7 @@ class AuthProvider extends ChangeNotifier {
     _refreshToken = null;
     _user = null;
     _favoriteItemIds.clear();
+    _favoriteItems = [];
   }
 
   Future<bool> register({
@@ -373,6 +377,7 @@ class AuthProvider extends ChangeNotifier {
 
       if (success) {
         _favoriteItemIds.remove(itemId);
+        _favoriteItems.removeWhere((item) => item.id == itemId);
         notifyListeners();
       }
 
@@ -403,10 +408,15 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final favorites = await _favoriteService.getFavorites(token: _token!);
-      _favoriteItemIds.clear();
-      for (final item in favorites) {
-        _favoriteItemIds.add(item.id);
+      final result = await _favoriteService.getFavorites(token: _token!);
+      if (result != null) {
+        final favorites = result['items'] as List<ItemModel>;
+        _favoriteItemIds.clear();
+        _favoriteItems = [];
+        for (final item in favorites) {
+          _favoriteItemIds.add(item.id);
+          _favoriteItems.add(item);
+        }
       }
 
       _isLoadingFavorites = false;
@@ -414,6 +424,35 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       _isLoadingFavorites = false;
       notifyListeners();
+    }
+  }
+
+  /// Charge la page suivante de favoris
+  Future<Map<String, dynamic>?> loadMoreFavorites({required int page}) async {
+    if (_token == null) return null;
+
+    try {
+      final result = await _favoriteService.getFavorites(
+        token: _token!,
+        page: page,
+        limit: 20,
+      );
+      if (result != null) {
+        final favorites = result['items'] as List<ItemModel>;
+        final pagination = result['pagination'] as Map<String, dynamic>;
+        for (final item in favorites) {
+          if (!_favoriteItemIds.contains(item.id)) {
+            _favoriteItemIds.add(item.id);
+            _favoriteItems.add(item);
+          }
+        }
+        notifyListeners();
+        return pagination;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('⚠️ Error loading more favorites: $e');
+      return null;
     }
   }
 

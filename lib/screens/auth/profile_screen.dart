@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/location_model.dart';
@@ -356,25 +357,26 @@ class ProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 8),
 
-            // Phone
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                FaIcon(
-                  FontAwesomeIcons.phone,
-                  size: 12,
-                  color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  user.phone,
-                  style: TextStyle(
+            // Phone (masqué si c'est un numéro généré pour les connexions sociales)
+            if (!user.phone.startsWith('social_'))
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FaIcon(
+                    FontAwesomeIcons.phone,
+                    size: 12,
                     color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
-                    fontSize: Responsive.fontSize(context, 13),
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(width: 6),
+                  Text(
+                    user.phone,
+                    style: TextStyle(
+                      color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+                      fontSize: Responsive.fontSize(context, 13),
+                    ),
+                  ),
+                ],
+              ),
 
             // Location
             if (user.location != null && (user.location as Map<String, dynamic>).isNotEmpty)
@@ -646,14 +648,13 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildAvatarImage(String photoUrl, String userName) {
-    // Utiliser Image.network pour toutes les URLs (plus de base64)
+    // Utiliser CachedNetworkImage pour toutes les URLs (plus de base64)
     return ClipOval(
-      child: Image.network(
-        photoUrl,
+      child: CachedNetworkImage(
+        imageUrl: photoUrl,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, widget) {
-          return _buildFallbackAvatar(userName);
-        },
+        placeholder: (context, url) => _buildFallbackAvatar(userName),
+        errorWidget: (context, url, error) => _buildFallbackAvatar(userName),
       ),
     );
   }

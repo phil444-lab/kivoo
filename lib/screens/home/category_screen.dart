@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../models/category_model.dart';
-import '../../services/category_service.dart';
+import '../../providers/data_cache_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/theme_provider.dart';
 import '../../utils/responsive.dart';
@@ -18,7 +18,6 @@ class CategoryScreen extends StatefulWidget {
 }
 
 class _CategoryScreenState extends State<CategoryScreen> {
-  final _service = CategoryService();
   List<CategoryModel> _subcategories = [];
   bool _loading = true;
 
@@ -29,7 +28,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   Future<void> _load() async {
-    final subs = await _service.getSubCategories(widget.category.id);
+    final dataCache = context.read<DataCacheProvider>();
+    final subs = await dataCache.getSubCategories(widget.category.id);
     if (mounted) setState(() { _subcategories = subs; _loading = false; });
   }
 

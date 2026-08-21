@@ -5,7 +5,7 @@ import '../../models/category_model.dart';
 import '../../models/item_model.dart';
 import '../../models/location_model.dart';
 import '../../services/item_service.dart';
-import '../../services/location_service.dart';
+import '../../providers/data_cache_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/theme_provider.dart';
 import '../../utils/responsive.dart';
@@ -30,7 +30,6 @@ class ItemsListScreen extends StatefulWidget {
 
 class _ItemsListScreenState extends State<ItemsListScreen> {
   final _itemService = ItemService();
-  final _locationService = LocationService();
   final _searchController = TextEditingController();
   final _minPriceController = TextEditingController();
   final _maxPriceController = TextEditingController();
@@ -108,9 +107,10 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
   }
 
   Future<void> _loadDepartments() async {
-    final countries = await _locationService.getCountries();
+    final dataCache = context.read<DataCacheProvider>();
+    final countries = await dataCache.getCountries();
     if (countries.isNotEmpty) {
-      final deps = await _locationService.getDepartments(countries.first.id);
+      final deps = await dataCache.getDepartments(countries.first.id);
       if (mounted) setState(() => _departments = deps);
     }
   }
@@ -124,7 +124,8 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
       _districts = [];
     });
     if (dept != null) {
-      final cities = await _locationService.getCities(dept.id);
+      final dataCache = context.read<DataCacheProvider>();
+      final cities = await dataCache.getCities(dept.id);
       if (mounted) setState(() => _cities = cities);
     }
   }
@@ -136,7 +137,8 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
       _districts = [];
     });
     if (city != null) {
-      final districts = await _locationService.getDistricts(city.id);
+      final dataCache = context.read<DataCacheProvider>();
+      final districts = await dataCache.getDistricts(city.id);
       if (mounted) setState(() => _districts = districts);
     }
   }

@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/theme_provider.dart';
 import '../../utils/responsive.dart';
 import '../../components/item_card.dart';
+import '../../components/skeleton_card.dart';
 import '../../providers/auth_provider.dart';
 import 'item_detail_screen.dart';
 import '../sell/sell_screen.dart';
@@ -39,7 +40,8 @@ class _MyItemsScreenState extends State<MyItemsScreen> {
       return;
     }
 
-    final items = await _itemService.getMyItems(token: token);
+    final result = await _itemService.getMyItems(token: token);
+    final items = (result?['items'] as List<ItemModel>?) ?? [];
     if (mounted) {
       setState(() {
         _items = items;
@@ -138,9 +140,7 @@ class _MyItemsScreenState extends State<MyItemsScreen> {
 
   Widget _buildBody(bool isDark) {
     if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppTheme.primaryBlue),
-      );
+      return _buildSkeletonList(isDark);
     }
 
     if (_items.isEmpty) {
@@ -364,6 +364,21 @@ class _MyItemsScreenState extends State<MyItemsScreen> {
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  /// Affiche une liste de cartes skeleton pendant le chargement
+  Widget _buildSkeletonList(bool isDark) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: 3,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: SkeletonItemCard(isDark: isDark),
         );
       },
     );

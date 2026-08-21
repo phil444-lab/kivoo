@@ -5,8 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/data_cache_provider.dart';
 import '../../models/location_model.dart';
-import '../../services/location_service.dart';
 import '../../utils/responsive.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -25,7 +25,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _newPasswordController;
 
   // Controllers pour la localisation
-  final _locationService = LocationService();
   late TextEditingController _customCountryController;
   late TextEditingController _customDepartmentController;
   late TextEditingController _customCityController;
@@ -101,7 +100,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _loadCountries() async {
     setState(() => _isLoadingLocations = true);
-    final countries = await _locationService.getCountries();
+    final dataCache = context.read<DataCacheProvider>();
+    final countries = await dataCache.getCountries();
     if (mounted) {
       setState(() {
         _countries = countries;
@@ -112,7 +112,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _loadDepartments(String countryId) async {
     setState(() => _isLoadingLocations = true);
-    final departments = await _locationService.getDepartments(countryId);
+    final dataCache = context.read<DataCacheProvider>();
+    final departments = await dataCache.getDepartments(countryId);
     if (mounted) {
       setState(() {
         _departments = departments;
@@ -128,7 +129,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _loadCities(String departmentId) async {
     setState(() => _isLoadingLocations = true);
-    final cities = await _locationService.getCities(departmentId);
+    final dataCache = context.read<DataCacheProvider>();
+    final cities = await dataCache.getCities(departmentId);
     if (mounted) {
       setState(() {
         _cities = cities;
@@ -142,7 +144,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _loadDistricts(String cityId) async {
     setState(() => _isLoadingLocations = true);
-    final districts = await _locationService.getDistricts(cityId);
+    final dataCache = context.read<DataCacheProvider>();
+    final districts = await dataCache.getDistricts(cityId);
     if (mounted) {
       setState(() {
         _districts = districts;

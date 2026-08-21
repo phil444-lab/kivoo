@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
-import '../../models/item_model.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/theme_provider.dart';
 import '../../route/route_constants.dart';
 import '../../utils/responsive.dart';
 import '../../components/item_card.dart';
+import '../../components/skeleton_card.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/item_service.dart';
 import 'item_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
@@ -23,9 +22,11 @@ class FavoritesScreen extends StatefulWidget {
 }
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
-  List<ItemModel> _favorites = [];
   bool _loading = true;
-  final ItemService _itemService = ItemService();
+  bool _loadingMore = false;
+  int _currentPage = 1;
+  bool _hasMore = false;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -35,17 +36,50 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadFavorites();
     });
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _loadMoreFavorites();
+    }
   }
 
   Future<void> _loadFavorites() async {
     final authProvider = context.read<AuthProvider>();
-    
+
     await authProvider.loadFavorites();
-    
+
     if (mounted) {
       setState(() {
-        _favorites = [];
         _loading = false;
+        _currentPage = 1;
+        _hasMore = authProvider.favoriteItems.length >= 20;
+      });
+    }
+  }
+
+  Future<void> _loadMoreFavorites() async {
+    if (_loadingMore || !_hasMore) return;
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isAuthenticated) return;
+
+    _loadingMore = true;
+    setState(() {});
+
+    final result = await authProvider.loadMoreFavorites(page: _currentPage + 1);
+    if (mounted) {
+      setState(() {
+        _currentPage = result?['currentPage'] ?? _currentPage;
+        _hasMore = result?['hasNext'] ?? false;
+        _loadingMore = false;
       });
     }
   }
@@ -71,7 +105,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           onPressed: widget.onBack ?? () => Navigator.pop(context),
           icon: FaIcon(
             FontAwesomeIcons.arrowLeft,
-            size: Responsive.iconSize(context, 18), 
+            size: Responsive.iconSize(context, 18),
             color: Colors.white,
           ),
         ),
@@ -87,13 +121,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   Widget _buildBody(bool isDark) {
     if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppTheme.primaryBlue),
-      );
+      return _buildSkeletonList(isDark);
     }
 
     final authProvider = context.watch<AuthProvider>();
-    
+
     // Check if user is authenticated
     if (!authProvider.isAuthenticated) {
       return Center(
@@ -149,9 +181,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       );
     }
 
-    final favoriteIds = authProvider.favoriteItemIds;
+    final favoriteItems = authProvider.favoriteItems;
 
-    if (favoriteIds.isEmpty) {
+    if (favoriteItems.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -185,72 +217,66 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     }
 
     return ListView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.all(16),
-      itemCount: favoriteIds.length,
+      itemCount: favoriteItems.length + (_hasMore ? 1 : 0),
       itemBuilder: (context, index) {
-        final itemId = favoriteIds.elementAt(index);
-
-        return FutureBuilder<ItemModel?>(
-          future: _getItemDetails(itemId),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
-                child: Center(
-                  child: CircularProgressIndicator(color: AppTheme.primaryBlue),
+        if (index == favoriteItems.length) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: CircularProgressIndicator(color: AppTheme.primaryBlue),
+            ),
+          );
+        }
+        final item = favoriteItems[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: ItemCard(
+            item: item,
+            isDark: isDark,
+            imageHeight: 300,
+            fillHeight: false,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ItemDetailScreen(item: item),
                 ),
               );
-            }
-
-            if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-              return const SizedBox.shrink();
-            }
-
-            final item = snapshot.data!;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-            child: ItemCard(
-                item: item,
-                isDark: isDark,
-                imageHeight: 300,
-                fillHeight: false,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ItemDetailScreen(item: item),
-                    ),
-                  );
-                },
-                onFavoriteToggle: () async {
-                  final success = await authProvider.removeFromFavorites(item.id);
-                  if (success && mounted) {
-                    setState(() {});
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Retiré des favoris'),
-                        backgroundColor: Colors.green,
-                        behavior: SnackBarBehavior.floating,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  }
-                },
-              ),
-            );
-          },
+            },
+            onFavoriteToggle: () async {
+              final success = await authProvider.removeFromFavorites(item.id);
+              if (success && mounted) {
+                setState(() {});
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Retiré des favoris'),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+          ),
         );
       },
     );
   }
 
-  Future<ItemModel?> _getItemDetails(String itemId) async {
-    try {
-      return await _itemService.getItemById(itemId);
-    } catch (e) {
-      print('⚠️ Error fetching item details: $e');
-      return null;
-    }
+  /// Affiche une liste de cartes skeleton pendant le chargement initial
+  Widget _buildSkeletonList(bool isDark) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: 4,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: SkeletonItemCard(isDark: isDark),
+        );
+      },
+    );
   }
 }
-
