@@ -14,6 +14,7 @@ import '../../services/category_service.dart';
 import '../../services/location_service.dart';
 import '../../services/feature_card_service.dart';
 import '../../services/item_service.dart';
+import '../../services/cloudinary_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/responsive.dart';
 
@@ -39,6 +40,7 @@ class _SellScreenState extends State<SellScreen> {
   final _locationService = LocationService();
   final _featureCardService = FeatureCardService();
   final _itemService = ItemService();
+  final _cloudinaryService = CloudinaryService();
 
   List<CategoryModel> _parentCategories = [];
   List<CategoryModel> _subCategories = [];
@@ -333,66 +335,91 @@ class _SellScreenState extends State<SellScreen> {
     final brand = _brandController.text.trim().isEmpty ? null : _brandController.text.trim();
     final color = _colorController.text.trim().isEmpty ? null : _colorController.text.trim();
 
-    if (_isEditing) {
-      // Mode édition : mettre à jour l'annonce
-      final result = await _itemService.updateItem(
-        token: authProvider.token!,
-        itemId: widget.item!.id,
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim(),
-        price: double.parse(_priceController.text.trim()),
-        priceType: _selectedPriceType ?? 'fixed',
-        categoryId: _selectedParentCategory!.id,
-        subcategoryId: _selectedSubCategory!.id,
-        images: _newImages.isNotEmpty ? _newImages : null,
-        keepImages: keptImages,
-        brand: brand,
-        color: color,
-        condition: _selectedCondition,
-        departmentId: _selectedDepartment?.id,
-        cityId: _selectedCity?.id,
-        districtId: _selectedDistrict?.id,
-        featureId: _selectedFeature?.id,
-      );
+    try {
+      // Uploader les nouvelles images directement vers Cloudinary
+      List<String> uploadedImageUrls = [];
+      if (_newImages.isNotEmpty) {
+        uploadedImageUrls = await _cloudinaryService.uploadMultiple(
+          token: authProvider.token!,
+          imageFiles: _newImages,
+          folder: 'kivoo/items',
+        );
 
+        if (uploadedImageUrls.length != _newImages.length) {
+          if (!mounted) return;
+          setState(() => _isSubmitting = false);
+          _showSnack('Erreur lors de l\'upload des images. Veuillez réessayer.');
+          return;
+        }
+      }
+
+      // Images finales = conservées + nouvelles URLs Cloudinary
+      final allImages = [...keptImages, ...uploadedImageUrls];
+
+      if (_isEditing) {
+        // Mode édition : mettre à jour l'annonce
+        final result = await _itemService.updateItem(
+          token: authProvider.token!,
+          itemId: widget.item!.id,
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          price: double.parse(_priceController.text.trim()),
+          priceType: _selectedPriceType ?? 'fixed',
+          categoryId: _selectedParentCategory!.id,
+          subcategoryId: _selectedSubCategory!.id,
+          images: allImages,
+          brand: brand,
+          color: color,
+          condition: _selectedCondition,
+          departmentId: _selectedDepartment?.id,
+          cityId: _selectedCity?.id,
+          districtId: _selectedDistrict?.id,
+          featureId: _selectedFeature?.id,
+        );
+
+        if (!mounted) return;
+        setState(() => _isSubmitting = false);
+
+        if (result != null) {
+          _showSnack('Annonce modifiée avec succès !', isError: false);
+          Navigator.pop(context, true);
+        } else {
+          _showSnack('Erreur lors de la modification. Veuillez réessayer.');
+        }
+      } else {
+        // Mode création
+        final result = await _itemService.createItem(
+          token: authProvider.token!,
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          price: double.parse(_priceController.text.trim()),
+          priceType: _selectedPriceType ?? 'fixed',
+          images: allImages,
+          categoryId: _selectedParentCategory!.id,
+          subcategoryId: _selectedSubCategory!.id,
+          brand: brand,
+          color: color,
+          condition: _selectedCondition,
+          departmentId: _selectedDepartment?.id,
+          cityId: _selectedCity?.id,
+          districtId: _selectedDistrict?.id,
+          featureId: _selectedFeature?.id,
+        );
+
+        if (!mounted) return;
+        setState(() => _isSubmitting = false);
+
+        if (result != null) {
+          _showSnack('Article publié avec succès !', isError: false);
+          Navigator.pop(context, true);
+        } else {
+          _showSnack('Erreur lors de la publication. Veuillez réessayer.');
+        }
+      }
+    } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-
-      if (result != null) {
-        _showSnack('Annonce modifiée avec succès !', isError: false);
-        Navigator.pop(context, true);
-      } else {
-        _showSnack('Erreur lors de la modification. Veuillez réessayer.');
-      }
-    } else {
-      // Mode création
-      final result = await _itemService.createItem(
-        token: authProvider.token!,
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim(),
-        price: double.parse(_priceController.text.trim()),
-        priceType: _selectedPriceType ?? 'fixed',
-        images: _newImages,
-        categoryId: _selectedParentCategory!.id,
-        subcategoryId: _selectedSubCategory!.id,
-        brand: brand,
-        color: color,
-        condition: _selectedCondition,
-        departmentId: _selectedDepartment?.id,
-        cityId: _selectedCity?.id,
-        districtId: _selectedDistrict?.id,
-        featureId: _selectedFeature?.id,
-      );
-
-      if (!mounted) return;
-      setState(() => _isSubmitting = false);
-
-      if (result != null) {
-        _showSnack('Article publié avec succès !', isError: false);
-        Navigator.pop(context, true);
-      } else {
-        _showSnack('Erreur lors de la publication. Veuillez réessayer.');
-      }
+      _showSnack('Erreur lors de l\'upload des images. Veuillez réessayer.');
     }
   }
 

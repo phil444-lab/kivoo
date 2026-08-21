@@ -20,6 +20,7 @@ import userRoutes from './routes/userRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
 import featuredRoutes from './routes/featuredRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
 
 export function createApp(): Express {
   const app = express() as Express;
@@ -57,6 +58,7 @@ export function createApp(): Express {
   app.use('/api/locations', locationRoutes);
   app.use('/api/featured', featuredRoutes);
   app.use('/api/notifications', notificationRoutes);
+  app.use('/api/uploads', uploadRoutes);
 
   // Error handler
   app.use(errorHandler);

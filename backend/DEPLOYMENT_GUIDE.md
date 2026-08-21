@@ -15,6 +15,7 @@ Vercel est **serverless** (sans serveur persistant). Cela signifie :
 1. **Socket.io ne fonctionnera PAS** - les conversations temps réel ne fonctionneront pas en production. Il faudra utiliser un service externe (Pusher, Ably, etc.) ou un polling.
 2. **Les jobs de nettoyage (`setInterval`)** sont remplacés par **Vercel Cron Jobs** (configurés dans `vercel.json`, 1x/jour à minuit - limite du plan Hobby) ✅
 3. **Le stockage local des fichiers** ne fonctionne pas - c'est déjà géré via Cloudinary ✅
+4. **La limite de 4,5 Mo sur le corps de requête** - les fichiers uploadés ne passent **PAS** par l'API Vercel. Ils sont uploadés **directement** vers Cloudinary depuis l'app Flutter via une signature signée. ✅
 
 ## 🛠️ Fichiers déjà préparés
 
@@ -25,6 +26,33 @@ Vercel est **serverless** (sans serveur persistant). Cela signifie :
 | `backend/api/cron/cleanup.ts` | Endpoint Cron pour le nettoyage (sessions, notifications, annonces expirées) |
 | `backend/src/app.ts` | App Express séparée (réutilisable par Vercel et le serveur local) |
 | `backend/package.json` | Script `vercel-build` = `prisma generate` |
+| `backend/src/routes/uploadRoutes.ts` | Endpoint `/api/uploads/signature` pour générer les signatures Cloudinary |
+| `lib/services/cloudinary_service.dart` | Service Flutter pour l'upload direct vers Cloudinary |
+
+## 📤 Upload direct Cloudinary (contourne la limite de 4,5 Mo)
+
+### Comment ça fonctionne
+
+1. **L'app Flutter** demande une signature signée au backend : `POST /api/uploads/signature` (avec le token JWT)
+2. **Le backend** génère une signature Cloudinary signée (timestamp + signature HMAC) et la renvoie
+3. **L'app Flutter** upload **directement** les images vers `https://api.cloudinary.com/v1_1/{cloud_name}/image/upload` avec la signature
+4. **L'app Flutter** envoie ensuite les URLs Cloudinary au backend en JSON (payload minuscule, < 4,5 Mo)
+5. **Le backend** stocke les URLs Cloudinary en base de données
+
+### Avantages
+
+- ✅ **Contourne totalement la limite de 4,5 Mo** de Vercel
+- ✅ Les images haute qualité sont préservées
+- ✅ Le backend ne traite plus les fichiers binaires (moins de charge CPU)
+- ✅ Le payload JSON envoyé à Vercel reste minuscule
+
+### Endpoints modifiés
+
+| Endpoint | Avant | Après |
+|----------|-------|-------|
+| `POST /api/items` | multipart/form-data (fichiers) | JSON avec `images: [URLs Cloudinary]` |
+| `PUT /api/items/:id` | multipart/form-data (fichiers) | JSON avec `images: [URLs Cloudinary]` |
+| `POST /api/uploads/signature` | - | **Nouveau** : génère une signature Cloudinary |
 
 ## 📦 Étapes de déploiement
 

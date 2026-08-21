@@ -20,6 +20,7 @@ export const createItemSchema = z.object({
     location: z.any().optional(),
     tags: z.array(z.string()).optional(),
     specifications: z.any().optional(),
+    images: z.array(z.string()).min(3, 'Au moins 3 photos sont requises'),
   }),
 });
 
@@ -40,9 +41,9 @@ export const updateItemSchema = z.object({
     cityId: z.string().optional(),
     districtId: z.string().optional(),
     featureId: z.string().optional(),
-    keepImages: z.array(z.string()).or(z.string()).optional(),
     location: z.any().optional(),
     tags: z.array(z.string()).optional(),
     specifications: z.any().optional(),
+    images: z.array(z.string()).refine((imgs) => imgs.length >= 3, 'Au moins 3 photos sont requises').optional(),
   }),
 });

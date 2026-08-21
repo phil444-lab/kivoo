@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { ApiError, NotFoundError, ForbiddenError } from '../utils/ApiError.js';
-import { uploadToCloudinary, deleteManyFromCloudinary, extractCloudinaryImageIds } from '../services/cloudinaryService.js';
+import { deleteManyFromCloudinary, extractCloudinaryImageIds } from '../services/cloudinaryService.js';
 
 export const getMyItems = async (
   req: AuthRequest,
@@ -290,19 +290,20 @@ export const createItem = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { featureId, ...rest } = req.body;
+    const { featureId, images, ...rest } = req.body;
 
-    // Récupérer les fichiers uploadés (multer les place dans req.files)
-    const files = (req.files as Express.Multer.File[]) || [];
-    if (files.length < 3) {
+    // Les images sont des URLs Cloudinary envoyées en JSON
+    if (!Array.isArray(images) || images.length < 3) {
       throw new ApiError(400, 'Au moins 3 photos sont requises');
     }
 
-    // Uploader les images vers Cloudinary
-    const uploadedImages = await Promise.all(
-      files.map((file) => uploadToCloudinary(file.buffer, 'kivoo/items'))
+    // Vérifier que toutes les images sont des URLs Cloudinary valides
+    const validImages = images.filter(
+      (img) => typeof img === 'string' && img.includes('res.cloudinary.com/')
     );
-    const images = uploadedImages.map((img) => img.secureUrl);
+    if (validImages.length < 3) {
+      throw new ApiError(400, 'Les images doivent être des URLs Cloudinary valides');
+    }
 
     // Convertir les champs numériques reçus en string (multipart/form-data)
     const price = rest.price !== undefined ? Number(rest.price) : undefined;
@@ -325,7 +326,7 @@ export const createItem = async (
       ...rest,
       price,
       year,
-      images,
+      images: validImages,
       featureId: defaultFeatureId,
       sellerId: req.user.id,
       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -370,49 +371,32 @@ export const updateItem = async (
       throw new ForbiddenError('Vous n\'êtes pas autorisé à modifier cette annonce');
     }
 
-    const { featureId, keepImages, ...rest } = req.body;
+    const { featureId, images: imageUrls, ...rest } = req.body;
 
-    // Convertir les champs numériques reçus en string (multipart/form-data)
+    // Convertir les champs numériques reçus en string (JSON)
     const price = rest.price !== undefined ? Number(rest.price) : undefined;
     const year = rest.year !== undefined ? Number(rest.year) : undefined;
     if (price !== undefined && isNaN(price)) {
       throw new ApiError(400, 'Le prix doit être un nombre valide');
     }
 
-    // Gestion des images :
-    // - keepImages : liste des images existantes à conserver (JSON string ou array)
-    // - files : nouvelles images uploadées
-    const files = (req.files as Express.Multer.File[]) || [];
-
-    // Uploader les nouvelles images vers Cloudinary
-    const newImages = await Promise.all(
-      files.map((file) => uploadToCloudinary(file.buffer, 'kivoo/items'))
-    );
-    const newImageUrls = newImages.map((img) => img.secureUrl);
-
-    // Décoder keepImages (peut être un JSON string en multipart, ou un array en JSON)
-    let keptImages: string[] = [];
-    if (typeof keepImages === 'string') {
-      try {
-        const parsed = JSON.parse(keepImages);
-        if (Array.isArray(parsed)) keptImages = parsed.map(String);
-      } catch {
-        keptImages = [keepImages];
+    // Gestion des images : les URLs Cloudinary sont envoyées en JSON
+    let finalImages: string[] | null = null;
+    if (Array.isArray(imageUrls)) {
+      // Vérifier que toutes les images sont des URLs Cloudinary valides
+      const validImages = imageUrls.filter(
+        (img) => typeof img === 'string' && img.includes('res.cloudinary.com/')
+      );
+      if (validImages.length < 3) {
+        throw new ApiError(400, 'Au moins 3 photos Cloudinary valides sont requises');
       }
-    } else if (Array.isArray(keepImages)) {
-      keptImages = keepImages.map(String);
-    }
-
-    // Images finales = conservées + nouvelles
-    let images: string[] | null = null;
-    if (keptImages.length > 0 || newImageUrls.length > 0) {
-      images = [...keptImages, ...newImageUrls];
+      finalImages = validImages;
     }
 
     // Supprimer les anciennes images Cloudinary qui ne sont plus conservées
     const oldImageNames = extractCloudinaryImageIds(item.images);
     const imagesToDelete = oldImageNames.filter(
-      (oldImg) => !keptImages.includes(oldImg)
+      (oldImg) => !finalImages?.includes(oldImg)
     );
     await deleteManyFromCloudinary(imagesToDelete);
 
@@ -422,7 +406,7 @@ export const updateItem = async (
         ...rest,
         ...(price !== undefined ? { price } : {}),
         ...(year !== undefined ? { year } : {}),
-        ...(images ? { images } : {}),
+        ...(finalImages ? { images: finalImages } : {}),
         ...(featureId ? { featureId } : {}),
       },
       include: {
