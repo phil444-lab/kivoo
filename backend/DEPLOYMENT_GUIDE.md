@@ -4,9 +4,45 @@
 
 - Compte [Vercel](https://vercel.com)
 - Le projet poussé sur GitHub (déjà fait : `https://github.com/phil444-lab/kivoo.git`)
-- Base MySQL sur Aiven (déjà configurée)
+- Base de données **TiDB Cloud** (compatible MySQL, ne s'endort jamais)
 - Stockage Cloudinary (déjà configuré)
 - Fichier Firebase service account JSON (déjà présent : `kivoo-d8521-firebase-adminsdk-fbsvc-dff099da48.json`)
+
+## 🗄️ Migration Aiven → TiDB Cloud
+
+### Pourquoi TiDB ?
+
+- ✅ **Ne s'endort jamais** - contrairement à Aiven qui se met en veille après inactivité
+- ✅ **Compatible MySQL** - Prisma fonctionne sans modification majeure du code
+- ✅ **Gratuit pour démarrer** - TiDB Cloud offre un plan Serverless gratuit
+- ✅ **Scalable automatiquement** - pas besoin de gérer la capacité
+- ✅ **HTTPS/TLS inclus** - connexions sécurisées par défaut
+
+### Étapes de migration
+
+1. **Créer un compte TiDB Cloud** : https://tidbcloud.com
+2. **Créer un cluster Serverless** (plan gratuit)
+3. **Créer une base de données** nommée `kivoo`
+4. **Récupérer la connection string** depuis le dashboard TiDB Cloud :
+   ```
+   mysql://<user>:<password>@<host>.tidbcloud.com:4000/kivoo
+   ```
+5. **Mettre à jour le fichier `.env`** (utiliser `sslaccept=strict` pour Prisma) :
+   ```
+   DATABASE_URL=mysql://<user>:<password>@<host>.tidbcloud.com:4000/kivoo?sslaccept=strict
+   ```
+6. **Régénérer le client Prisma** :
+   ```bash
+   cd backend
+   npx prisma generate
+   ```
+7. **Pousser le schéma vers TiDB** :
+   ```bash
+   npx prisma db push
+   ```
+8. **Migrer les données existantes** (si nécessaire) :
+   - Utiliser l'outil de migration de TiDB Cloud ou un outil comme `mysqldump` pour exporter depuis Aiven et importer vers TiDB
+   - Ou simplement re-seeder : `npm run seed`
 
 ## ⚠️ IMPORTANT - Limitations Vercel
 
@@ -77,7 +113,7 @@ Dans Vercel → Settings → Environment Variables, ajouter :
 
 | Variable | Valeur |
 |----------|--------|
-| `DATABASE_URL` | Votre URL MySQL Aiven (voir votre dashboard Aiven) |
+| `DATABASE_URL` | Votre URL TiDB Cloud (voir votre dashboard TiDB Cloud) |
 | `JWT_SECRET` | Une clé secrète forte (ex: générée avec `openssl rand -base64 32`) |
 | `JWT_EXPIRES_IN` | `7d` |
 | `JWT_REFRESH_SECRET` | Une autre clé secrète forte |
@@ -142,7 +178,8 @@ npm run dev
 
 ### Erreur Prisma "Can't reach database server"
 - Vérifier que `DATABASE_URL` est correctement définie dans Vercel
-- Vérifier que l'IP d'Aiven autorise les connexions externes (Aiven → Service settings → Allow all IPs)
+- Vérifier que l'URL TiDB est correcte (format : `mysql://<user>:<password>@<host>.tidbcloud.com:4000/kivoo?sslaccept=strict`)
+- TiDB Cloud Serverless accepte les connexions de n'importe où (pas de restriction IP par défaut)
 
 ### Erreur "FIREBASE_SERVICE_ACCOUNT_JSON non défini"
 - Vérifier que la variable est bien créée dans Vercel
