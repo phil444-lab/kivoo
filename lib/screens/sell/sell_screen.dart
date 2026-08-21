@@ -416,6 +416,11 @@ class _SellScreenState extends State<SellScreen> {
           _showSnack('Erreur lors de la publication. Veuillez réessayer.');
         }
       }
+    } on CloudinaryUploadException catch (e) {
+      // Message d'erreur personnalisé pour les erreurs Cloudinary
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      _showSnack(e.message);
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);

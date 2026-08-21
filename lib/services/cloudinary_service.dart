@@ -4,7 +4,9 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import '../constants.dart';
+import 'image_compression_service.dart';
 
+/// Résultat d'un upload Cloudinary
 class CloudinaryUploadResult {
   final String secureUrl;
   final String publicId;
@@ -19,7 +21,24 @@ class CloudinaryUploadResult {
   }
 }
 
+/// Exception personnalisée pour les erreurs d'upload Cloudinary
+class CloudinaryUploadException implements Exception {
+  final String message;
+  final int? statusCode;
+
+  CloudinaryUploadException(this.message, {this.statusCode});
+
+  @override
+  String toString() => message;
+}
+
 class CloudinaryService {
+  /// Taille maximale autorisée par Cloudinary (10 Mo pour le plan gratuit)
+  static const int maxFileSizeBytes = 10 * 1024 * 1024; // 10 Mo
+
+  /// Service de compression d'images
+  final ImageCompressionService _compressionService = ImageCompressionService();
+
   /// Obtient une signature Cloudinary signée depuis le backend
   Future<Map<String, dynamic>?> _getUploadSignature({
     required String token,
@@ -51,6 +70,55 @@ class CloudinaryService {
     }
   }
 
+  /// Vérifie la taille d'un fichier avant l'upload
+  void _validateFileSize(File file) {
+    final fileSize = file.lengthSync();
+    if (fileSize > maxFileSizeBytes) {
+      final sizeInMB = (fileSize / (1024 * 1024)).toStringAsFixed(1);
+      throw CloudinaryUploadException(
+        'L\'image "${file.path.split('/').last}" fait $sizeInMB Mo. '
+        'La taille maximale autorisée est de 10 Mo par image. '
+        'Veuillez compresser l\'image ou en choisir une plus petite.',
+      );
+    }
+  }
+
+  /// Analyse la réponse d'erreur Cloudinary pour extraire un message clair
+  String _parseCloudinaryError(http.Response response) {
+    try {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final error = data['error'] as Map<String, dynamic>?;
+      final message = error?['message'] as String? ?? '';
+
+      // Messages d'erreur Cloudinary courants
+      if (message.contains('File size too large') || message.contains('too large')) {
+        return 'L\'image dépasse la taille maximale autorisée par Cloudinary (10 Mo). '
+            'Veuillez compresser l\'image ou en choisir une plus petite.';
+      }
+      if (message.contains('Invalid file type') || message.contains('not allowed')) {
+        return 'Le format de l\'image n\'est pas autorisé. '
+            'Utilisez un format JPEG, PNG, WebP ou GIF.';
+      }
+      if (message.contains('Invalid signature') || message.contains('signature')) {
+        return 'La signature Cloudinary a expiré. Veuillez réessayer.';
+      }
+      if (message.contains('Upload preset') || message.contains('preset')) {
+        return 'Configuration d\'upload invalide. Veuillez réessayer plus tard.';
+      }
+      if (message.contains('Rate limit') || message.contains('too many')) {
+        return 'Trop de requêtes envoyées. Veuillez patienter quelques secondes et réessayer.';
+      }
+      if (message.contains('timed out') || message.contains('timeout')) {
+        return 'Le téléversement a expiré. Vérifiez votre connexion internet et réessayez.';
+      }
+
+      // Message générique avec le détail Cloudinary
+      return 'Erreur lors de l\'upload de l\'image : $message';
+    } catch (_) {
+      return 'Erreur lors de l\'upload de l\'image. Veuillez réessayer.';
+    }
+  }
+
   /// Upload direct d'un fichier vers Cloudinary (contourne Vercel)
   Future<CloudinaryUploadResult?> uploadDirect({
     required String token,
@@ -58,6 +126,12 @@ class CloudinaryService {
     String folder = 'kivoo/items',
   }) async {
     try {
+      // Compresser l'image avant l'upload (réduit la taille sans altérer la qualité)
+      final compressedFile = await _compressionService.compressImage(file);
+
+      // Vérifier la taille du fichier après compression
+      _validateFileSize(compressedFile);
+
       // Obtenir la signature depuis le backend
       final signatureData = await _getUploadSignature(
         token: token,
@@ -65,7 +139,10 @@ class CloudinaryService {
       );
 
       if (signatureData == null) {
-        throw Exception('Impossible d\'obtenir la signature Cloudinary');
+        throw CloudinaryUploadException(
+          'Impossible d\'obtenir la signature Cloudinary. '
+          'Vérifiez votre connexion internet et réessayez.',
+        );
       }
 
       final cloudName = signatureData['cloudName'] as String;
@@ -83,12 +160,12 @@ class CloudinaryService {
       request.fields['signature'] = signature;
       request.fields['folder'] = folder;
 
-      // Ajouter le fichier
-      final mimeType = lookupMimeType(file.path) ?? 'image/jpeg';
+      // Ajouter le fichier compressé
+      final mimeType = lookupMimeType(compressedFile.path) ?? 'image/jpeg';
       request.files.add(
         await http.MultipartFile.fromPath(
           'file',
-          file.path,
+          compressedFile.path,
           contentType: MediaType.parse(mimeType),
         ),
       );
@@ -100,22 +177,46 @@ class CloudinaryService {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         return CloudinaryUploadResult.fromJson(data);
       }
-      print('⚠️ Error uploading to Cloudinary: ${response.statusCode} - ${response.body}');
-      return null;
+
+      // Gérer les erreurs Cloudinary avec un message personnalisé
+      final errorMessage = _parseCloudinaryError(response);
+      print('⚠️ Error uploading to Cloudinary: ${response.statusCode} - $errorMessage');
+      throw CloudinaryUploadException(errorMessage, statusCode: response.statusCode);
+    } on CloudinaryUploadException {
+      rethrow;
+    } on SocketException {
+      throw CloudinaryUploadException(
+        'Connexion internet instable. Vérifiez votre connexion et réessayez.',
+      );
+    } on HttpException {
+      throw CloudinaryUploadException(
+        'Erreur réseau lors de l\'upload. Vérifiez votre connexion et réessayez.',
+      );
     } catch (e) {
       print('⚠️ Error uploading to Cloudinary: $e');
-      return null;
+      throw CloudinaryUploadException(
+        'Erreur inattendue lors de l\'upload de l\'image. Veuillez réessayer.',
+      );
     }
   }
 
   /// Upload multiple fichiers vers Cloudinary en parallèle
+  /// Retourne les URLs des images uploadées avec succès
   Future<List<String>> uploadMultiple({
     required String token,
     required List<File> imageFiles,
     String folder = 'kivoo/items',
   }) async {
+    // Compresser toutes les images en parallèle avant l'upload
+    final compressedFiles = await _compressionService.compressImages(imageFiles);
+
+    // Vérifier la taille de tous les fichiers compressés
+    for (final file in compressedFiles) {
+      _validateFileSize(file);
+    }
+
     final results = await Future.wait(
-      imageFiles.map((file) => uploadDirect(token: token, file: file, folder: folder)),
+      compressedFiles.map((file) => uploadDirect(token: token, file: file, folder: folder)),
     );
 
     return results
