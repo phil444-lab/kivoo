@@ -58,7 +58,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final user = context.read<AuthProvider>().user;
     _nameController = TextEditingController(text: user?.name ?? '');
     _emailController = TextEditingController(text: user?.email ?? '');
-    _phoneController = TextEditingController(text: user?.phone ?? '');
+    // Si le numéro n'est pas un vrai numéro (ex: social_...), on affiche le placeholder
+    final phone = user?.phone ?? '';
+    final phoneRegex = RegExp(r'^01[0-9]{8}$');
+    _phoneController = TextEditingController(
+      text: phoneRegex.hasMatch(phone) ? phone : '',
+    );
     _currentPasswordController = TextEditingController();
     _newPasswordController = TextEditingController();
 
