@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { adminApi } from '../api/client';
 import type { AdminCategory } from '../api/types';
-import { Badge, LoadingState, EmptyState, Modal, ConfirmDialog } from '../components/ui';
+import { Badge, LoadingState, EmptyState, Modal, ConfirmDialog, Select } from '../components/ui';
 import { useToast } from '../context/ToastContext';
 import { IconPlus, IconEdit, IconTrash } from '../components/icons';
 
@@ -143,19 +143,15 @@ export default function CategoriesPage() {
           </form>
 
           <form className="inline-form" onSubmit={createSub}>
-            <select
-              className="select"
+            <Select
               value={newSubParentId}
-              onChange={(e) => setNewSubParentId(e.target.value)}
+              onChange={(v) => setNewSubParentId(v)}
+              options={[
+                { value: '', label: 'Catégorie parente...' },
+                ...categories.map((c) => ({ value: c.id, label: c.name })),
+              ]}
               style={{ width: 'auto', minWidth: 200 }}
-            >
-              <option value="">Catégorie parente...</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            />
             <input
               className="input"
               placeholder="Nouvelle sous-catégorie"

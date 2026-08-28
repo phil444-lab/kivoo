@@ -14,7 +14,7 @@ import {
 } from 'recharts';
 import { adminApi } from '../api/client';
 import type { Stats, Analytics } from '../api/types';
-import { StatCard, EmptyState, LoadingState } from '../components/ui';
+import { StatCard, EmptyState, LoadingState, Select } from '../components/ui';
 import {
   IconUsers,
   IconBox,
@@ -151,17 +151,17 @@ export default function DashboardPage() {
               <h3 className="card-title">Évolution des inscriptions & annonces</h3>
               <p className="card-subtitle">Nouveaux comptes et nouvelles annonces par jour</p>
             </div>
-            <select
-              className="select"
-              style={{ width: 'auto' }}
+            <Select
               value={days}
-              onChange={(e) => setDays(e.target.value)}
-            >
-              <option value="7">7 jours</option>
-              <option value="30">30 jours</option>
-              <option value="90">90 jours</option>
-              <option value="365">1 an</option>
-            </select>
+              onChange={setDays}
+              options={[
+                { value: '7', label: '7 jours' },
+                { value: '30', label: '30 jours' },
+                { value: '90', label: '90 jours' },
+                { value: '365', label: '1 an' },
+              ]}
+              style={{ width: 'auto' }}
+            />
           </div>
           <div className="card-body" style={{ height: 300 }}>
             {analytics && analytics.timeline.length > 0 ? (

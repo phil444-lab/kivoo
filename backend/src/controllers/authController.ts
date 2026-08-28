@@ -250,11 +250,21 @@ export const socialLogin = async (
       const socialProviders = (user.socialProviders as any[]) || [];
       const hasProvider = socialProviders.some((sp: any) => sp.provider === provider);
 
+      const data: any = {};
       if (!hasProvider) {
         socialProviders.push({ provider, providerId, email });
-        await prisma.user.update({
+        data.socialProviders = socialProviders;
+      }
+      // Synchroniser la photo (et le nom) Google à chaque connexion, même si le
+      // compte existait déjà. On ne remplace PAS une photo délibérément définie
+      // par l'utilisateur (photo absente = on en profite pour y mettre celle de Google).
+      if (photo && !user.photo) data.photo = photo;
+      if (name && !user.name) data.name = name;
+
+      if (Object.keys(data).length > 0) {
+        user = await prisma.user.update({
           where: { id: user.id },
-          data: { socialProviders },
+          data,
         });
       }
     } else {

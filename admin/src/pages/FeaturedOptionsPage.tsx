@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
 import type { AdminFeaturedOption } from '../api/types';
-import { Badge, LoadingState, EmptyState, Modal, ConfirmDialog } from '../components/ui';
+import { Badge, LoadingState, EmptyState, Modal, ConfirmDialog, Select } from '../components/ui';
 import { useToast } from '../context/ToastContext';
 import { IconPlus, IconEdit, IconTrash } from '../components/icons';
 
@@ -248,16 +248,16 @@ export default function FeaturedOptionsPage() {
           <div className="form-grid" style={{ marginBottom: 14 }}>
             <div className="form-field">
               <label className="form-label">Icône</label>
-              <select
-                className="select"
+              <Select
                 value={editor.form.icon}
-                onChange={(e) => setField('icon', e.target.value)}
-              >
-                <option value="star">★ Étoile</option>
-                <option value="gift">🎁 Cadeau</option>
-                <option value="circle-check">✔ Vérifié</option>
-                <option value="bolt">⚡ Éclair</option>
-              </select>
+                onChange={(v) => setField('icon', v)}
+                options={[
+                  { value: 'star', label: '★ Étoile' },
+                  { value: 'gift', label: '🎁 Cadeau' },
+                  { value: 'circle-check', label: '✔ Vérifié' },
+                  { value: 'bolt', label: '⚡ Éclair' },
+                ]}
+              />
             </div>
             <div className="form-field">
               <label className="form-label">Ordre d'affichage</label>

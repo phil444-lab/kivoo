@@ -17,5 +17,11 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
+  "exclude": [
+    "src/components/ui/calendar.tsx",
+    "src/components/ui/resizable.tsx",
+    "src/components/ui/form.tsx",
+    "src/components/ui/input-otp.tsx"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

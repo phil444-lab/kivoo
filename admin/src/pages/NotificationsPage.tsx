@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
 import type { NotificationRecord } from '../api/types';
-import { LoadingState, EmptyState, Avatar } from '../components/ui';
+import { LoadingState, EmptyState, Avatar, Select } from '../components/ui';
 import { useToast } from '../context/ToastContext';
 import { IconBell } from '../components/icons';
 import { formatDateTime } from '../utils/format';
@@ -110,11 +110,15 @@ export default function NotificationsPage() {
             <div className="form-grid" style={{ marginBottom: 14 }}>
               <div className="form-field">
                 <label className="form-label">Statut de vérification</label>
-                <select className="select" value={verified} onChange={(e) => setVerified(e.target.value)}>
-                  <option value="">Tous</option>
-                  <option value="true">Vérifiés uniquement</option>
-                  <option value="false">Non vérifiés uniquement</option>
-                </select>
+                <Select
+                  value={verified}
+                  onChange={setVerified}
+                  options={[
+                    { value: '', label: 'Tous' },
+                    { value: 'true', label: 'Vérifiés uniquement' },
+                    { value: 'false', label: 'Non vérifiés uniquement' },
+                  ]}
+                />
               </div>
             </div>
           )}
