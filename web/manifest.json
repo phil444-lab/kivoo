@@ -1,11 +1,11 @@
 {
-    "name": "kivoo",
-    "short_name": "kivoo",
-    "start_url": ".",
+    "name": "Kivoo — Petites annonces",
+    "short_name": "Kivoo",
+    "start_url": "/",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#ffffff",
+    "theme_color": "#2563EB",
+    "description": "Kivoo — Marketplace de petites annonces : publiez, découvrez et échangez en toute simplicité.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

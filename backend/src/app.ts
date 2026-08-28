@@ -38,6 +38,13 @@ export function createApp(): Express {
         ) {
           return cb(null, true);
         }
+        // En développement : autoriser les ports locaux (Vite, Flutter web/PWA…)
+        if (
+          config.nodeEnv !== 'production' &&
+          /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+        ) {
+          return cb(null, true);
+        }
         return cb(new Error('Non autorisé par CORS'));
       },
       credentials: true,

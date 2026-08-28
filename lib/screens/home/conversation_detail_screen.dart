@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -7,6 +6,7 @@ import '../../models/conversation_model.dart';
 import '../../models/item_model.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/theme_provider.dart';
+import '../../utils/picked_image.dart';
 import '../../utils/responsive.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/conversation_service.dart';
@@ -649,14 +649,14 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1920, maxHeight: 1920, imageQuality: 85);
     if (picked == null) return;
 
-    final file = File(picked.path);
+    final image = await PickedImage.fromXFile(picked);
     setState(() => _sending = true);
 
     try {
       final message = await _conversationService.sendImage(
         token: token,
         conversationId: widget.conversation.id,
-        image: file,
+        image: image,
       );
 
       if (mounted && message != null) {

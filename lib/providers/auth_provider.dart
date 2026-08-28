@@ -8,6 +8,7 @@ import '../services/auth_service.dart';
 import '../services/google_auth_service.dart';
 import '../services/favorite_service.dart';
 import '../services/notification_service.dart';
+import '../utils/picked_image.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -302,7 +303,8 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> uploadPhoto(String imagePath) async {
+  /// Upload la photo de profil (cross-platform mobile + web)
+  Future<bool> uploadPhoto(PickedImage image) async {
     if (_token == null) return false;
 
     _isLoading = true;
@@ -311,7 +313,8 @@ class AuthProvider extends ChangeNotifier {
     try {
       final updatedUser = await _authService.uploadPhoto(
         token: _token!,
-        imagePath: imagePath,
+        bytes: image.bytes,
+        fileName: image.name,
       );
 
       _user = updatedUser;

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +6,7 @@ import '../../theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/data_cache_provider.dart';
 import '../../models/location_model.dart';
+import '../../utils/picked_image.dart';
 import '../../utils/responsive.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -46,7 +46,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   City? _selectedCity;
   District? _selectedDistrict;
 
-  File? _selectedImage;
+  PickedImage? _selectedImage;
   bool _isLoading = false;
   bool _showPasswordFields = false;
   bool _obscureCurrentPassword = true;
@@ -189,8 +189,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
 
       if (image != null) {
+        final picked = await PickedImage.fromXFile(image);
         setState(() {
-          _selectedImage = File(image.path);
+          _selectedImage = picked;
         });
       }
     } catch (e) {
@@ -221,7 +222,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       // D'abord uploader la photo si une nouvelle image est sélectionnée
       if (_selectedImage != null) {
         try {
-          await authProvider.uploadPhoto(_selectedImage!.path);
+          await authProvider.uploadPhoto(_selectedImage!);
         } catch (e) {
           print('⚠️ Upload photo échoué, continuation sans changer la photo: $e');
         }
@@ -346,8 +347,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
                           child: _selectedImage != null
                               ? ClipOval(
-                                  child: Image.file(
-                                    _selectedImage!,
+                                  child: Image(
+                                    image: _selectedImage!.provider,
                                     fit: BoxFit.cover,
                                   ),
                                 )

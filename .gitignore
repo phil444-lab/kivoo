@@ -88,8 +88,11 @@ backend/*.json
 !backend/vercel.json
 
 # Web related
-lib/generated_plugin_registrant.dart
 
 # Exceptions to above rules.
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 node_modules
+
+# Vercel CLI (lien projet local + artefacts de déploiement)
+.vercel/
+deploy/

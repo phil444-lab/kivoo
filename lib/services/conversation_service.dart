@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'dart:io';
+
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import '../constants.dart';
 import '../models/conversation_model.dart';
+import '../utils/picked_image.dart';
 
 class ConversationService {
   /// Récupère toutes les conversations de l'utilisateur connecté
@@ -132,21 +133,25 @@ class ConversationService {
   }
 
   /// Envoie une image dans une conversation
+  ///
+  /// Cross-platform (mobile + web) : utilise les bytes de la [PickedImage]
+  /// via `MultipartFile.fromBytes` (aucun usage de `dart:io`).
   Future<Message?> sendImage({
     required String token,
     required String conversationId,
-    required File image,
+    required PickedImage image,
   }) async {
     try {
       final uri = Uri.parse('${AppConstants.baseUrl}/conversations/$conversationId/images');
       final request = http.MultipartRequest('POST', uri);
       request.headers['Authorization'] = 'Bearer $token';
 
-      final mimeType = lookupMimeType(image.path) ?? 'image/jpeg';
+      final mimeType = lookupMimeType(image.name, headerBytes: image.bytes) ?? 'image/jpeg';
       request.files.add(
-        await http.MultipartFile.fromPath(
+        http.MultipartFile.fromBytes(
           'image',
-          image.path,
+          image.bytes,
+          filename: image.name,
           contentType: MediaType.parse(mimeType),
         ),
       );

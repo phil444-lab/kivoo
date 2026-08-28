@@ -95,4 +95,14 @@ class AppConstants {
   static const String socialLoginEndpoint = '/auth/social-login';
   static const String uploadPhotoEndpoint = '/auth/upload-photo';
   static const String uploadsBaseUrl = 'https://kivoo-api.vercel.app/uploads';
+
+  // Firebase Web (PWA)
+  // Clé VAPID pour les notifications push FCM sur le web (Firebase Console >
+  // Paramètres du projet > Cloud Messaging > Certificats push Web).
+  // Laisser vide désactive le push web sans casser l'application.
+  static const String fcmVapidKey = '';
+
+  // PWA : largeur maximale (px) du contenu sur grand écran. Sur desktop, la
+  // web app garde une mise en page "mobile" centrée, identique à la native.
+  static const double webMaxContentWidth = 480;
 }

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -16,6 +15,7 @@ import '../../services/cloudinary_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/data_cache_provider.dart';
 import '../../components/skeleton_card.dart';
+import '../../utils/picked_image.dart';
 import '../../utils/responsive.dart';
 
 class SellScreen extends StatefulWidget {
@@ -70,7 +70,7 @@ class _SellScreenState extends State<SellScreen> {
   List<String> _existingImages = [];
 
   /// Nouvelles images sélectionnées localement
-  final List<File> _newImages = [];
+  final List<PickedImage> _newImages = [];
 
   bool _isLoading = false;
   bool _isSubmitting = false;
@@ -259,8 +259,9 @@ class _SellScreenState extends State<SellScreen> {
     final picked = await picker.pickMultiImage(limit: remaining);
     if (picked.isEmpty) return;
 
+    final images = await PickedImage.fromXFiles(picked);
     setState(() {
-      _newImages.addAll(picked.map((x) => File(x.path)));
+      _newImages.addAll(images);
     });
   }
 
@@ -346,7 +347,7 @@ class _SellScreenState extends State<SellScreen> {
       if (_newImages.isNotEmpty) {
         uploadedImageUrls = await _cloudinaryService.uploadMultiple(
           token: authProvider.token!,
-          imageFiles: _newImages,
+          images: _newImages,
           folder: 'kivoo/items',
         );
 
@@ -891,7 +892,10 @@ class _SellScreenState extends State<SellScreen> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(Responsive.dimension(context, 12)),
-                    child: Image.file(_newImages[index], fit: BoxFit.cover),
+                    child: Image(
+                      image: _newImages[index].provider,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                   Positioned(
                     top: Responsive.dimension(context, 4),

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -43,7 +44,9 @@ class AppNotification {
 
 /// Service de gestion des notifications push FCM
 class NotificationService {
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  /// Instancié paresseusement (late) : sur web sans configuration Firebase,
+  /// l'accès lève une exception qui est capturée dans les méthodes appelantes.
+  late final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
 
   /// Canal de notification Android (doit correspondre au backend)
   static const String androidChannelId = 'kivoo_default_channel';
@@ -62,32 +65,61 @@ class NotificationService {
 
   /// Initialise les notifications push
   Future<void> initialize() async {
-    // Initialiser le plugin de notifications locales (Android)
-    await _initLocalNotifications();
+    try {
+      // Web (PWA) : pas de notifications locales Flutter ni de canaux Android
+      if (kIsWeb) {
+        await _initializeWeb();
+        return;
+      }
 
-    // Demander la permission (iOS + Android 13+)
-    await _requestPermissions();
+      // Initialiser le plugin de notifications locales (Android)
+      await _initLocalNotifications();
 
-    // Gérer les notifications quand l'app est en arrière-plan / fermée
-    FirebaseMessaging.onBackgroundMessage(_backgroundMessageHandler);
+      // Demander la permission (iOS + Android 13+)
+      await _requestPermissions();
 
-    // Gérer les notifications quand l'app est au premier plan
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('📨 Notification reçue (premier plan): ${message.notification?.title}');
-      _showLocalNotification(message);
-    });
+      // Gérer les notifications quand l'app est en arrière-plan / fermée
+      FirebaseMessaging.onBackgroundMessage(_backgroundMessageHandler);
 
-    // Gérer quand l'utilisateur clique sur une notification
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print('📨 Notification ouverte: ${message.notification?.title}');
-      _handleNotificationTap(message);
-    });
+      // Gérer les notifications quand l'app est au premier plan
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        print('📨 Notification reçue (premier plan): ${message.notification?.title}');
+        _showLocalNotification(message);
+      });
 
-    // Ré-enregistrer automatiquement le token quand il change
-    _firebaseMessaging.onTokenRefresh.listen((newToken) async {
-      print('🔄 Token FCM rafraîchi: $newToken');
-      await registerTokenOnBackend(newToken);
-    });
+      // Gérer quand l'utilisateur clique sur une notification
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+        print('📨 Notification ouverte: ${message.notification?.title}');
+        _handleNotificationTap(message);
+      });
+
+      // Ré-enregistrer automatiquement le token quand il change
+      _firebaseMessaging.onTokenRefresh.listen((newToken) async {
+        print('🔄 Token FCM rafraîchi: $newToken');
+        await registerTokenOnBackend(newToken);
+      });
+    } catch (e) {
+      print('⚠️ Initialisation des notifications impossible: $e');
+    }
+  }
+
+  /// Web (PWA) : demande la permission et prépare le token FCM si une clé
+  /// VAPID est configurée. Les notifications in-app (via l'API) restent
+  /// fonctionnelles même sans configuration Firebase web.
+  Future<void> _initializeWeb() async {
+    try {
+      await _firebaseMessaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      if (AppConstants.fcmVapidKey.isEmpty) {
+        print('ℹ️ Web: clé VAPID non configurée (AppConstants.fcmVapidKey) — '
+            'notifications push web désactivées.');
+      }
+    } catch (e) {
+      print('⚠️ Web: Firebase Messaging non disponible: $e');
+    }
   }
 
   /// Initialise le plugin de notifications locales
@@ -176,7 +208,11 @@ class NotificationService {
   /// Récupère le token FCM actuel (sans l'enregistrer)
   Future<String?> getToken() async {
     try {
-      return await _firebaseMessaging.getToken();
+      return await _firebaseMessaging.getToken(
+        vapidKey: kIsWeb && AppConstants.fcmVapidKey.isNotEmpty
+            ? AppConstants.fcmVapidKey
+            : null,
+      );
     } catch (e) {
       print('⚠️ Erreur lors de la récupération du token FCM: $e');
       return null;
@@ -187,7 +223,11 @@ class NotificationService {
   Future<String?> getTokenAndRegister() async {
     try {
       print('🔑 Récupération du token FCM...');
-      final token = await _firebaseMessaging.getToken();
+      final token = await _firebaseMessaging.getToken(
+        vapidKey: kIsWeb && AppConstants.fcmVapidKey.isNotEmpty
+            ? AppConstants.fcmVapidKey
+            : null,
+      );
       print('🔑 Token FCM obtenu: ${token != null ? '${token.substring(0, min(20, token.length))}...' : 'NULL'}');
       if (token != null) {
         final success = await registerTokenOnBackend(token);
@@ -222,7 +262,7 @@ class NotificationService {
         },
         body: jsonEncode({
           'token': token,
-          'platform': 'android',
+          'platform': _platformLabel(),
         }),
       );
 
@@ -327,6 +367,18 @@ class NotificationService {
     } catch (e) {
       print('⚠️ Erreur lors du marquage des notifications: $e');
       return false;
+    }
+  }
+
+  /// Label de plateforme envoyé au backend (sans dart:io, compatible web)
+  String _platformLabel() {
+    if (kIsWeb) return 'web';
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.iOS:
+        return 'ios';
+      case TargetPlatform.android:
+      default:
+        return 'android';
     }
   }
 

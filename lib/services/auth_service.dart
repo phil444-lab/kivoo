@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import '../constants.dart';
@@ -212,9 +213,11 @@ class AuthService {
     }
   }
 
+  /// Upload la photo de profil (cross-platform mobile + web : bytes)
   Future<User> uploadPhoto({
     required String token,
-    required String imagePath,
+    required Uint8List bytes,
+    required String fileName,
   }) async {
     try {
       final request = http.MultipartRequest(
@@ -223,7 +226,9 @@ class AuthService {
       );
 
       request.headers['Authorization'] = 'Bearer $token';
-      request.files.add(await http.MultipartFile.fromPath('photo', imagePath));
+      request.files.add(
+        http.MultipartFile.fromBytes('photo', bytes, filename: fileName),
+      );
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);

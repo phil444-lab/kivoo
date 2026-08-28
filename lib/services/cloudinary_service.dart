@@ -1,9 +1,10 @@
 import 'dart:convert';
-import 'dart:io';
+
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import '../constants.dart';
+import '../utils/picked_image.dart';
 import 'image_compression_service.dart';
 
 /// Résultat d'un upload Cloudinary
@@ -70,13 +71,12 @@ class CloudinaryService {
     }
   }
 
-  /// Vérifie la taille d'un fichier avant l'upload
-  void _validateFileSize(File file) {
-    final fileSize = file.lengthSync();
+  /// Vérifie la taille d'une image avant l'upload
+  void _validateFileSize(int fileSize, String fileName) {
     if (fileSize > maxFileSizeBytes) {
       final sizeInMB = (fileSize / (1024 * 1024)).toStringAsFixed(1);
       throw CloudinaryUploadException(
-        'L\'image "${file.path.split('/').last}" fait $sizeInMB Mo. '
+        'L\'image "$fileName" fait $sizeInMB Mo. '
         'La taille maximale autorisée est de 10 Mo par image. '
         'Veuillez compresser l\'image ou en choisir une plus petite.',
       );
@@ -119,18 +119,21 @@ class CloudinaryService {
     }
   }
 
-  /// Upload direct d'un fichier vers Cloudinary (contourne Vercel)
+  /// Upload direct d'une image vers Cloudinary (contourne Vercel)
+  ///
+  /// Cross-platform (mobile + web) : compression + upload basés sur les
+  /// bytes de la [PickedImage] (aucun usage de `dart:io`).
   Future<CloudinaryUploadResult?> uploadDirect({
     required String token,
-    required File file,
+    required PickedImage image,
     String folder = 'kivoo/items',
   }) async {
     try {
       // Compresser l'image avant l'upload (réduit la taille sans altérer la qualité)
-      final compressedFile = await _compressionService.compressImage(file);
+      final compressedBytes = await _compressionService.compressBytes(image.bytes);
 
-      // Vérifier la taille du fichier après compression
-      _validateFileSize(compressedFile);
+      // Vérifier la taille de l'image après compression
+      _validateFileSize(compressedBytes.length, image.name);
 
       // Obtenir la signature depuis le backend
       final signatureData = await _getUploadSignature(
@@ -160,12 +163,13 @@ class CloudinaryService {
       request.fields['signature'] = signature;
       request.fields['folder'] = folder;
 
-      // Ajouter le fichier compressé
-      final mimeType = lookupMimeType(compressedFile.path) ?? 'image/jpeg';
+      // Ajouter le fichier compressé (cross-platform : fromBytes)
+      final mimeType = lookupMimeType(image.name, headerBytes: compressedBytes) ?? 'image/jpeg';
       request.files.add(
-        await http.MultipartFile.fromPath(
+        http.MultipartFile.fromBytes(
           'file',
-          compressedFile.path,
+          compressedBytes,
+          filename: image.name,
           contentType: MediaType.parse(mimeType),
         ),
       );
@@ -184,13 +188,9 @@ class CloudinaryService {
       throw CloudinaryUploadException(errorMessage, statusCode: response.statusCode);
     } on CloudinaryUploadException {
       rethrow;
-    } on SocketException {
+    } on http.ClientException {
       throw CloudinaryUploadException(
         'Connexion internet instable. Vérifiez votre connexion et réessayez.',
-      );
-    } on HttpException {
-      throw CloudinaryUploadException(
-        'Erreur réseau lors de l\'upload. Vérifiez votre connexion et réessayez.',
       );
     } catch (e) {
       print('⚠️ Error uploading to Cloudinary: $e');
@@ -200,23 +200,15 @@ class CloudinaryService {
     }
   }
 
-  /// Upload multiple fichiers vers Cloudinary en parallèle
+  /// Upload multiple d'images vers Cloudinary en parallèle
   /// Retourne les URLs des images uploadées avec succès
   Future<List<String>> uploadMultiple({
     required String token,
-    required List<File> imageFiles,
+    required List<PickedImage> images,
     String folder = 'kivoo/items',
   }) async {
-    // Compresser toutes les images en parallèle avant l'upload
-    final compressedFiles = await _compressionService.compressImages(imageFiles);
-
-    // Vérifier la taille de tous les fichiers compressés
-    for (final file in compressedFiles) {
-      _validateFileSize(file);
-    }
-
     final results = await Future.wait(
-      compressedFiles.map((file) => uploadDirect(token: token, file: file, folder: folder)),
+      images.map((image) => uploadDirect(token: token, image: image, folder: folder)),
     );
 
     return results
@@ -228,11 +220,11 @@ class CloudinaryService {
   /// Upload direct pour la photo de profil
   Future<String?> uploadProfilePhoto({
     required String token,
-    required File imageFile,
+    required PickedImage image,
   }) async {
     final result = await uploadDirect(
       token: token,
-      file: imageFile,
+      image: image,
       folder: 'kivoo/profiles',
     );
     return result?.secureUrl;
