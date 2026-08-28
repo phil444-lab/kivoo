@@ -56,6 +56,57 @@ npm run preview
 > Lorsque `VITE_API_URL` est renseignée au build, le client cible directement l'API
 > distante sans passer par le proxy relatif `/api`.
 
+## Déploiement sur Vercel
+
+Le dashboard admin est déployé comme site **statique** (build Vite) avec le routing
+géré par React Router — `admin/vercel.json` contient la règle de *rewrite* SPA
+(tous les chemins servent `index.html`) pour éviter les 404 au rafraîchissement
+de `/categories`, `/users`, etc.
+
+### 1. Variable d'environnement (obligatoire avant le premier déploiement)
+
+En production il n'y a **pas de proxy Vite** : le client doit cibler l'API
+directement via `VITE_API_URL` (lue au **build** — la modifier implique un
+redéploiement) :
+
+| Variable | Valeur | Environnements |
+|----------|--------|----------------|
+| `VITE_API_URL` | `https://kivoo-api.vercel.app/api` | Production + Preview |
+
+### 2. Création du projet (dashboard)
+
+1. **Add New… → Project** → importer le repo GitHub `kivoo`
+2. **Root Directory** : `admin` (le framework **Vite** est détecté automatiquement,
+   build `npm run build`, sortie `dist`)
+3. Renseigner `VITE_API_URL` (voir ci-dessus) puis **Deploy**
+4. Noter le domaine attribué (ex. `https://kivoo-admin.vercel.app`)
+
+### 3. Autoriser le domaine côté backend (CORS)
+
+Dans le projet **backend** sur Vercel : *Settings → Environment Variables* →
+ajouter le domaine de l'admin à `FRONTEND_URLS` (origines séparées par des
+virgules), puis **Redeploy** le backend :
+
+```
+FRONTEND_URLS=...,https://kivoo-admin.vercel.app
+```
+
+### 4. Alternative — Vercel CLI
+
+```bash
+npx vercel --cwd admin          # premier déploiement (liera le projet)
+npx vercel env add VITE_API_URL production
+npx vercel --prod --cwd admin   # déploiements suivants
+```
+
+### 5. Vérification
+
+```bash
+curl https://kivoo-api.vercel.app/api/health
+```
+Puis ouvrir l'URL de l'admin, se connecter avec le compte admin et vérifier que
+les modules (statistiques, catégories, annonces…) chargent bien les données.
+
 ### Authentification
 
 - Route utilisée : `POST /api/auth/login` (identifier + password)
