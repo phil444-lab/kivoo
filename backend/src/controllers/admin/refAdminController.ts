@@ -17,7 +17,10 @@ export const getAdminCategories = async (
       where: { parentCategoryId: null },
       include: {
         subcategories: {
-          include: { _count: { select: { items: true } } },
+          // Les annonces d'une sous-catégorie sont liées via `subcategoryId`
+          // (leur `categoryId` pointe vers la catégorie parente), donc on
+          // compte `subItems` et non `items` pour obtenir le bon total.
+          include: { _count: { select: { subItems: true } } },
           orderBy: { name: 'asc' },
         },
         _count: { select: { items: true } },

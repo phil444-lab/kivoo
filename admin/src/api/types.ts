@@ -90,7 +90,7 @@ export interface AdminCategory {
   parentCategoryId: string | null;
   createdAt: string;
   subcategories?: AdminCategory[];
-  _count?: { items: number };
+  _count?: { items: number; subItems?: number };
 }
 
 export interface AdminSession {

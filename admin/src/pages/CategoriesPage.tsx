@@ -31,9 +31,10 @@ export default function CategoriesPage() {
     void load();
   }, [load]);
 
-  const totalCount = (c: AdminCategory): number =>
-    (c._count?.items ?? 0) +
-    (c.subcategories?.reduce((acc, s) => acc + (s._count?.items ?? 0), 0) ?? 0);
+  // Une annonce d'une sous-catégorie porte `categoryId` = id de la catégorie
+  // parente, donc `_count.items` de la catégorie parente totalise déjà toutes
+  // les annonces (sous-catégories comprises).
+  const totalCount = (c: AdminCategory): number => c._count?.items ?? 0;
 
   const createParent = async (e: FormEvent) => {
     e.preventDefault();
@@ -207,7 +208,7 @@ export default function CategoriesPage() {
                         <div key={sub.id} className="tree-row">
                           <span className="tree-name">
                             {sub.name}
-                            <span className="tree-count">{sub._count?.items ?? 0} annonces</span>
+                            <span className="tree-count">{sub._count?.subItems ?? 0} annonces</span>
                           </span>
                           {!sub.isActive && <Badge color="neutral">Inactive</Badge>}
                           <div className="tree-actions">
@@ -267,8 +268,8 @@ export default function CategoriesPage() {
         <ConfirmDialog
           title="Supprimer cette catégorie ?"
           message={
-            del._count?.items
-              ? `« ${del.name} » est utilisée par ${del._count.items} annonce(s). La suppression sera refusée par l'API — désactivez-la plutôt.`
+            (del._count?.items ?? 0) + (del._count?.subItems ?? 0) > 0
+              ? `« ${del.name} » est utilisée par ${(del._count?.items ?? 0) + (del._count?.subItems ?? 0)} annonce(s). La suppression sera refusée par l'API — désactivez-la plutôt.`
               : `« ${del.name} » et ses sous-catégories vides seront supprimées définitivement.`
           }
           confirmLabel="Supprimer"
