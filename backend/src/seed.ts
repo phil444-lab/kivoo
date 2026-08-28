@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
+
 
 async function main() {
   console.log('🌱 Seeding locations...');
@@ -389,9 +391,32 @@ async function main() {
     data: featuredData,
     skipDuplicates: true,
   });
-  console.log(`   ✓ ${featuredData.length} options insérées`);
+  console.log(`   [OK] ${featuredData.length} options inserees`);
 
-  console.log('✅ Featured options seeded!');
+  console.log('[ADMIN] Seeding admin account...');
+
+  // Compte administrateur pour le dashboard React (backend/admin)
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@kivoo.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'Admin1234!';
+  const adminPhone = process.env.ADMIN_PHONE || '+22990000001';
+
+  const hashedAdminPassword = await bcrypt.hash(adminPassword, 12);
+
+  await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: { role: 'admin' },
+    create: {
+      email: adminEmail,
+      name: 'Administrateur Kivoo',
+      phone: adminPhone,
+      password: hashedAdminPassword,
+      role: 'admin',
+      verified: true,
+      isActive: true,
+      preferences: { notifications: true, language: 'fr' },
+    },
+  });
+  console.log(`   [OK] Admin pret : ${adminEmail} / mot de passe dans ADMIN_PASSWORD`);
 }
 
 main()

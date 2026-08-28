@@ -21,6 +21,7 @@ import locationRoutes from './routes/locationRoutes.js';
 import featuredRoutes from './routes/featuredRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 export function createApp(): Express {
   const app = express() as Express;
@@ -29,7 +30,16 @@ export function createApp(): Express {
   app.use(helmet());
   app.use(
     cors({
-      origin: config.frontendUrl,
+      // Autorise plusieurs origines (front de production + ports dev du dashboard)
+      origin(origin: string | undefined, cb) {
+        if (
+          !origin || // requêtes d'origine absence (curl, scripts, cron)
+          config.frontendUrls.includes(origin)
+        ) {
+          return cb(null, true);
+        }
+        return cb(new Error('Non autorisé par CORS'));
+      },
       credentials: true,
     })
   );
@@ -59,6 +69,7 @@ export function createApp(): Express {
   app.use('/api/featured', featuredRoutes);
   app.use('/api/notifications', notificationRoutes);
   app.use('/api/uploads', uploadRoutes);
+  app.use('/api/admin', adminRoutes);
 
   // Error handler
   app.use(errorHandler);

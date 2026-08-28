@@ -66,6 +66,7 @@ model User {
   joinedAt  DateTime @default(now())
   lastLogin DateTime?
   isActive  Boolean  @default(true)
+  role      String   @default("user") @db.VarChar(20)
   socialProviders Json?
   preferences Json?
 

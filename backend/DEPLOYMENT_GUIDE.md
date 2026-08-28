@@ -187,6 +187,13 @@ npm run dev
 
 ### CORS errors
 - Vérifier que `FRONTEND_URL` correspond exactement à l'URL de votre app (sans `/` à la fin)
+- Pour autoriser plusieurs origines (app Flutter + dashboard admin local), servez-vous de la variable **`FRONTEND_URLS`** (liste d'origines séparées par des virgules). Le backend accepte par défaut `http://localhost:5174` (dashboard admin en dev) et `http://localhost:5173`, en plus de `FRONTEND_URL` :
+  ```
+  FRONTEND_URLS=http://localhost:5173,http://localhost:5174,https://mon-admin.vercel.app
+  ```
+  > En mode dev, le dashboard admin utilise le proxy Vite vers Vercel : les requêtes
+  > sont vues comme provenant de `localhost:5174` (même origine côté navigateur), donc
+  > le CORS n'est nécessaire que si vous accédez à l'API directement (`VITE_API_URL`).
 
 ### Socket.io ne fonctionne pas
 - C'est normal sur Vercel (serverless). Les messages seront quand même sauvegardés en base, mais sans temps réel.

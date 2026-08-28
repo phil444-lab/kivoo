@@ -27,6 +27,13 @@ const config = {
   },
   
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+
+  // Liste des origines autorisées par CORS (front de production + ports dev)
+  frontendUrls: (process.env.FRONTEND_URLS ||
+    'http://localhost:5173,http://localhost:5174,https://localhost:5173,https://localhost:5174')
+    .split(',')
+    .map((u) => u.trim())
+    .filter(Boolean),
   
   smtp: {
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
