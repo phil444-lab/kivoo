@@ -51,7 +51,10 @@ Copy-Item (Join-Path $build '*') $deploy -Recurse -Force
 # Le .map ne sert qu'au debug local : inutile sur Vercel (gagne ~3 Mo d'upload)
 Remove-Item (Join-Path $deploy 'main.dart.js.map') -ErrorAction SilentlyContinue
 
-# 5. Déployer en production (même projet => même URL, CORS intact)
+# 5. Déployer en production (depuis le dossier LIÉ => même projet, même URL)
 Write-Host '🚀 Déploiement Vercel (production)...' -ForegroundColor Cyan
+Push-Location $deploy
 vercel deploy --prod --yes
-exit $LASTEXITCODE
+$code = $LASTEXITCODE
+Pop-Location
+exit $code
