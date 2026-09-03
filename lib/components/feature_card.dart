@@ -6,9 +6,6 @@ import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
 
 class FeatureCard extends StatelessWidget {
-  final FeatureCardModel card;
-  final bool isDark;
-  final VoidCallback? onTap;
 
   const FeatureCard({
     super.key,
@@ -16,6 +13,9 @@ class FeatureCard extends StatelessWidget {
     required this.isDark,
     this.onTap,
   });
+  final FeatureCardModel card;
+  final bool isDark;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +41,7 @@ class FeatureCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: cardColor.withOpacity(0.15),
+              color: cardColor.withValues(alpha: 0.15),
               blurRadius: 24,
               offset: const Offset(0, 6),
             ),
@@ -60,13 +60,13 @@ class FeatureCard extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      cardColor.withOpacity(0.2),
-                      cardColor.withOpacity(0.05),
+                      cardColor.withValues(alpha: 0.2),
+                      cardColor.withValues(alpha: 0.05),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: cardColor.withOpacity(0.3),
+                    color: cardColor.withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),

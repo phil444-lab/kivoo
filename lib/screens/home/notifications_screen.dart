@@ -51,7 +51,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         actions: [
           if (notificationProvider.unreadCount > 0)
             IconButton(
-              onPressed: () => notificationProvider.markAllAsRead(),
+              onPressed: notificationProvider.markAllAsRead,
               tooltip: 'Tout marquer comme lu',
               icon: FaIcon(
                 FontAwesomeIcons.checkDouble,
@@ -130,8 +130,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     bool isDark,
     NotificationProvider provider,
   ) {
-    final FaIconData icon = _getNotificationIcon(notification.type);
-    final Color iconColor = _getNotificationColor(notification.type);
+    final icon = _getNotificationIcon(notification.type);
+    final iconColor = _getNotificationColor(notification.type);
 
     return InkWell(
       onTap: () {

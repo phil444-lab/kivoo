@@ -9,17 +9,17 @@ class GoogleAuthService {
   /// Déclenche la connexion Google et retourne l'idToken et les infos utilisateur
   Future<GoogleSignInResult?> signIn() async {
     try {
-      final GoogleSignInAccount? account = await _googleSignIn.signIn();
+      final account = await _googleSignIn.signIn();
 
       if (account == null) {
         // L'utilisateur a annulé la connexion
         return null;
       }
 
-      final GoogleSignInAuthentication auth =
+      final auth =
           await account.authentication;
 
-      final String? idToken = auth.idToken;
+      final idToken = auth.idToken;
 
       if (idToken == null) {
         throw Exception('Impossible d\'obtenir le token Google');
@@ -43,10 +43,6 @@ class GoogleAuthService {
 }
 
 class GoogleSignInResult {
-  final String idToken;
-  final String email;
-  final String name;
-  final String? photoUrl;
 
   GoogleSignInResult({
     required this.idToken,
@@ -54,4 +50,8 @@ class GoogleSignInResult {
     required this.name,
     this.photoUrl,
   });
+  final String idToken;
+  final String email;
+  final String name;
+  final String? photoUrl;
 }

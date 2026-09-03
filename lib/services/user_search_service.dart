@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../constants.dart';
-import '../models/user_model.dart';
 
 class UserSearchService {
   /// Recherche des utilisateurs vendeurs (ayant au moins une annonce active)

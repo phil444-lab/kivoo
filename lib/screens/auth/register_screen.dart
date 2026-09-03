@@ -108,8 +108,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                   ),
                   prefixIcon: Align(
-                    widthFactor: 1.0,
-                    heightFactor: 1.0,
+                    widthFactor: 1,
+                    heightFactor: 1,
                     child: FaIcon(
                       FontAwesomeIcons.user,
                       color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
@@ -140,8 +140,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                   ),
                   prefixIcon: Align(
-                    widthFactor: 1.0,
-                    heightFactor: 1.0,
+                    widthFactor: 1,
+                    heightFactor: 1,
                     child: FaIcon(
                       FontAwesomeIcons.envelope,
                       color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
@@ -172,8 +172,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                   ),
                   prefixIcon: Align(
-                    widthFactor: 1.0,
-                    heightFactor: 1.0,
+                    widthFactor: 1,
+                    heightFactor: 1,
                     child: FaIcon(
                       FontAwesomeIcons.phone,
                       color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
@@ -205,8 +205,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                   ),
                   prefixIcon: Align(
-                    widthFactor: 1.0,
-                    heightFactor: 1.0,
+                    widthFactor: 1,
+                    heightFactor: 1,
                     child: FaIcon(
                       FontAwesomeIcons.lock,
                       color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
@@ -250,8 +250,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                   ),
                   prefixIcon: Align(
-                    widthFactor: 1.0,
-                    heightFactor: 1.0,
+                    widthFactor: 1,
+                    heightFactor: 1,
                     child: FaIcon(
                       FontAwesomeIcons.lock,
                       color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
@@ -287,9 +287,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                    border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     _errorMessage!,
@@ -366,8 +366,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Expanded(
                     child: Divider(
                       color: isDark
-                          ? AppTheme.darkTextMuted.withOpacity(0.3)
-                          : AppTheme.lightTextMuted.withOpacity(0.3),
+                          ? AppTheme.darkTextMuted.withValues(alpha: 0.3)
+                          : AppTheme.lightTextMuted.withValues(alpha: 0.3),
                     ),
                   ),
                   Padding(
@@ -383,8 +383,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Expanded(
                     child: Divider(
                       color: isDark
-                          ? AppTheme.darkTextMuted.withOpacity(0.3)
-                          : AppTheme.lightTextMuted.withOpacity(0.3),
+                          ? AppTheme.darkTextMuted.withValues(alpha: 0.3)
+                          : AppTheme.lightTextMuted.withValues(alpha: 0.3),
                     ),
                   ),
                 ],
@@ -400,8 +400,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isDark
-                        ? AppTheme.darkTextMuted.withOpacity(0.2)
-                        : AppTheme.lightTextMuted.withOpacity(0.2),
+                        ? AppTheme.darkTextMuted.withValues(alpha: 0.2)
+                        : AppTheme.lightTextMuted.withValues(alpha: 0.2),
                   ),
                 ),
                 child: ElevatedButton.icon(
@@ -414,7 +414,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: const Padding(
-                      padding: EdgeInsets.all(3.0),
+                      padding: EdgeInsets.all(3),
                       child: FaIcon(
                         FontAwesomeIcons.google,
                         color: Colors.red,

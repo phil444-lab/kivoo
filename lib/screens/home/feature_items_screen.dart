@@ -12,9 +12,9 @@ import '../../components/skeleton_card.dart';
 import 'item_detail_screen.dart';
 
 class FeatureItemsScreen extends StatefulWidget {
-  final FeatureCardModel feature;
 
   const FeatureItemsScreen({super.key, required this.feature});
+  final FeatureCardModel feature;
 
   @override
   State<FeatureItemsScreen> createState() => _FeatureItemsScreenState();
@@ -186,7 +186,7 @@ class _FeatureItemsScreenState extends State<FeatureItemsScreen> {
               if (index == _items.length) {
                 return const Center(
                   child: Padding(
-                    padding: EdgeInsets.all(16.0),
+                    padding: EdgeInsets.all(16),
                     child: CircularProgressIndicator(color: AppTheme.primaryBlue),
                   ),
                 );
@@ -213,8 +213,7 @@ class _FeatureItemsScreenState extends State<FeatureItemsScreen> {
   }
 
   /// Skeleton de la grille d'articles en vedette pendant le chargement
-  Widget _buildItemsSkeleton(bool isDark) {
-    return LayoutBuilder(
+  Widget _buildItemsSkeleton(bool isDark) => LayoutBuilder(
       builder: (context, constraints) {
         const crossAxisCount = 2;
         const spacing = 12.0;
@@ -235,5 +234,4 @@ class _FeatureItemsScreenState extends State<FeatureItemsScreen> {
         );
       },
     );
-  }
 }

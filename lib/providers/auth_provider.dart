@@ -11,6 +11,10 @@ import '../services/notification_service.dart';
 import '../utils/picked_image.dart';
 
 class AuthProvider extends ChangeNotifier {
+
+  AuthProvider() {
+    _loadStoredAuth();
+  }
   final AuthService _authService = AuthService();
   final GoogleAuthService _googleAuthService = GoogleAuthService();
 
@@ -33,10 +37,6 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoadingFavorites => _isLoadingFavorites;
   Set<String> get favoriteItemIds => Set.unmodifiable(_favoriteItemIds);
   List<ItemModel> get favoriteItems => List.unmodifiable(_favoriteItems);
-
-  AuthProvider() {
-    _loadStoredAuth();
-  }
 
   Future<void> _loadStoredAuth() async {
     try {
@@ -333,9 +333,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Vérifie si un article est dans les favoris
-  bool isFavorite(String itemId) {
-    return _favoriteItemIds.contains(itemId);
-  }
+  bool isFavorite(String itemId) => _favoriteItemIds.contains(itemId);
 
   /// Ajoute un article aux favoris
   Future<bool> addToFavorites(String itemId) async {
@@ -397,9 +395,9 @@ class AuthProvider extends ChangeNotifier {
   /// Bascule le statut favori d'un article
   Future<bool> toggleFavorite(String itemId) async {
     if (isFavorite(itemId)) {
-      return await removeFromFavorites(itemId);
+      return removeFromFavorites(itemId);
     } else {
-      return await addToFavorites(itemId);
+      return addToFavorites(itemId);
     }
   }
 

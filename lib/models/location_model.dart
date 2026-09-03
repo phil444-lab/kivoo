@@ -1,7 +1,4 @@
 class Country {
-  final String id;
-  final String name;
-  final String code;
 
   Country({
     required this.id,
@@ -16,6 +13,9 @@ class Country {
       code: json['code'] as String,
     );
   }
+  final String id;
+  final String name;
+  final String code;
 
   @override
   bool operator ==(Object other) =>
@@ -26,9 +26,6 @@ class Country {
 }
 
 class Department {
-  final String id;
-  final String name;
-  final String countryId;
 
   Department({
     required this.id,
@@ -43,6 +40,9 @@ class Department {
       countryId: json['countryId'] as String,
     );
   }
+  final String id;
+  final String name;
+  final String countryId;
 
   @override
   bool operator ==(Object other) =>
@@ -53,9 +53,6 @@ class Department {
 }
 
 class City {
-  final String id;
-  final String name;
-  final String departmentId;
 
   City({
     required this.id,
@@ -70,6 +67,9 @@ class City {
       departmentId: json['departmentId'] as String,
     );
   }
+  final String id;
+  final String name;
+  final String departmentId;
 
   @override
   bool operator ==(Object other) =>
@@ -80,9 +80,6 @@ class City {
 }
 
 class District {
-  final String id;
-  final String name;
-  final String cityId;
 
   District({
     required this.id,
@@ -97,6 +94,9 @@ class District {
       cityId: json['cityId'] as String,
     );
   }
+  final String id;
+  final String name;
+  final String cityId;
 
   @override
   bool operator ==(Object other) =>
@@ -108,10 +108,6 @@ class District {
 
 /// Représente la localisation complète d'un utilisateur
 class UserLocation {
-  final String country;
-  final String department;
-  final String city;
-  final String district;
 
   UserLocation({
     required this.country,
@@ -128,15 +124,17 @@ class UserLocation {
       district: json['district'] as String? ?? '',
     );
   }
+  final String country;
+  final String department;
+  final String city;
+  final String district;
 
-  Map<String, dynamic> toJson() {
-    return {
+  Map<String, dynamic> toJson() => {
       'country': country,
       'department': department,
       'city': city,
       'district': district,
     };
-  }
 
   bool get isEmpty =>
       country.isEmpty &&

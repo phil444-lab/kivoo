@@ -3,14 +3,14 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 /// Visionneuse d'images plein écran avec swipe et zoom.
 class FullscreenImageViewer extends StatefulWidget {
-  final List<String> images;
-  final int initialIndex;
 
   const FullscreenImageViewer({
     super.key,
     required this.images,
     this.initialIndex = 0,
   });
+  final List<String> images;
+  final int initialIndex;
 
   @override
   State<FullscreenImageViewer> createState() => _FullscreenImageViewerState();
@@ -34,8 +34,7 @@ class _FullscreenImageViewerState extends State<FullscreenImageViewer> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
@@ -116,26 +115,25 @@ class _FullscreenImageViewerState extends State<FullscreenImageViewer> {
         ],
       ),
     );
-  }
 }
 
 /// Image zoomable avec pinch-to-zoom et double-tap pour zoomer.
 class _ZoomableImage extends StatefulWidget {
-  final String imageUrl;
-  final VoidCallback onTap;
 
   const _ZoomableImage({
     required this.imageUrl,
     required this.onTap,
   });
+  final String imageUrl;
+  final VoidCallback onTap;
 
   @override
   State<_ZoomableImage> createState() => _ZoomableImageState();
 }
 
 class _ZoomableImageState extends State<_ZoomableImage> {
-  double _scale = 1.0;
-  double _previousScale = 1.0;
+  double _scale = 1;
+  double _previousScale = 1;
   Offset _offset = Offset.zero;
   Offset _previousOffset = Offset.zero;
 
@@ -149,8 +147,7 @@ class _ZoomableImageState extends State<_ZoomableImage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: widget.onTap,
       onDoubleTap: () {
         if (_scale > 1.0) {
@@ -196,5 +193,4 @@ class _ZoomableImageState extends State<_ZoomableImage> {
         ),
       ),
     );
-  }
 }

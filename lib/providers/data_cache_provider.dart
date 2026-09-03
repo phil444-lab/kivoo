@@ -12,15 +12,15 @@ class DataCacheProvider extends ChangeNotifier {
 
   // Catégories
   List<CategoryModel> _parentCategories = [];
-  Map<String, List<CategoryModel>> _subCategoriesCache = {};
+  final Map<String, List<CategoryModel>> _subCategoriesCache = {};
   bool _categoriesLoaded = false;
   bool _categoriesLoading = false;
 
   // Localisation
   List<Country> _countries = [];
-  Map<String, List<Department>> _departmentsCache = {};
-  Map<String, List<City>> _citiesCache = {};
-  Map<String, List<District>> _districtsCache = {};
+  final Map<String, List<Department>> _departmentsCache = {};
+  final Map<String, List<City>> _citiesCache = {};
+  final Map<String, List<District>> _districtsCache = {};
   bool _locationsLoaded = false;
   bool _locationsLoading = false;
 

@@ -7,14 +7,14 @@ import '../utils/responsive.dart';
 import '../models/item_model.dart';
 
 class SharedItemCard extends StatelessWidget {
-  final ItemModel item;
-  final VoidCallback? onTap;
 
   const SharedItemCard({
     super.key,
     required this.item,
     this.onTap,
   });
+  final ItemModel item;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

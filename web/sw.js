@@ -1,14 +1,25 @@
-// Service worker PWA minimal pour Kivoo (shell offline).
+// Service worker PWA pour Kivoo (shell offline).
 //
 // Le service worker auto-généré par Flutter est déprécié (généré vide dans
 // les versions récentes). Celui-ci fournit :
 //  - le cache du "shell" de l'app (démarrage hors-ligne),
 //  - un cache progressif des assets (fonts, icônes, images),
 //  - un fallback index.html pour les navigations hors-ligne.
+//
+// ⚠️ Fix "Icon Font Loading Failure / Missing Material Icons Asset" :
+//  1. Le nom du cache est VERSIONNÉ À CHAQUE BUILD : deploy-web.ps1 réécrit
+//     la constante CACHE ci-dessous avec l'ID unique du build Flutter. À
+//     l'activation, tous les caches des anciennes versions sont purgés.
+//     (Avant : nom de cache fixe + cache-first => les clients servaient
+//     indéfiniment main.dart.js / FontManifest.json périmés, mélangés aux
+//     assets du nouveau déploiement => échecs de chargement de polices.)
+//  2. Stratégie "network-first" avec repli sur le cache : le JS, le moteur
+//     (canvaskit/skwasm) et les manifestes sont revalidés sur le réseau à
+//     chaque fois ; le cache n'est servi qu'en cas d'échec réseau (offline).
 // Les appels API (kivoo-api.vercel.app) et le CDN CanvasKit sont cross-origin
 // et ne sont PAS interceptés : toujours réseau direct.
 
-const CACHE = 'kivoo-pwa-v1';
+const CACHE = 'kivoo-pwa-dev'; // <-- réécrit à chaque build par deploy-web.ps1
 const CORE = [
   '/',
   '/index.html',
@@ -52,25 +63,31 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Assets : cache d'abord, puis réseau (mise en cache au fil de l'eau)
+  // Assets : réseau d'abord (revalidation systématique => jamais d'assets
+  // périmés après un déploiement), repli sur le cache uniquement hors-ligne.
+  // La réponse fraîche met le cache à jour au fil de l'eau.
   event.respondWith(
-    caches.match(req).then(
-      (cached) =>
-        cached ||
-        fetch(req).then((res) => {
-          const cacheable =
-            res.ok &&
-            (url.pathname.startsWith('/assets/') ||
-              url.pathname.endsWith('.js') ||
-              url.pathname.endsWith('.wasm') ||
-              url.pathname.endsWith('.png') ||
-              url.pathname.endsWith('.jpg'));
-          if (cacheable) {
-            const copy = res.clone();
-            caches.open(CACHE).then((cache) => cache.put(req, copy));
-          }
-          return res;
-        })
-    )
+    fetch(req)
+      .then((res) => {
+        const cacheable =
+          res.ok &&
+          (url.pathname.startsWith('/assets/') ||
+            url.pathname.endsWith('.js') ||
+            url.pathname.endsWith('.wasm') ||
+            url.pathname.endsWith('.png') ||
+            url.pathname.endsWith('.jpg'));
+        if (cacheable) {
+          const copy = res.clone();
+          caches.open(CACHE).then((cache) => cache.put(req, copy));
+        }
+        return res;
+      })
+      .catch(() =>
+        caches.match(req).then(
+          (cached) =>
+            cached ||
+            new Response('', { status: 504, statusText: 'Offline' })
+        )
+      )
   );
 });

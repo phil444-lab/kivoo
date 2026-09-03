@@ -7,8 +7,7 @@ import '../utils/responsive.dart';
 Future<void> showPhoneNumberDialog(
   BuildContext context, {
   required String phoneNumber,
-}) {
-  return showDialog(
+}) => showDialog(
     context: context,
     builder: (dialogContext) {
       final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
@@ -98,4 +97,3 @@ Future<void> showPhoneNumberDialog(
       );
     },
   );
-}

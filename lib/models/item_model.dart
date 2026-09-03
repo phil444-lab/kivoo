@@ -1,43 +1,6 @@
 import '../constants.dart';
 
 class ItemModel {
-  final String id;
-  final String title;
-  final String description;
-  final String price;
-  final String priceType;
-  final String priceTypeValue;
-  final String location;
-  final String condition;
-  final String time;
-  final String photo;
-  final List<String> images;
-  final bool verified;
-  final String sellerId;
-  final String sellerName;
-  final String sellerPhone;
-  final String sellerPhoto;
-  final double sellerRating;
-  final String sellerLocation;
-  final String categoryName;
-  final String subcategoryName;
-  final String brand;
-  final String model;
-  final String color;
-  final int year;
-  final int views;
-  final int likes;
-  final String featureTitle;
-  final String featureIcon;
-  final bool featured;
-  final String categoryId;
-  final String subcategoryId;
-  final String departmentId;
-  final String cityId;
-  final String districtId;
-  final String featureId;
-  final String status;
-  final DateTime createdAt;
 
   const ItemModel({
     required this.id,
@@ -264,9 +227,45 @@ class ItemModel {
       createdAt: createdAt,
     );
   }
+  final String id;
+  final String title;
+  final String description;
+  final String price;
+  final String priceType;
+  final String priceTypeValue;
+  final String location;
+  final String condition;
+  final String time;
+  final String photo;
+  final List<String> images;
+  final bool verified;
+  final String sellerId;
+  final String sellerName;
+  final String sellerPhone;
+  final String sellerPhoto;
+  final double sellerRating;
+  final String sellerLocation;
+  final String categoryName;
+  final String subcategoryName;
+  final String brand;
+  final String model;
+  final String color;
+  final int year;
+  final int views;
+  final int likes;
+  final String featureTitle;
+  final String featureIcon;
+  final bool featured;
+  final String categoryId;
+  final String subcategoryId;
+  final String departmentId;
+  final String cityId;
+  final String districtId;
+  final String featureId;
+  final String status;
+  final DateTime createdAt;
 
-  Map<String, dynamic> toJson() {
-    return {
+  Map<String, dynamic> toJson() => {
       'id': id,
       'title': title,
       'description': description,
@@ -305,7 +304,6 @@ class ItemModel {
       'status': status,
       'createdAt': createdAt.toIso8601String(),
     };
-  }
 
   /// Retourne l'URL complète de la photo principale de l'item
   String get photoUrl {

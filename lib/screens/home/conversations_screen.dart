@@ -13,9 +13,9 @@ import '../../components/skeleton_card.dart';
 import 'conversation_detail_screen.dart';
 
 class ConversationsScreen extends StatefulWidget {
-  final VoidCallback? onBack;
 
   const ConversationsScreen({super.key, this.onBack});
+  final VoidCallback? onBack;
 
   @override
   State<ConversationsScreen> createState() => _ConversationsScreenState();
@@ -160,8 +160,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
     );
   }
 
-  Widget _buildSearchBar(bool isDark) {
-    return Container(
+  Widget _buildSearchBar(bool isDark) => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.darkCard : Colors.white,
@@ -213,7 +212,6 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
         ),
       ),
     );
-  }
 
   Widget _buildBody(bool isDark) {
     if (_loading) {
@@ -319,8 +317,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
     return ListView.builder(
       physics: const NeverScrollableScrollPhysics(),
       itemCount: 8,
-      itemBuilder: (context, index) {
-        return Container(
+      itemBuilder: (context, index) => Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             border: Border(
@@ -388,23 +385,19 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
               ),
             ],
           ),
-        );
-      },
+        ),
     );
   }
 
-  Widget _buildUserSearchResults(bool isDark) {
-    return ListView.builder(
+  Widget _buildUserSearchResults(bool isDark) => ListView.builder(
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
         final user = _searchResults[index];
         return _buildUserTile(user, isDark);
       },
     );
-  }
 
-  Widget _buildUserTile(User user, bool isDark) {
-    return ListTile(
+  Widget _buildUserTile(User user, bool isDark) => ListTile(
       leading: CircleAvatar(
         backgroundImage: user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
         child: user.photoUrl == null
@@ -520,7 +513,6 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
         }
       },
     );
-  }
 
   Widget _buildConversationTile(Conversation conversation, bool isDark) {
     final authProvider = context.read<AuthProvider>();
@@ -549,6 +541,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
             backgroundImage: otherParticipant.user.photoUrl != null
                 ? NetworkImage(otherParticipant.user.photoUrl!)
                 : null,
+            backgroundColor: AppTheme.primaryBlue,
             child: otherParticipant.user.photoUrl == null
                 ? Text(
                     otherParticipant.user.name.isNotEmpty
@@ -561,7 +554,6 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                     ),
                   )
                 : null,
-            backgroundColor: AppTheme.primaryBlue,
           ),
           title: Text(
             otherParticipant.user.name,

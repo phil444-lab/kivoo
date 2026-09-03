@@ -9,13 +9,6 @@ import '../constants.dart';
 
 /// Modèle de notification
 class AppNotification {
-  final String id;
-  final String type;
-  final String title;
-  final String message;
-  final Map<String, dynamic>? data;
-  final bool read;
-  final DateTime createdAt;
 
   const AppNotification({
     required this.id,
@@ -40,6 +33,13 @@ class AppNotification {
       ),
     );
   }
+  final String id;
+  final String type;
+  final String title;
+  final String message;
+  final Map<String, dynamic>? data;
+  final bool read;
+  final DateTime createdAt;
 }
 
 /// Service de gestion des notifications push FCM

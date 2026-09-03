@@ -139,24 +139,26 @@ class _HomeScreenState extends State<HomeScreen> {
     if (countries.isNotEmpty) {
       final country = countries.first;
       final deps = await dataCache.getDepartments(country.id);
-      if (mounted)
+      if (mounted) {
         setState(() {
           _country = country;
           _departments = deps;
         });
+      }
     }
 
     // Trier les articles du plus récent au plus ancien
     final sorted = List<ItemModel>.of(trending);
     sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-    if (mounted)
+    if (mounted) {
       setState(() {
         _categories = cats;
         _featureCards = cards;
         _trendingItems = sorted;
         _trendingLoading = false;
       });
+    }
     
     // Charger le compteur de messages non lus après le chargement des données
     if (mounted) {
@@ -204,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
     
     try {
       final conversations = await _conversationService.getConversations(token: token);
-      int total = 0;
+      var total = 0;
       for (final conv in conversations) {
         total += conv.getUnreadCount(authProvider.user?.id ?? '');
       }
@@ -322,11 +324,9 @@ class _HomeScreenState extends State<HomeScreen> {
     // Filtre par recherche texte (avec debounce)
     if (_debouncedSearchQuery.isNotEmpty) {
       final query = _debouncedSearchQuery.toLowerCase();
-      items = items.where((item) {
-        return item.title.toLowerCase().contains(query) ||
+      items = items.where((item) => item.title.toLowerCase().contains(query) ||
             item.location.toLowerCase().contains(query) ||
-            item.condition.toLowerCase().contains(query);
-      }).toList();
+            item.condition.toLowerCase().contains(query)).toList();
     }
 
     return items;
@@ -870,8 +870,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               // Bouton notifications avec badge
               Consumer<NotificationProvider>(
-                builder: (context, notificationProvider, _) {
-                  return Stack(
+                builder: (context, notificationProvider, _) => Stack(
                     clipBehavior: Clip.none,
                     children: [
                       IconButton(
@@ -918,8 +917,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                     ],
-                  );
-                },
+                  ),
               ),
               const SizedBox(width: 4),
               IconButton(
@@ -940,8 +938,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSearchBar() {
-    return Container(
+  Widget _buildSearchBar() => Container(
       color: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(
@@ -1054,7 +1051,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
-  }
 
   Widget _buildTrendingSkeleton() {
     if (isListView) {
@@ -1131,11 +1127,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildFloatingBottomNav() {
     final items = [
-      _NavItem(FontAwesomeIcons.house, 'Accueil', 0),
-      _NavItem(FontAwesomeIcons.heart, 'Favoris', 1),
-      _NavItem(FontAwesomeIcons.plusCircle, 'Vendre', 2),
+      const _NavItem(FontAwesomeIcons.house, 'Accueil', 0),
+      const _NavItem(FontAwesomeIcons.heart, 'Favoris', 1),
+      const _NavItem(FontAwesomeIcons.plusCircle, 'Vendre', 2),
       _NavItem(FontAwesomeIcons.comment, 'Discussions', 3, badgeCount: _unreadCount),
-      _NavItem(FontAwesomeIcons.user, 'Profil', 4),
+      const _NavItem(FontAwesomeIcons.user, 'Profil', 4),
     ];
 
     return Positioned(
@@ -1246,27 +1242,15 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _NavItem {
+
+  const _NavItem(this.icon, this.label, this.index, {this.badgeCount = 0});
   final FaIconData icon;
   final String label;
   final int index;
   final int badgeCount;
-
-  const _NavItem(this.icon, this.label, this.index, {this.badgeCount = 0});
 }
 
 class _LocationPickerSheet extends StatelessWidget {
-  final bool isDark;
-  final String countryName;
-  final List<Department> departments;
-  final List<City> cities;
-  final List<District> districts;
-  final Department? selectedDepartment;
-  final City? selectedCity;
-  final District? selectedDistrict;
-  final VoidCallback onReset;
-  final ValueChanged<Department> onDepartmentSelected;
-  final ValueChanged<City> onCitySelected;
-  final ValueChanged<District> onDistrictSelected;
 
   const _LocationPickerSheet({
     required this.isDark,
@@ -1282,6 +1266,18 @@ class _LocationPickerSheet extends StatelessWidget {
     required this.onCitySelected,
     required this.onDistrictSelected,
   });
+  final bool isDark;
+  final String countryName;
+  final List<Department> departments;
+  final List<City> cities;
+  final List<District> districts;
+  final Department? selectedDepartment;
+  final City? selectedCity;
+  final District? selectedDistrict;
+  final VoidCallback onReset;
+  final ValueChanged<Department> onDepartmentSelected;
+  final ValueChanged<City> onCitySelected;
+  final ValueChanged<District> onDistrictSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -1388,14 +1384,6 @@ class _LocationPickerSheet extends StatelessWidget {
 }
 
 class _PickerColumn extends StatelessWidget {
-  final String title;
-  final List<String> items;
-  final int selectedIndex;
-  final ValueChanged<int> onTap;
-  final bool isDark;
-  final Color textColor;
-  final Color mutedColor;
-  final Color borderColor;
 
   const _PickerColumn({
     required this.title,
@@ -1407,10 +1395,17 @@ class _PickerColumn extends StatelessWidget {
     required this.mutedColor,
     required this.borderColor,
   });
+  final String title;
+  final List<String> items;
+  final int selectedIndex;
+  final ValueChanged<int> onTap;
+  final bool isDark;
+  final Color textColor;
+  final Color mutedColor;
+  final Color borderColor;
 
   @override
-  Widget build(BuildContext context) {
-    return Expanded(
+  Widget build(BuildContext context) => Expanded(
       child: Column(
         children: [
           Container(
@@ -1457,5 +1452,4 @@ class _PickerColumn extends StatelessWidget {
         ],
       ),
     );
-  }
 }

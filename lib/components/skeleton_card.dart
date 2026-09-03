@@ -3,9 +3,9 @@ import '../theme/app_theme.dart';
 
 /// Widget qui anime l'opacité de son enfant avec un effet de pulsation
 class SkeletonPulse extends StatefulWidget {
-  final Widget child;
 
   const SkeletonPulse({super.key, required this.child});
+  final Widget child;
 
   @override
   State<SkeletonPulse> createState() => _SkeletonPulseState();
@@ -23,7 +23,7 @@ class _SkeletonPulseState extends State<SkeletonPulse>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
-    _animation = Tween<double>(begin: 0.4, end: 1.0).animate(
+    _animation = Tween<double>(begin: 0.4, end: 1).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
@@ -35,24 +35,22 @@ class _SkeletonPulseState extends State<SkeletonPulse>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
+  Widget build(BuildContext context) => FadeTransition(
       opacity: _animation,
       child: widget.child,
     );
-  }
 }
 
 /// Carte skeleton imitant l'apparence de l'ItemCard en mode liste
 class SkeletonItemCard extends StatelessWidget {
-  final bool isDark;
-  final double imageHeight;
 
   const SkeletonItemCard({
     super.key,
     required this.isDark,
     this.imageHeight = 300,
   });
+  final bool isDark;
+  final double imageHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -67,21 +65,21 @@ class SkeletonItemCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isDark
-                ? const Color(0xFF3d4752).withOpacity(0.5)
-                : const Color(0xFF000000).withOpacity(0.07),
+                ? const Color(0xFF3d4752).withValues(alpha: 0.5)
+                : const Color(0xFF000000).withValues(alpha: 0.07),
             width: 1,
           ),
           boxShadow: isDark
               ? [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -135,8 +133,7 @@ class SkeletonItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBlock(Color color, double width, double height) {
-    return Container(
+  Widget _buildBlock(Color color, double width, double height) => Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
@@ -144,14 +141,13 @@ class SkeletonItemCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
     );
-  }
 }
 
 /// Carte skeleton imitant l'apparence de l'ItemCard en mode grille
 class SkeletonGridCard extends StatelessWidget {
-  final bool isDark;
 
   const SkeletonGridCard({super.key, required this.isDark});
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -166,21 +162,21 @@ class SkeletonGridCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isDark
-                ? const Color(0xFF3d4752).withOpacity(0.5)
-                : const Color(0xFF000000).withOpacity(0.07),
+                ? const Color(0xFF3d4752).withValues(alpha: 0.5)
+                : const Color(0xFF000000).withValues(alpha: 0.07),
             width: 1,
           ),
           boxShadow: isDark
               ? [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -231,8 +227,7 @@ class SkeletonGridCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBlock(Color color, double width, double height) {
-    return Container(
+  Widget _buildBlock(Color color, double width, double height) => Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
@@ -240,15 +235,10 @@ class SkeletonGridCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
     );
-  }
 }
 
 /// Bloc skeleton simple pour les sections (feature cards, catégories, etc.)
 class SkeletonBlock extends StatelessWidget {
-  final bool isDark;
-  final double? width;
-  final double height;
-  final double borderRadius;
 
   const SkeletonBlock({
     super.key,
@@ -257,6 +247,10 @@ class SkeletonBlock extends StatelessWidget {
     required this.height,
     this.borderRadius = 16,
   });
+  final bool isDark;
+  final double? width;
+  final double height;
+  final double borderRadius;
 
   @override
   Widget build(BuildContext context) {

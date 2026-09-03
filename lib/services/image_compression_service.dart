@@ -52,7 +52,7 @@ class ImageCompressionService {
   /// Compresse une liste d'images en parallèle
   Future<List<Uint8List>> compressImages(List<Uint8List> bytesList) async {
     final results = await Future.wait(
-      bytesList.map((bytes) => compressBytes(bytes)),
+      bytesList.map(compressBytes),
     );
     return results;
   }

@@ -5,19 +5,6 @@ import '../models/item_model.dart';
 
 /// Modèle de profil public d'un vendeur
 class PublicSellerProfile {
-  final String id;
-  final String name;
-  final String phone;
-  final String photo;
-  final bool verified;
-  final double rating;
-  final int ratingCount;
-  final String location;
-  final DateTime joinedAt;
-  final int itemsListed;
-  final int itemsSold;
-  final int responseRate;
-  final String responseTime;
 
   const PublicSellerProfile({
     required this.id,
@@ -79,6 +66,19 @@ class PublicSellerProfile {
       responseTime: stats['responseTime']?.toString() ?? '',
     );
   }
+  final String id;
+  final String name;
+  final String phone;
+  final String photo;
+  final bool verified;
+  final double rating;
+  final int ratingCount;
+  final String location;
+  final DateTime joinedAt;
+  final int itemsListed;
+  final int itemsSold;
+  final int responseRate;
+  final String responseTime;
 }
 
 class PublicProfileService {

@@ -117,8 +117,7 @@ class _MyItemsScreenState extends State<MyItemsScreen> {
     }
   }
 
-  Future<bool?> _showConfirmDialog(String title, String message) {
-    return showDialog<bool>(
+  Future<bool?> _showConfirmDialog(String title, String message) => showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(title),
@@ -136,7 +135,6 @@ class _MyItemsScreenState extends State<MyItemsScreen> {
         ],
       ),
     );
-  }
 
   Widget _buildBody(bool isDark) {
     if (_loading) {
@@ -370,8 +368,7 @@ class _MyItemsScreenState extends State<MyItemsScreen> {
   }
 
   /// Affiche une liste de cartes skeleton pendant le chargement
-  Widget _buildSkeletonList(bool isDark) {
-    return ListView.builder(
+  Widget _buildSkeletonList(bool isDark) => ListView.builder(
       padding: const EdgeInsets.all(16),
       physics: const NeverScrollableScrollPhysics(),
       itemCount: 3,
@@ -382,5 +379,4 @@ class _MyItemsScreenState extends State<MyItemsScreen> {
         );
       },
     );
-  }
 }

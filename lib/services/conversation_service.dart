@@ -21,7 +21,7 @@ class ConversationService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final List<dynamic> list = data['data'] as List<dynamic>;
+        final list = data['data'] as List<dynamic>;
         return list
             .map((e) => Conversation.fromJson(e as Map<String, dynamic>))
             .toList();

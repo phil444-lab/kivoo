@@ -180,8 +180,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _pickImage() async {
     try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
+      final picker = ImagePicker();
+      final image = await picker.pickImage(
         source: ImageSource.gallery,
         maxWidth: 512,
         maxHeight: 512,
@@ -256,7 +256,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = e.toString().replaceAll('Exception: ', '');
+        var errorMessage = e.toString().replaceAll('Exception: ', '');
 
         if (errorMessage.contains('email') || errorMessage.contains('Email')) {
           errorMessage = 'Cet email est déjà utilisé par un autre compte';
@@ -357,8 +357,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       child: Image.network(
                                         user.photoUrl!,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, widget) {
-                                          return Center(
+                                        errorBuilder: (context, error, widget) => Center(
                                             child: Text(
                                               _nameController.text.isNotEmpty
                                                   ? _nameController.text[0].toUpperCase()
@@ -369,8 +368,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                                 fontWeight: FontWeight.w800,
                                               ),
                                             ),
-                                          );
-                                        },
+                                          ),
                                       ),
                                     )
                                   : Center(
@@ -423,8 +421,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     labelText: 'Nom complet',
                     hintText: 'Entrez votre nom',
                     prefixIcon: Align(
-                      widthFactor: 1.0,
-                      heightFactor: 1.0,
+                      widthFactor: 1,
+                      heightFactor: 1,
                       child: FaIcon(
                         FontAwesomeIcons.user,
                         size: Responsive.iconSize(context, 18),
@@ -457,8 +455,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     labelText: 'Email',
                     hintText: 'exemple@email.com',
                     prefixIcon: Align(
-                      widthFactor: 1.0,
-                      heightFactor: 1.0,
+                      widthFactor: 1,
+                      heightFactor: 1,
                       child: FaIcon(
                         FontAwesomeIcons.envelope,
                         size: Responsive.iconSize(context, 18),
@@ -490,8 +488,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     labelText: 'Téléphone',
                     hintText: '01XXXXXXXX',
                     prefixIcon: Align(
-                      widthFactor: 1.0,
-                      heightFactor: 1.0,
+                      widthFactor: 1,
+                      heightFactor: 1,
                       child: FaIcon(
                         FontAwesomeIcons.phone,
                         size: Responsive.iconSize(context, 18),
@@ -545,7 +543,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     _showPasswordFields
                         ? 'Masquer le mot de passe'
                         : 'Changer le mot de passe',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppTheme.primaryBlue,
                       fontSize: 14,
                     ),
@@ -561,8 +559,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       labelText: 'Mot de passe actuel',
                       hintText: 'Entrez votre mot de passe actuel',
                       prefixIcon: Align(
-                        widthFactor: 1.0,
-                        heightFactor: 1.0,
+                        widthFactor: 1,
+                        heightFactor: 1,
                         child: FaIcon(
                           FontAwesomeIcons.lock,
                           size: Responsive.iconSize(context, 18),
@@ -603,8 +601,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       labelText: 'Nouveau mot de passe',
                       hintText: 'Minimum 8 caractères',
                       prefixIcon: Align(
-                        widthFactor: 1.0,
-                        heightFactor: 1.0,
+                        widthFactor: 1,
+                        heightFactor: 1,
                         child: FaIcon(
                           FontAwesomeIcons.lock,
                           size: Responsive.iconSize(context, 18),
@@ -686,8 +684,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title, bool isDark) {
-    return Text(
+  Widget _buildSectionTitle(String title, bool isDark) => Text(
       title,
       style: TextStyle(
         color: isDark ? AppTheme.darkText : AppTheme.lightText,
@@ -695,10 +692,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         fontWeight: FontWeight.w700,
       ),
     );
-  }
 
-  Widget _buildLocationToggle(bool isDark) {
-    return Container(
+  Widget _buildLocationToggle(bool isDark) => Container(
       decoration: BoxDecoration(
         color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
         borderRadius: BorderRadius.circular(12),
@@ -814,10 +809,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ],
       ),
     );
-  }
 
-  Widget _buildSelectLocationFields(bool isDark) {
-    return Column(
+  Widget _buildSelectLocationFields(bool isDark) => Column(
       children: [
         // Pays
         _buildDropdownField<Country>(
@@ -911,7 +904,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
       ],
     );
-  }
 
   Widget _buildDropdownField<T>({
     required String label,
@@ -931,15 +923,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isDark
-                ? AppTheme.darkTextMuted.withOpacity(0.1)
-                : AppTheme.lightTextMuted.withOpacity(0.1),
+                ? AppTheme.darkTextMuted.withValues(alpha: 0.1)
+                : AppTheme.lightTextMuted.withValues(alpha: 0.1),
           ),
         ),
         child: Row(
           children: [
             FaIcon(icon, size: 18, color: AppTheme.primaryBlue),
             const SizedBox(width: 12),
-            SizedBox(
+            const SizedBox(
               width: 16,
               height: 16,
               child: CircularProgressIndicator(
@@ -948,7 +940,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            Text(
+            const Text(
               'Chargement...',
               style: TextStyle(
                 fontSize: 14,
@@ -966,20 +958,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
-              ? AppTheme.darkTextMuted.withOpacity(0.1)
-              : AppTheme.lightTextMuted.withOpacity(0.1),
+              ? AppTheme.darkTextMuted.withValues(alpha: 0.1)
+              : AppTheme.lightTextMuted.withValues(alpha: 0.1),
         ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButtonFormField<T>(
-          value: value,
+          initialValue: value,
           isExpanded: true,
           isDense: true,
           decoration: InputDecoration(
             labelText: label,
             prefixIcon: Align(
-              widthFactor: 1.0,
-              heightFactor: 1.0,
+              widthFactor: 1,
+              heightFactor: 1,
               child: FaIcon(icon, size: Responsive.iconSize(context, 18)),
             ),
             border: OutlineInputBorder(
@@ -997,8 +989,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               fontSize: 14,
             ),
           ),
-          items: items.map((item) {
-            return DropdownMenuItem<T>(
+          items: items.map((item) => DropdownMenuItem<T>(
               value: item,
               child: Text(
                 getLabel(item),
@@ -1007,16 +998,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   color: isDark ? AppTheme.darkText : AppTheme.lightText,
                 ),
               ),
-            );
-          }).toList(),
+            )).toList(),
           onChanged: onChanged,
         ),
       ),
     );
   }
 
-  Widget _buildCustomLocationFields(bool isDark) {
-    return Column(
+  Widget _buildCustomLocationFields(bool isDark) => Column(
       children: [
         _buildCustomTextField(
           controller: _customCountryController,
@@ -1051,7 +1040,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
       ],
     );
-  }
 
   Widget _buildCustomTextField({
     required TextEditingController controller,
@@ -1059,8 +1047,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     required FaIconData icon,
     required String hint,
     required bool isDark,
-  }) {
-    return TextFormField(
+  }) => TextFormField(
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
@@ -1075,5 +1062,4 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
       ),
     );
-  }
 }

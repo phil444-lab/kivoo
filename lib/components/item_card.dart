@@ -8,16 +8,6 @@ import '../utils/responsive.dart';
 import '../providers/auth_provider.dart';
 
 class ItemCard extends StatelessWidget {
-  final ItemModel item;
-  final bool isDark;
-  final VoidCallback? onTap;
-  final bool showFavoriteButton;
-  final VoidCallback? onFavoriteToggle;
-  /// Hauteur du conteneur d'image. Plus petit en mode grille.
-  final double imageHeight;
-  /// Si true, le contenu remplit toute la hauteur de la carte (mode grille).
-  /// Si false, le contenu s'adapte à son contenu (mode liste).
-  final bool fillHeight;
 
   const ItemCard({
     super.key,
@@ -29,6 +19,16 @@ class ItemCard extends StatelessWidget {
     this.imageHeight = 300,
     this.fillHeight = false,
   });
+  final ItemModel item;
+  final bool isDark;
+  final VoidCallback? onTap;
+  final bool showFavoriteButton;
+  final VoidCallback? onFavoriteToggle;
+  /// Hauteur du conteneur d'image. Plus petit en mode grille.
+  final double imageHeight;
+  /// Si true, le contenu remplit toute la hauteur de la carte (mode grille).
+  /// Si false, le contenu s'adapte à son contenu (mode liste).
+  final bool fillHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -44,21 +44,21 @@ class ItemCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isDark
-                ? const Color(0xFF3d4752).withOpacity(0.5)
-                : const Color(0xFF000000).withOpacity(0.07),
+                ? const Color(0xFF3d4752).withValues(alpha: 0.5)
+                : const Color(0xFF000000).withValues(alpha: 0.07),
             width: 1,
           ),
           boxShadow: isDark
               ? [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -143,8 +143,8 @@ class ItemCard extends StatelessWidget {
                           height: 32,
                           decoration: BoxDecoration(
                             color: isDark
-                                ? const Color(0xFF12161a).withOpacity(0.8)
-                                : const Color(0xFFffffff).withOpacity(0.9),
+                                ? const Color(0xFF12161a).withValues(alpha: 0.8)
+                                : const Color(0xFFffffff).withValues(alpha: 0.9),
                             shape: BoxShape.circle,
                           ),
                           child: Center(

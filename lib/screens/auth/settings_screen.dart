@@ -37,13 +37,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  String get _currentLanguage {
-    return _preferences['language'] as String? ?? 'fr';
-  }
+  String get _currentLanguage => _preferences['language'] as String? ?? 'fr';
 
-  bool get _notificationsEnabled {
-    return _preferences['notifications'] as bool? ?? true;
-  }
+  bool get _notificationsEnabled => _preferences['notifications'] as bool? ?? true;
 
   Future<void> _updatePreferences() async {
     setState(() => _isLoading = true);
@@ -157,8 +153,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title, bool isDark) {
-    return Text(
+  Widget _buildSectionTitle(String title, bool isDark) => Text(
       title,
       style: TextStyle(
         color: isDark ? AppTheme.darkText : AppTheme.lightText,
@@ -166,10 +161,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         fontWeight: FontWeight.w700,
       ),
     );
-  }
 
-  Widget _buildLanguageSelector(bool isDark) {
-    return Container(
+  Widget _buildLanguageSelector(bool isDark) => Container(
       decoration: BoxDecoration(
         color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
         borderRadius: BorderRadius.circular(12),
@@ -197,7 +190,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
-  }
 
   Widget _buildLanguageOption(String label, String value, String flag, bool isDark) {
     final isSelected = _currentLanguage == value;
@@ -209,7 +201,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppTheme.primaryBlue.withOpacity(0.1)
+              ? AppTheme.primaryBlue.withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
@@ -233,7 +225,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             if (isSelected)
-              FaIcon(
+              const FaIcon(
                 FontAwesomeIcons.check,
                 color: AppTheme.primaryBlue,
                 size: 18,
@@ -244,8 +236,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildNotificationToggle(bool isDark) {
-    return Container(
+  Widget _buildNotificationToggle(bool isDark) => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
@@ -296,10 +287,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
-  }
 
-  Widget _buildInfoCard(bool isDark) {
-    return Container(
+  Widget _buildInfoCard(bool isDark) => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppTheme.primaryBlue.withOpacity(0.1),
@@ -344,5 +333,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
-  }
 }

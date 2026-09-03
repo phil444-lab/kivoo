@@ -9,8 +9,6 @@ import 'image_compression_service.dart';
 
 /// Résultat d'un upload Cloudinary
 class CloudinaryUploadResult {
-  final String secureUrl;
-  final String publicId;
 
   CloudinaryUploadResult({required this.secureUrl, required this.publicId});
 
@@ -20,14 +18,16 @@ class CloudinaryUploadResult {
       publicId: json['public_id'] as String? ?? '',
     );
   }
+  final String secureUrl;
+  final String publicId;
 }
 
 /// Exception personnalisée pour les erreurs d'upload Cloudinary
 class CloudinaryUploadException implements Exception {
-  final String message;
-  final int? statusCode;
 
   CloudinaryUploadException(this.message, {this.statusCode});
+  final String message;
+  final int? statusCode;
 
   @override
   String toString() => message;

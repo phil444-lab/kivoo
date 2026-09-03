@@ -14,9 +14,6 @@ import '../../components/skeleton_card.dart';
 import 'item_detail_screen.dart';
 
 class ItemsListScreen extends StatefulWidget {
-  final CategoryModel category;
-  final CategoryModel? parentCategory;
-  final bool isSubcategory;
 
   const ItemsListScreen({
     super.key,
@@ -24,6 +21,9 @@ class ItemsListScreen extends StatefulWidget {
     this.parentCategory,
     this.isSubcategory = false,
   });
+  final CategoryModel category;
+  final CategoryModel? parentCategory;
+  final bool isSubcategory;
 
   @override
   State<ItemsListScreen> createState() => _ItemsListScreenState();
@@ -342,7 +342,7 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
                   children: [
                     // Tri
                     DropdownButtonFormField<String>(
-                      value: _selectedSort,
+                      initialValue: _selectedSort,
                       decoration: _filterDecoration('Trier par', isDark),
                       items: _sortOptions
                           .map((option) => DropdownMenuItem(
@@ -365,7 +365,7 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
 
                     // État
                     DropdownButtonFormField<String>(
-                      value: _selectedCondition,
+                      initialValue: _selectedCondition,
                       decoration: _filterDecoration('État', isDark),
                       items: [
                         const DropdownMenuItem<String>(
@@ -391,7 +391,7 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
 
                     // Type de prix
                     DropdownButtonFormField<String>(
-                      value: _selectedPriceType,
+                      initialValue: _selectedPriceType,
                       decoration: _filterDecoration('Type de prix', isDark),
                       items: [
                         const DropdownMenuItem<String>(
@@ -453,7 +453,7 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
 
                     // Localisation : Département
                     DropdownButtonFormField<Department>(
-                      value: _selectedDepartment,
+                      initialValue: _selectedDepartment,
                       decoration: _filterDecoration('Département', isDark),
                       items: [
                         const DropdownMenuItem<Department>(
@@ -479,7 +479,7 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
                     // Localisation : Ville
                     if (_cities.isNotEmpty)
                       DropdownButtonFormField<City>(
-                        value: _selectedCity,
+                        initialValue: _selectedCity,
                         decoration: _filterDecoration('Ville', isDark),
                         items: [
                           const DropdownMenuItem<City>(
@@ -505,7 +505,7 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
                     // Localisation : Quartier
                     if (_districts.isNotEmpty)
                       DropdownButtonFormField<District>(
-                        value: _selectedDistrict,
+                        initialValue: _selectedDistrict,
                         decoration: _filterDecoration('Quartier', isDark),
                         items: [
                           const DropdownMenuItem<District>(
@@ -613,8 +613,7 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
     );
   }
 
-  InputDecoration _filterDecoration(String label, bool isDark) {
-    return InputDecoration(
+  InputDecoration _filterDecoration(String label, bool isDark) => InputDecoration(
       labelText: label,
       labelStyle: TextStyle(
         color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
@@ -625,11 +624,9 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     );
-  }
 
   /// Skeleton de la grille d'items pendant le chargement
-  Widget _buildItemsSkeleton(bool isDark) {
-    return LayoutBuilder(
+  Widget _buildItemsSkeleton(bool isDark) => LayoutBuilder(
       builder: (context, constraints) {
         const crossAxisCount = 2;
         const spacing = 12.0;
@@ -650,7 +647,6 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
         );
       },
     );
-  }
 
   Widget _buildBody(bool isDark) {
     if (_loading) {
@@ -720,7 +716,7 @@ class _ItemsListScreenState extends State<ItemsListScreen> {
               if (index == _items.length) {
                 return const Center(
                   child: Padding(
-                    padding: EdgeInsets.all(16.0),
+                    padding: EdgeInsets.all(16),
                     child:
                         CircularProgressIndicator(color: AppTheme.primaryBlue),
                   ),

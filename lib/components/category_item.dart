@@ -5,14 +5,14 @@ import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
 
 class CategoryItem extends StatelessWidget {
-  final CategoryModel category;
-  final bool isDark;
 
   const CategoryItem({
     super.key,
     required this.category,
     required this.isDark,
   });
+  final CategoryModel category;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -35,21 +35,21 @@ class CategoryItem extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isDark
-                    ? const Color(0xFF3d4752).withOpacity(0.3)
-                    : const Color(0xFF000000).withOpacity(0.06),
+                    ? const Color(0xFF3d4752).withValues(alpha: 0.3)
+                    : const Color(0xFF000000).withValues(alpha: 0.06),
                 width: 1,
               ),
               boxShadow: isDark
                   ? [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.4),
+                        color: Colors.black.withValues(alpha: 0.4),
                         blurRadius: 8,
                         offset: const Offset(2, 2),
                       ),
                     ]
                   : [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 6,
                         offset: const Offset(2, 2),
                       ),

@@ -30,6 +30,14 @@ if (-not $SkipBuild) {
   if ($LASTEXITCODE -ne 0) { Write-Host '❌ Échec du build Flutter.' -ForegroundColor Red; exit 1 }
   # Flutter 3.44 génère un service worker vide (déprécié) -> on met le nôtre
   Copy-Item (Join-Path $root 'web\sw.js') (Join-Path $build 'flutter_service_worker.js') -Force
+  # Fix "Missing Material Icons Asset" : versionner le cache du SW avec l'ID
+  # unique du build. À l'activation, le SW purge les caches des anciennes
+  # versions -> plus d'assets périmés servis aux clients après un déploiement.
+  $swPath = Join-Path $build 'flutter_service_worker.js'
+  $buildId = (Get-Content (Join-Path $build '.last_build_id') -Raw).Trim()
+  (Get-Content $swPath -Raw) -replace "const CACHE = 'kivoo-pwa-[^']*'", "const CACHE = 'kivoo-pwa-$buildId'" |
+    Set-Content $swPath -NoNewline
+  Write-Host "   SW cache versionné : kivoo-pwa-$buildId" -ForegroundColor DarkGray
   Write-Host '✅ Build OK' -ForegroundColor Green
 }
 

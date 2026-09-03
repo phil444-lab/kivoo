@@ -55,8 +55,7 @@ class KivooApp extends StatelessWidget {
   const KivooApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
+  Widget build(BuildContext context) => MultiProvider(
       providers: [
         ChangeNotifierProvider<ThemeProvider>(
           create: (_) => ThemeProvider(),
@@ -100,7 +99,6 @@ class KivooApp extends StatelessWidget {
         },
       ),
     );
-  }
 }
 
 class AuthWrapper extends StatefulWidget {
@@ -155,13 +153,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
 /// écrans (web desktop / tablette), pour une expérience PWA identique à
 /// l'app native.
 class MobileAppShell extends StatelessWidget {
-  final Widget child;
 
   const MobileAppShell({super.key, required this.child});
+  final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
+  Widget build(BuildContext context) => LayoutBuilder(
       builder: (context, constraints) {
         const maxMobileWidth = AppConstants.webMaxContentWidth;
 
@@ -195,5 +192,4 @@ class MobileAppShell extends StatelessWidget {
         );
       },
     );
-  }
 }

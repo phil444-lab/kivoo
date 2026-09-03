@@ -2,11 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class CategoryModel {
-  final String id;
-  final dynamic icon;
-  final String label;
-  final String color;
-  final int itemCount;
 
   const CategoryModel({
     required this.id,
@@ -27,6 +22,11 @@ class CategoryModel {
       itemCount: json['itemCount'] as int? ?? 0,
     );
   }
+  final String id;
+  final dynamic icon;
+  final String label;
+  final String color;
+  final int itemCount;
 
   static dynamic _iconForCategory(String name) {
     final n = name.toLowerCase();

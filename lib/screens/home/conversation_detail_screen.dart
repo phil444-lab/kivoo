@@ -17,14 +17,14 @@ import 'home_screen.dart';
 import 'item_detail_screen.dart';
 
 class ConversationDetailScreen extends StatefulWidget {
-  final Conversation conversation;
-  final String otherUserId;
 
   const ConversationDetailScreen({
     super.key,
     required this.conversation,
     required this.otherUserId,
   });
+  final Conversation conversation;
+  final String otherUserId;
 
   @override
   State<ConversationDetailScreen> createState() => _ConversationDetailScreenState();
@@ -176,6 +176,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
               backgroundImage: otherParticipant.user.photoUrl != null
                   ? NetworkImage(otherParticipant.user.photoUrl!)
                   : null,
+              backgroundColor: AppTheme.primaryBlue,
               child: otherParticipant.user.photoUrl == null
                   ? Text(
                       otherParticipant.user.name.isNotEmpty
@@ -188,7 +189,6 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                       ),
                     )
                   : null,
-              backgroundColor: AppTheme.primaryBlue,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -277,17 +277,15 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
         controller: _scrollController,
         padding: const EdgeInsets.all(16),
         itemCount: _messages.length + _countDateSeparators(),
-        itemBuilder: (context, index) {
-          return _buildMessageOrDateSeparator(index, isDark, currentUserId);
-        },
+        itemBuilder: (context, index) => _buildMessageOrDateSeparator(index, isDark, currentUserId),
       ),
     );
   }
 
   int _countDateSeparators() {
     if (_messages.isEmpty) return 0;
-    int count = 0;
-    for (int i = 0; i < _messages.length; i++) {
+    var count = 0;
+    for (var i = 0; i < _messages.length; i++) {
       if (i == 0 || !_isSameDay(_messages[i].createdAt, _messages[i - 1].createdAt)) {
         count++;
       }
@@ -296,10 +294,10 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   }
 
   Widget _buildMessageOrDateSeparator(int index, bool isDark, String? currentUserId) {
-    int messageIndex = 0;
-    int separatorCount = 0;
+    var messageIndex = 0;
+    var separatorCount = 0;
     
-    for (int i = 0; i < _messages.length; i++) {
+    for (var i = 0; i < _messages.length; i++) {
       final showSeparator = i == 0 || !_isSameDay(_messages[i].createdAt, _messages[i - 1].createdAt);
       if (showSeparator) {
         if (index == messageIndex + separatorCount) {
@@ -319,8 +317,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     return const SizedBox.shrink();
   }
 
-  Widget _buildDateSeparator(DateTime date, bool isDark) {
-    return Center(
+  Widget _buildDateSeparator(DateTime date, bool isDark) => Center(
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -338,13 +335,10 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
         ),
       ),
     );
-  }
 
-  bool _isSameDay(DateTime date1, DateTime date2) {
-    return date1.year == date2.year &&
+  bool _isSameDay(DateTime date1, DateTime date2) => date1.year == date2.year &&
         date1.month == date2.month &&
         date1.day == date2.day;
-  }
 
   String _formatDateSeparator(DateTime date) {
     final now = DateTime.now();
@@ -388,7 +382,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
           border: isMe 
               ? null 
               : Border.all(
-                  color: isDark ? AppTheme.darkTextMuted.withOpacity(0.2) : Colors.grey.shade400,
+                  color: isDark ? AppTheme.darkTextMuted.withValues(alpha: 0.2) : Colors.grey.shade400,
                   width: 1,
                 ),
         ),
@@ -508,6 +502,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                     backgroundImage: message.sender.photoUrl != null
                         ? NetworkImage(message.sender.photoUrl!)
                         : null,
+                    backgroundColor: AppTheme.primaryBlue,
                     child: message.sender.photoUrl == null
                         ? Text(
                             message.sender.name.isNotEmpty
@@ -520,7 +515,6 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                             ),
                           )
                         : null,
-                    backgroundColor: AppTheme.primaryBlue,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -565,7 +559,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
           border: isMe 
               ? null 
               : Border.all(
-                  color: isDark ? AppTheme.darkTextMuted.withOpacity(0.2) : Colors.grey.shade400,
+                  color: isDark ? AppTheme.darkTextMuted.withValues(alpha: 0.2) : Colors.grey.shade400,
                   width: 1,
                 ),
         ),
@@ -597,8 +591,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                       ),
                     );
                   },
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
+                  errorBuilder: (context, error, stackTrace) => Container(
                       height: 200,
                       color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
                       child: FaIcon(
@@ -606,8 +599,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                         size: 40,
                         color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                       ),
-                    );
-                  },
+                    ),
                 ),
               ),
             ),
@@ -698,8 +690,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     );
   }
 
-  Widget _buildMessageInput(bool isDark) {
-    return Container(
+  Widget _buildMessageInput(bool isDark) => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.darkCard : Colors.white,
@@ -780,7 +771,6 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
         ],
       ),
     );
-  }
 
   String _formatTime(DateTime date) {
     final now = DateTime.now();

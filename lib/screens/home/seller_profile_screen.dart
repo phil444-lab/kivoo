@@ -16,14 +16,14 @@ import 'item_detail_screen.dart';
 import 'conversation_detail_screen.dart';
 
 class SellerProfileScreen extends StatefulWidget {
-  final String sellerId;
-  final String? initialName;
 
   const SellerProfileScreen({
     super.key,
     required this.sellerId,
     this.initialName,
   });
+  final String sellerId;
+  final String? initialName;
 
   @override
   State<SellerProfileScreen> createState() => _SellerProfileScreenState();
@@ -551,8 +551,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
     String label,
     FaIconData icon,
     bool isDark,
-  ) {
-    return Container(
+  ) => Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
@@ -585,10 +584,8 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
         ],
       ),
     );
-  }
 
-  Widget _buildSectionTitle(BuildContext context, bool isDark, Color textColor) {
-    return Align(
+  Widget _buildSectionTitle(BuildContext context, bool isDark, Color textColor) => Align(
       alignment: Alignment.centerLeft,
       child: Text(
         'Annonces de ${_profile?.name ?? 'ce vendeur'}',
@@ -599,10 +596,8 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildEmptyItems(bool isDark, Color mutedColor) {
-    return Padding(
+  Widget _buildEmptyItems(bool isDark, Color mutedColor) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 48),
       child: Column(
         children: [
@@ -623,10 +618,8 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
         ],
       ),
     );
-  }
 
-  Widget _buildErrorState(bool isDark, Color textColor) {
-    return Center(
+  Widget _buildErrorState(bool isDark, Color textColor) => Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -648,10 +641,8 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
         ],
       ),
     );
-  }
 
-  Widget _buildFallbackAvatar(String name) {
-    return Center(
+  Widget _buildFallbackAvatar(String name) => Center(
       child: Text(
         name.isNotEmpty ? name[0].toUpperCase() : '?',
         style: const TextStyle(
@@ -661,5 +652,4 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
         ),
       ),
     );
-  }
 }

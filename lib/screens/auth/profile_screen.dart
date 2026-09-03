@@ -16,9 +16,9 @@ import '../home/my_items_screen.dart';
 import '../../utils/responsive.dart';
 
 class ProfileScreen extends StatelessWidget {
-  final bool showAppBar;
 
   const ProfileScreen({super.key, this.showAppBar = true});
+  final bool showAppBar;
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +34,7 @@ class ProfileScreen extends StatelessWidget {
     return _buildAuthenticatedProfile(context, isDark, authProvider);
   }
 
-  Widget _buildNotAuthenticatedBody(BuildContext context, bool isDark) {
-    return LayoutBuilder(
+  Widget _buildNotAuthenticatedBody(BuildContext context, bool isDark) => LayoutBuilder(
       builder: (context, constraints) {
         final availableHeight = constraints.maxHeight;
         final useScroll = availableHeight < 550;
@@ -257,7 +256,6 @@ class ProfileScreen extends StatelessWidget {
         );
       },
     );
-  }
 
   Widget _buildNotAuthenticated(BuildContext context, bool isDark) {
     final body = _buildNotAuthenticatedBody(context, isDark);
@@ -659,8 +657,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFallbackAvatar(String userName) {
-    return Center(
+  Widget _buildFallbackAvatar(String userName) => Center(
       child: Text(
         userName.isNotEmpty
             ? userName[0].toUpperCase()
@@ -672,10 +669,8 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
     );
-  }
 
-  Widget _buildStatCard(BuildContext context, String label, String value, FaIconData icon, bool isDark) {
-    return Container(
+  Widget _buildStatCard(BuildContext context, String label, String value, FaIconData icon, bool isDark) => Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
@@ -715,10 +710,8 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
     );
-  }
 
-  Widget _buildMenuItem(BuildContext context, String title, FaIconData icon, bool isDark, VoidCallback onTap) {
-    return Container(
+  Widget _buildMenuItem(BuildContext context, String title, FaIconData icon, bool isDark, VoidCallback onTap) => Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
@@ -757,5 +750,4 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
     );
-  }
 }

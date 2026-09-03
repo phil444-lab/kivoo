@@ -10,9 +10,9 @@ import '../../components/skeleton_card.dart';
 import 'items_list_screen.dart';
 
 class CategoryScreen extends StatefulWidget {
-  final CategoryModel category;
 
   const CategoryScreen({super.key, required this.category});
+  final CategoryModel category;
 
   @override
   State<CategoryScreen> createState() => _CategoryScreenState();
@@ -118,7 +118,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: subColor.withOpacity(isDark ? 0.15 : 0.1),
+                            color: subColor.withValues(alpha: isDark ? 0.15 : 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Center(child: _buildIcon(sub.icon, subColor)),

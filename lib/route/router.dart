@@ -69,12 +69,12 @@ class AppRouter {
 }
 
 class PlaceholderScreen extends StatelessWidget {
-  final String title;
 
   const PlaceholderScreen({
     super.key,
     required this.title,
   });
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +87,7 @@ class PlaceholderScreen extends StatelessWidget {
         backgroundColor: AppTheme.darkBlue,
         title: Text(
           title,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w700,
           ),

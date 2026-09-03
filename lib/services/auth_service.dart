@@ -35,7 +35,7 @@ class AuthService {
       } else {
         throw Exception(responseData['message'] ?? 'Social login failed');
       }
-    } on http.ClientException catch (e) {
+    } on http.ClientException {
       throw Exception('Impossible de se connecter au serveur. Vérifiez votre connexion internet.');
     } catch (e) {
       throw Exception(e.toString().replaceAll('Exception: ', ''));
@@ -78,7 +78,7 @@ class AuthService {
       } else {
         throw Exception(responseData['message'] ?? 'Token refresh failed');
       }
-    } on http.ClientException catch (e) {
+    } on http.ClientException {
       throw Exception('Impossible de se connecter au serveur.');
     } catch (e) {
       throw Exception(e.toString().replaceAll('Exception: ', ''));
@@ -112,7 +112,7 @@ class AuthService {
       } else {
         throw Exception(responseData['message'] ?? 'Registration failed');
       }
-    } on http.ClientException catch (e) {
+    } on http.ClientException {
       throw Exception('Impossible de se connecter au serveur. Vérifiez votre connexion internet.');
     } catch (e) {
       throw Exception(e.toString().replaceAll('Exception: ', ''));
@@ -142,7 +142,7 @@ class AuthService {
       } else {
         throw Exception(responseData['message'] ?? 'Login failed');
       }
-    } on http.ClientException catch (e) {
+    } on http.ClientException {
       throw Exception('Impossible de se connecter au serveur. Vérifiez votre connexion internet.');
     } catch (e) {
       throw Exception(e.toString().replaceAll('Exception: ', ''));
@@ -239,7 +239,7 @@ class AuthService {
       } else {
         throw Exception(responseData['message'] ?? 'Upload photo failed');
       }
-    } on http.ClientException catch (e) {
+    } on http.ClientException {
       throw Exception('Impossible de se connecter au serveur. Vérifiez votre connexion internet.');
     } catch (e) {
       throw Exception(e.toString().replaceAll('Exception: ', ''));
@@ -263,7 +263,7 @@ class AuthService {
       } else {
         throw Exception(responseData['message'] ?? 'Delete account failed');
       }
-    } on http.ClientException catch (e) {
+    } on http.ClientException {
       throw Exception('Impossible de se connecter au serveur. Vérifiez votre connexion internet.');
     } catch (e) {
       throw Exception(e.toString().replaceAll('Exception: ', ''));

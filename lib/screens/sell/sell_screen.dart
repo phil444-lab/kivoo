@@ -19,10 +19,10 @@ import '../../utils/picked_image.dart';
 import '../../utils/responsive.dart';
 
 class SellScreen extends StatefulWidget {
-  /// Si item est fourni, le formulaire est en mode édition et prérempli.
-  final ItemModel? item;
 
   const SellScreen({super.key, this.item});
+  /// Si item est fourni, le formulaire est en mode édition et prérempli.
+  final ItemModel? item;
 
   @override
   State<SellScreen> createState() => _SellScreenState();
@@ -120,9 +120,7 @@ class _SellScreenState extends State<SellScreen> {
   }
 
   /// Extrait le nombre depuis une chaîne formatée "250 000 FCFA"
-  String _extractNumericPrice(String formatted) {
-    return formatted.replaceAll(RegExp(r'[^\d]'), '');
-  }
+  String _extractNumericPrice(String formatted) => formatted.replaceAll(RegExp(r'[^\d]'), '');
 
   /// Construit l'URL complète d'une image existante
   String _imageUrl(String img) {
@@ -343,7 +341,7 @@ class _SellScreenState extends State<SellScreen> {
 
     try {
       // Uploader les nouvelles images directement vers Cloudinary
-      List<String> uploadedImageUrls = [];
+      var uploadedImageUrls = <String>[];
       if (_newImages.isNotEmpty) {
         uploadedImageUrls = await _cloudinaryService.uploadMultiple(
           token: authProvider.token!,
@@ -450,8 +448,7 @@ class _SellScreenState extends State<SellScreen> {
         ? const Color(0xFF2a2f35)
         : const Color(0xFFE0E0E0);
 
-    Widget skeletonBlock({double? width, required double height, double radius = 8}) {
-      return SkeletonPulse(
+    Widget skeletonBlock({double? width, required double height, double radius = 8}) => SkeletonPulse(
         child: Container(
           width: width,
           height: height,
@@ -461,10 +458,8 @@ class _SellScreenState extends State<SellScreen> {
           ),
         ),
       );
-    }
 
-    Widget skeletonField({required double height}) {
-      return Container(
+    Widget skeletonField({required double height}) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
           color: cardBg,
@@ -473,7 +468,6 @@ class _SellScreenState extends State<SellScreen> {
         ),
         child: skeletonBlock(height: height),
       );
-    }
 
     return SingleChildScrollView(
       physics: const NeverScrollableScrollPhysics(),
@@ -640,7 +634,7 @@ class _SellScreenState extends State<SellScreen> {
                       Text('Catégorie', style: sectionTitleStyle),
                       SizedBox(height: Responsive.dimension(context, 8)),
                       DropdownButtonFormField<CategoryModel>(
-                        value: _selectedParentCategory,
+                        initialValue: _selectedParentCategory,
                         isExpanded: true,
                         decoration: _inputDecoration('Sélectionner une catégorie', cardBg, borderColor),
                         dropdownColor: cardBg,
@@ -651,7 +645,7 @@ class _SellScreenState extends State<SellScreen> {
                       SizedBox(height: Responsive.dimension(context, 12)),
                       if (_subCategories.isNotEmpty)
                         DropdownButtonFormField<CategoryModel>(
-                          value: _selectedSubCategory,
+                          initialValue: _selectedSubCategory,
                           isExpanded: true,
                           decoration: _inputDecoration('Sélectionner une sous-catégorie', cardBg, borderColor),
                           dropdownColor: cardBg,
@@ -699,7 +693,7 @@ class _SellScreenState extends State<SellScreen> {
                       Text('État', style: sectionTitleStyle),
                       SizedBox(height: Responsive.dimension(context, 8)),
                       DropdownButtonFormField<String>(
-                        value: _selectedCondition,
+                        initialValue: _selectedCondition,
                         isExpanded: true,
                         decoration: _inputDecoration('Sélectionner l\'état', cardBg, borderColor),
                         dropdownColor: cardBg,
@@ -713,7 +707,7 @@ class _SellScreenState extends State<SellScreen> {
                       Text('Type de prix', style: sectionTitleStyle),
                       SizedBox(height: Responsive.dimension(context, 8)),
                       DropdownButtonFormField<String>(
-                        value: _selectedPriceType,
+                        initialValue: _selectedPriceType,
                         isExpanded: true,
                         decoration: _inputDecoration('Sélectionner le type de prix', cardBg, borderColor),
                         dropdownColor: cardBg,
@@ -753,7 +747,7 @@ class _SellScreenState extends State<SellScreen> {
                       Text('Région', style: sectionTitleStyle),
                       SizedBox(height: Responsive.dimension(context, 8)),
                       DropdownButtonFormField<Department>(
-                        value: _selectedDepartment,
+                        initialValue: _selectedDepartment,
                         isExpanded: true,
                         decoration: _inputDecoration('Département', cardBg, borderColor),
                         dropdownColor: cardBg,
@@ -764,7 +758,7 @@ class _SellScreenState extends State<SellScreen> {
                       SizedBox(height: Responsive.dimension(context, 12)),
                       if (_cities.isNotEmpty)
                         DropdownButtonFormField<City>(
-                          value: _selectedCity,
+                          initialValue: _selectedCity,
                           isExpanded: true,
                           decoration: _inputDecoration('Ville', cardBg, borderColor),
                           dropdownColor: cardBg,
@@ -775,7 +769,7 @@ class _SellScreenState extends State<SellScreen> {
                       SizedBox(height: Responsive.dimension(context, 12)),
                       if (_districts.isNotEmpty)
                         DropdownButtonFormField<District>(
-                          value: _selectedDistrict,
+                          initialValue: _selectedDistrict,
                           isExpanded: true,
                           decoration: _inputDecoration('Quartier', cardBg, borderColor),
                           dropdownColor: cardBg,
@@ -788,7 +782,7 @@ class _SellScreenState extends State<SellScreen> {
                       Text('Mise en avant', style: sectionTitleStyle),
                       SizedBox(height: Responsive.dimension(context, 8)),
                       DropdownButtonFormField<FeatureCardModel>(
-                        value: _selectedFeature,
+                        initialValue: _selectedFeature,
                         isExpanded: true,
                         decoration: _inputDecoration('Sélectionner (défaut: Nouveautés)', cardBg, borderColor),
                         dropdownColor: cardBg,
@@ -822,8 +816,7 @@ class _SellScreenState extends State<SellScreen> {
     );
   }
 
-  Widget _buildPhotoPicker(Color cardBg, Color borderColor, Color textColor) {
-    return Column(
+  Widget _buildPhotoPicker(Color cardBg, Color borderColor, Color textColor) => Column(
       children: [
         // Images existantes (mode édition uniquement)
         if (_isEditing && _existingImages.isNotEmpty)
@@ -949,10 +942,8 @@ class _SellScreenState extends State<SellScreen> {
         ),
       ],
     );
-  }
 
-  InputDecoration _inputDecoration(String hint, Color cardBg, Color borderColor) {
-    return InputDecoration(
+  InputDecoration _inputDecoration(String hint, Color cardBg, Color borderColor) => InputDecoration(
       hintText: hint,
       hintStyle: TextStyle(
         color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
@@ -978,7 +969,6 @@ class _SellScreenState extends State<SellScreen> {
         borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 1.5),
       ),
     );
-  }
 
   String _conditionLabel(String condition) {
     switch (condition) {

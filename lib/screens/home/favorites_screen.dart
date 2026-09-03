@@ -11,11 +11,11 @@ import '../../providers/auth_provider.dart';
 import 'item_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
+
+  const FavoritesScreen({super.key, this.onBack});
   /// Callback appelé lors du clic sur le bouton retour.
   /// Si null, utilise Navigator.pop(context).
   final VoidCallback? onBack;
-
-  const FavoritesScreen({super.key, this.onBack});
 
   @override
   State<FavoritesScreen> createState() => _FavoritesScreenState();
@@ -224,7 +224,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         if (index == favoriteItems.length) {
           return const Center(
             child: Padding(
-              padding: EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(16),
               child: CircularProgressIndicator(color: AppTheme.primaryBlue),
             ),
           );
@@ -266,8 +266,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   /// Affiche une liste de cartes skeleton pendant le chargement initial
-  Widget _buildSkeletonList(bool isDark) {
-    return ListView.builder(
+  Widget _buildSkeletonList(bool isDark) => ListView.builder(
       padding: const EdgeInsets.all(16),
       physics: const NeverScrollableScrollPhysics(),
       itemCount: 4,
@@ -278,5 +277,4 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         );
       },
     );
-  }
 }

@@ -11,9 +11,9 @@ import '../../services/conversation_service.dart';
 import 'conversation_detail_screen.dart';
 
 class ShareItemScreen extends StatefulWidget {
-  final ItemModel item;
 
   const ShareItemScreen({super.key, required this.item});
+  final ItemModel item;
 
   @override
   State<ShareItemScreen> createState() => _ShareItemScreenState();
@@ -122,9 +122,7 @@ class _ShareItemScreenState extends State<ShareItemScreen> {
     }
   }
 
-  String _buildItemShareMessage(ItemModel item) {
-    return '📦 ${item.title}\n💰 ${item.price}';
-  }
+  String _buildItemShareMessage(ItemModel item) => '📦 ${item.title}\n💰 ${item.price}';
 
   String _getOtherUserId(Conversation conversation) {
     final authProvider = context.read<AuthProvider>();
@@ -272,6 +270,7 @@ class _ShareItemScreenState extends State<ShareItemScreen> {
               backgroundImage: otherParticipant.user.photoUrl != null
                   ? NetworkImage(otherParticipant.user.photoUrl!)
                   : null,
+              backgroundColor: AppTheme.primaryBlue,
               child: otherParticipant.user.photoUrl == null
                   ? Text(
                       otherParticipant.user.name.isNotEmpty
@@ -284,7 +283,6 @@ class _ShareItemScreenState extends State<ShareItemScreen> {
                       ),
                     )
                   : null,
-              backgroundColor: AppTheme.primaryBlue,
             ),
             title: Text(
               otherParticipant.user.name,

@@ -1,16 +1,6 @@
 import '../../constants.dart';
 
 class Conversation {
-  final String id;
-  final String? itemId;
-  final String? lastMessageContent;
-  final String? lastMessageSenderId;
-  final DateTime? lastMessageSentAt;
-  final Map<String, dynamic>? unreadCount;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final List<ConversationParticipant> participants;
-  final ConversationItem? item;
 
   Conversation({
     required this.id,
@@ -49,6 +39,16 @@ class Conversation {
       item: item,
     );
   }
+  final String id;
+  final String? itemId;
+  final String? lastMessageContent;
+  final String? lastMessageSenderId;
+  final DateTime? lastMessageSentAt;
+  final Map<String, dynamic>? unreadCount;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final List<ConversationParticipant> participants;
+  final ConversationItem? item;
 
   int getUnreadCount(String userId) {
     if (unreadCount == null) return 0;
@@ -57,8 +57,6 @@ class Conversation {
 }
 
 class ConversationParticipant {
-  final String userId;
-  final ConversationUser user;
 
   ConversationParticipant({
     required this.userId,
@@ -71,12 +69,11 @@ class ConversationParticipant {
       user: ConversationUser.fromJson(json['user'] as Map<String, dynamic>),
     );
   }
+  final String userId;
+  final ConversationUser user;
 }
 
 class ConversationUser {
-  final String id;
-  final String name;
-  final String? photo;
 
   ConversationUser({
     required this.id,
@@ -91,6 +88,9 @@ class ConversationUser {
       photo: json['photo'] as String?,
     );
   }
+  final String id;
+  final String name;
+  final String? photo;
 
   /// Retourne l'URL complète de la photo de profil
   String? get photoUrl {
@@ -105,10 +105,6 @@ class ConversationUser {
 }
 
 class ConversationItem {
-  final String id;
-  final String title;
-  final double price;
-  final List<String>? images;
 
   ConversationItem({
     required this.id,
@@ -126,19 +122,13 @@ class ConversationItem {
       images: imagesList?.map((e) => e as String).toList(),
     );
   }
+  final String id;
+  final String title;
+  final double price;
+  final List<String>? images;
 }
 
 class Message {
-  final String id;
-  final String conversationId;
-  final String senderId;
-  final String content;
-  final String type;
-  final Map<String, dynamic>? attachments;
-  final bool read;
-  final DateTime? readAt;
-  final DateTime createdAt;
-  final MessageSender sender;
 
   Message({
     required this.id,
@@ -169,12 +159,19 @@ class Message {
       sender: MessageSender.fromJson(json['sender'] as Map<String, dynamic>),
     );
   }
+  final String id;
+  final String conversationId;
+  final String senderId;
+  final String content;
+  final String type;
+  final Map<String, dynamic>? attachments;
+  final bool read;
+  final DateTime? readAt;
+  final DateTime createdAt;
+  final MessageSender sender;
 }
 
 class MessageSender {
-  final String id;
-  final String name;
-  final String? photo;
 
   MessageSender({
     required this.id,
@@ -189,6 +186,9 @@ class MessageSender {
       photo: json['photo'] as String?,
     );
   }
+  final String id;
+  final String name;
+  final String? photo;
 
   /// Retourne l'URL complète de la photo de profil
   String? get photoUrl {
@@ -203,8 +203,6 @@ class MessageSender {
 }
 
 class CreateConversationResponse {
-  final Conversation conversation;
-  final Message? message;
 
   CreateConversationResponse({
     required this.conversation,
@@ -218,4 +216,6 @@ class CreateConversationResponse {
       message: messageData != null ? Message.fromJson(messageData as Map<String, dynamic>) : null,
     );
   }
+  final Conversation conversation;
+  final Message? message;
 }

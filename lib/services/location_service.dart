@@ -13,7 +13,7 @@ class LocationService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final List<dynamic> countriesJson = data['data'] as List<dynamic>;
+        final countriesJson = data['data'] as List<dynamic>;
         return countriesJson
             .map((c) => Country.fromJson(c as Map<String, dynamic>))
             .toList();
@@ -34,7 +34,7 @@ class LocationService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final List<dynamic> departmentsJson = data['data'] as List<dynamic>;
+        final departmentsJson = data['data'] as List<dynamic>;
         return departmentsJson
             .map((d) => Department.fromJson(d as Map<String, dynamic>))
             .toList();
@@ -55,7 +55,7 @@ class LocationService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final List<dynamic> citiesJson = data['data'] as List<dynamic>;
+        final citiesJson = data['data'] as List<dynamic>;
         return citiesJson
             .map((c) => City.fromJson(c as Map<String, dynamic>))
             .toList();
@@ -76,7 +76,7 @@ class LocationService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final List<dynamic> districtsJson = data['data'] as List<dynamic>;
+        final districtsJson = data['data'] as List<dynamic>;
         return districtsJson
             .map((d) => District.fromJson(d as Map<String, dynamic>))
             .toList();

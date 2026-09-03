@@ -22,8 +22,7 @@ class AppTheme {
 
   static String get fontFamily => GoogleFonts.inter().fontFamily ?? 'Inter';
 
-  static ThemeData get darkTheme {
-    return ThemeData(
+  static ThemeData get darkTheme => ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       primaryColor: primaryBlue,
@@ -84,10 +83,8 @@ class AppTheme {
         ),
       ),
     );
-  }
 
-  static ThemeData get lightTheme {
-    return ThemeData(
+  static ThemeData get lightTheme => ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       primaryColor: primaryBlue,
@@ -148,5 +145,4 @@ class AppTheme {
         ),
       ),
     );
-  }
 }

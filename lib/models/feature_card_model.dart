@@ -2,13 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class FeatureCardModel {
-  final String id;
-  final String title;
-  final String subtitle;
-  final dynamic icon;
-  final String borderColor;
-  final String darkBg;
-  final String lightBg;
 
   const FeatureCardModel({
     required this.id,
@@ -31,6 +24,13 @@ class FeatureCardModel {
       lightBg: json['lightBg'] as String,
     );
   }
+  final String id;
+  final String title;
+  final String subtitle;
+  final dynamic icon;
+  final String borderColor;
+  final String darkBg;
+  final String lightBg;
 
   static dynamic _iconForKey(String key) {
     switch (key) {

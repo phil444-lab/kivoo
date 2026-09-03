@@ -15,9 +15,9 @@ import 'conversation_detail_screen.dart';
 import 'share_item_screen.dart';
 
 class ItemDetailScreen extends StatefulWidget {
-  final ItemModel item;
 
   const ItemDetailScreen({super.key, required this.item});
+  final ItemModel item;
 
   @override
   State<ItemDetailScreen> createState() => _ItemDetailScreenState();
@@ -81,7 +81,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                       child: IconButton(
                         icon: const FaIcon(FontAwesomeIcons.share,
                             color: Colors.white, size: 20),
-                        onPressed: () => _shareItem(),
+                        onPressed: _shareItem,
                       ),
                     ),
                     // Favori
@@ -441,12 +441,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
-  bool get isDarkFromContext {
-    return Provider.of<ThemeProvider>(context, listen: false).isDark;
-  }
+  bool get isDarkFromContext => Provider.of<ThemeProvider>(context, listen: false).isDark;
 
-  Widget _buildCharacteristicRow(String label, String value) {
-    return Padding(
+  Widget _buildCharacteristicRow(String label, String value) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -478,7 +475,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         ],
       ),
     );
-  }
 
   Widget _buildSellerCard(
     bool isDark,
@@ -674,8 +670,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
-  Widget _buildDefaultAvatar(bool isDark) {
-    return Container(
+  Widget _buildDefaultAvatar(bool isDark) => Container(
       color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
       child: FaIcon(
         FontAwesomeIcons.user,
@@ -683,7 +678,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
       ),
     );
-  }
 
   Future<void> _shareItem() async {
     final authProvider = context.read<AuthProvider>();
@@ -749,11 +743,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 }
 
 class _SectionCard extends StatelessWidget {
-  final bool isDark;
-  final Color cardColor;
-  final Color borderColor;
-  final String title;
-  final Widget child;
 
   const _SectionCard({
     required this.isDark,
@@ -762,10 +751,14 @@ class _SectionCard extends StatelessWidget {
     required this.title,
     required this.child,
   });
+  final bool isDark;
+  final Color cardColor;
+  final Color borderColor;
+  final String title;
+  final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -789,5 +782,4 @@ class _SectionCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }

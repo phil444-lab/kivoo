@@ -1,19 +1,6 @@
 import '../../constants.dart';
 
 class User {
-  final String id;
-  final String name;
-  final String email;
-  final String phone;
-  final String? photo;
-  final bool verified;
-  final double rating;
-  final int ratingCount;
-  final Map<String, dynamic>? location;
-  final DateTime joinedAt;
-  final DateTime? lastLogin;
-  final bool isActive;
-  final Map<String, dynamic> preferences;
 
   User({
     required this.id,
@@ -48,9 +35,21 @@ class User {
       preferences: json['preferences'] as Map<String, dynamic>? ?? {},
     );
   }
+  final String id;
+  final String name;
+  final String email;
+  final String phone;
+  final String? photo;
+  final bool verified;
+  final double rating;
+  final int ratingCount;
+  final Map<String, dynamic>? location;
+  final DateTime joinedAt;
+  final DateTime? lastLogin;
+  final bool isActive;
+  final Map<String, dynamic> preferences;
 
-  Map<String, dynamic> toJson() {
-    return {
+  Map<String, dynamic> toJson() => {
       'id': id,
       'name': name,
       'email': email,
@@ -65,7 +64,6 @@ class User {
       'isActive': isActive,
       'preferences': preferences,
     };
-  }
 
   /// Retourne l'URL complète de la photo de profil
   String? get photoUrl {
@@ -80,10 +78,6 @@ class User {
 }
 
 class AuthResponse {
-  final bool success;
-  final User user;
-  final String token;
-  final String refreshToken;
 
   AuthResponse({
     required this.success,
@@ -100,4 +94,8 @@ class AuthResponse {
       refreshToken: json['data']['refreshToken'] as String,
     );
   }
+  final bool success;
+  final User user;
+  final String token;
+  final String refreshToken;
 }
