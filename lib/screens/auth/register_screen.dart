@@ -486,9 +486,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.loginWithGoogle();
+      final success = await authProvider.loginWithGoogle();
 
-      if (mounted) {
+      // success == false : connexion annulée par l'utilisateur (popup fermée)
+      // → ni message de succès ni message d'erreur, on ne fait rien.
+      if (success && mounted) {
         // Afficher un snackbar de succès
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
