@@ -22,6 +22,14 @@ const config = {
     apiSecret: process.env.CLOUDINARY_API_SECRET || '',
   },
 
+  google: {
+    // Client ID OAuth Google (Web) — sert à vérifier que les tokens Google
+    // reçus (idToken mobile / accessToken web) ont bien été émis pour l'app.
+    clientId:
+      process.env.GOOGLE_CLIENT_ID ||
+      '329144921089-3lkhb9dv7umhbtnolfjitd1fvaar0q1t.apps.googleusercontent.com',
+  },
+
   firebase: {
     serviceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH || '',
   },

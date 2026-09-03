@@ -225,25 +225,122 @@ export const logout = async (
   }
 };
 
+// ---------------------------------------------------------------------------
+// Connexion sociale (Google)
+// ---------------------------------------------------------------------------
+
+interface GoogleUserInfo {
+  sub: string;
+  email?: string;
+  name?: string;
+  picture?: string;
+}
+
+// Vérifie un access token Google via l'endpoint tokeninfo.
+// Nécessaire sur le web : le flux `signIn` de google_sign_in_web ne fournit
+// pas d'idToken, seulement un accessToken OAuth2.
+const verifyGoogleAccessToken = async (
+  accessToken: string
+): Promise<GoogleUserInfo | null> => {
+  try {
+    const response = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`
+    );
+    if (!response.ok) return null;
+    const info: any = await response.json();
+    if (!info.sub || !info.email) return null;
+    if (info.email_verified !== true && info.email_verified !== 'true') {
+      return null;
+    }
+    // Le token doit avoir été émis pour le client OAuth de l'application
+    if (
+      info.aud !== config.google.clientId &&
+      info.azp !== config.google.clientId
+    ) {
+      return null;
+    }
+    return {
+      sub: info.sub,
+      email: info.email,
+      name: info.name,
+      picture: info.picture,
+    };
+  } catch {
+    return null;
+  }
+};
+
+// Extrait les infos d'un idToken JWT Google (flux mobile) : récupère un
+// identifiant stable (le `sub`) au lieu du JWT brut qui change à chaque
+// connexion.
+const decodeGoogleIdToken = (idToken: string): GoogleUserInfo | null => {
+  try {
+    const payload = jwt.decode(idToken) as any;
+    if (!payload?.sub) return null;
+    if (payload.aud && payload.aud !== config.google.clientId) return null;
+    return {
+      sub: payload.sub,
+      email: payload.email,
+      name: payload.name,
+      picture: payload.picture,
+    };
+  } catch {
+    return null;
+  }
+};
+
 export const socialLogin = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { provider, providerId, email, name, photo } = req.body;
+    const { provider, providerId, email, name, photo, accessToken } = req.body;
+
+    if (provider !== 'google') {
+      throw new ValidationError('Fournisseur de connexion non supporté');
+    }
+
+    // Vérification serveur du token Google :
+    //  - web : accessToken (le flux web ne fournit pas d'idToken)
+    //  - mobile : idToken JWT transmis dans providerId
+    let verified: GoogleUserInfo | null = null;
+    if (accessToken) {
+      verified = await verifyGoogleAccessToken(accessToken);
+      if (!verified) {
+        throw new ApiError(
+          401,
+          'Connexion Google impossible : token invalide ou expiré. Veuillez réessayer.'
+        );
+      }
+    } else if (
+      typeof providerId === 'string' &&
+      providerId.split('.').length === 3
+    ) {
+      verified = decodeGoogleIdToken(providerId);
+    }
+
+    // Les informations vérifiées par Google priment sur celles du client
+    const googleId: string = verified?.sub || providerId;
+    const googleEmail: string = verified?.email || email;
+    const googleName: string = verified?.name || name;
+    const googlePhoto: string | undefined = verified?.picture || photo;
+
+    if (!googleId || !googleEmail) {
+      throw new ValidationError('Informations Google manquantes');
+    }
 
     let user = await prisma.user.findFirst({
       where: {
         socialProviders: {
           path: '$[*].providerId',
-          string_contains: providerId,
+          string_contains: googleId,
         },
       },
     });
 
-    if (!user && email) {
-      user = await prisma.user.findUnique({ where: { email } });
+    if (!user && googleEmail) {
+      user = await prisma.user.findUnique({ where: { email: googleEmail } });
     }
 
     if (user) {
@@ -252,14 +349,14 @@ export const socialLogin = async (
 
       const data: any = {};
       if (!hasProvider) {
-        socialProviders.push({ provider, providerId, email });
+        socialProviders.push({ provider, providerId: googleId, email: googleEmail });
         data.socialProviders = socialProviders;
       }
       // Synchroniser la photo (et le nom) Google à chaque connexion, même si le
       // compte existait déjà. On ne remplace PAS une photo délibérément définie
       // par l'utilisateur (photo absente = on en profite pour y mettre celle de Google).
-      if (photo && !user.photo) data.photo = photo;
-      if (name && !user.name) data.name = name;
+      if (googlePhoto && !user.photo) data.photo = googlePhoto;
+      if (googleName && !user.name) data.name = googleName;
 
       if (Object.keys(data).length > 0) {
         user = await prisma.user.update({
@@ -271,17 +368,17 @@ export const socialLogin = async (
       const hashedPassword = await bcrypt.hash(Math.random().toString(36).slice(-12), 12);
       
       // Générer un numéro de téléphone unique pour les comptes sociaux
-      const uniquePhone = `social_${providerId.slice(0, 8)}_${Date.now().toString(36)}`;
+      const uniquePhone = `social_${googleId.slice(0, 8)}_${Date.now().toString(36)}`;
       
       user = await prisma.user.create({
         data: {
-          name,
-          email,
+          name: googleName,
+          email: googleEmail,
           phone: uniquePhone,
           password: hashedPassword,
-          photo,
+          photo: googlePhoto,
           verified: true,
-          socialProviders: [{ provider, providerId, email }],
+          socialProviders: [{ provider, providerId: googleId, email: googleEmail }],
           preferences: { notifications: true, language: 'fr' },
         },
       });

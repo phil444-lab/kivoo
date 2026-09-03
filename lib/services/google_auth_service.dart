@@ -25,13 +25,20 @@ class GoogleAuthService {
       final auth = await account.authentication;
 
       final idToken = auth.idToken;
+      // Sur le web, le flux `signIn()` de google_sign_in_web ne fournit pas
+      // d'idToken (profil synthétisé via la People API). On s'appuie alors
+      // sur l'accessToken + l'ID Google du compte (vérifié côté serveur).
+      final accessToken = auth.accessToken;
 
-      if (idToken == null) {
-        throw Exception('Impossible d\'obtenir le token Google');
+      if ((idToken == null || idToken.isEmpty) &&
+          (accessToken == null || accessToken.isEmpty)) {
+        throw Exception('Impossible d\'obtenir les tokens Google');
       }
 
       return GoogleSignInResult(
+        googleUserId: account.id,
         idToken: idToken,
+        accessToken: accessToken,
         email: account.email,
         name: account.displayName ?? account.email.split('@').first,
         photoUrl: account.photoUrl,
@@ -113,14 +120,25 @@ class GoogleAuthService {
 }
 
 class GoogleSignInResult {
-
   GoogleSignInResult({
-    required this.idToken,
+    required this.googleUserId,
+    this.idToken,
+    this.accessToken,
     required this.email,
     required this.name,
     this.photoUrl,
   });
-  final String idToken;
+
+  /// ID Google unique et stable de l'utilisateur (le `sub`), disponible
+  /// sur toutes les plateformes — c'est lui qui sert d'identifiant serveur.
+  final String googleUserId;
+
+  /// ID token Google (JWT). Non disponible sur le web avec le flux `signIn()`.
+  final String? idToken;
+
+  /// Access token OAuth2. Présent sur le web, absent sur mobile.
+  final String? accessToken;
+
   final String email;
   final String name;
   final String? photoUrl;

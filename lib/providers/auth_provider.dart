@@ -158,10 +158,11 @@ class AuthProvider extends ChangeNotifier {
 
       final response = await _authService.socialLogin(
         provider: 'google',
-        providerId: googleResult.idToken,
+        providerId: googleResult.googleUserId,
         email: googleResult.email,
         name: googleResult.name,
         photo: googleResult.photoUrl,
+        accessToken: googleResult.accessToken,
       );
 
       _token = response.token;
