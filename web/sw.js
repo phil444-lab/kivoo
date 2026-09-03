@@ -66,8 +66,14 @@ self.addEventListener('fetch', (event) => {
   // Assets : réseau d'abord (revalidation systématique => jamais d'assets
   // périmés après un déploiement), repli sur le cache uniquement hors-ligne.
   // La réponse fraîche met le cache à jour au fil de l'eau.
+  //
+  // ⚠️ `cache: 'no-cache'` : force la REVALIDATION serveur (If-None-Match →
+  // 304 si inchangé). Sans cela, `fetch(req)` (mode `default`) serait servi
+  // depuis le cache HTTP du navigateur tant que `max-age` est valide — ce qui
+  // contourne complètement le network-first et servait du JS périmé pendant
+  // 1 h après chaque déploiement (Cache-Control: max-age=3600).
   event.respondWith(
-    fetch(req)
+    fetch(req, { cache: 'no-cache' })
       .then((res) => {
         const cacheable =
           res.ok &&

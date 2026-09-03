@@ -63,6 +63,10 @@ Get-ChildItem $deploy -Exclude '.vercel' | Remove-Item -Recurse -Force
 Copy-Item (Join-Path $build '*') $deploy -Recurse -Force
 # Le .map ne sert qu'au debug local : inutile sur Vercel (gagne ~3 Mo d'upload)
 Remove-Item (Join-Path $deploy 'main.dart.js.map') -ErrorAction SilentlyContinue
+# Supprimer le doublon sw.js : Flutter copie tout web\ vers build\web, donc
+# web\sw.js se retrouve aussi en /sw.js (NON patché, NON enregistré — seul
+# flutter_service_worker.js l'est). Le retirer évite toute confusion.
+Remove-Item (Join-Path $deploy 'sw.js') -ErrorAction SilentlyContinue
 
 # 5. Déployer en production (depuis le dossier LIÉ => même projet, même URL)
 Write-Host '🚀 Déploiement Vercel (production)...' -ForegroundColor Cyan
