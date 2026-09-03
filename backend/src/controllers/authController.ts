@@ -295,7 +295,8 @@ export const socialLogin = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { provider, providerId, email, name, photo, accessToken } = req.body;
+    const { provider, providerId, email, name, photo, accessToken, idToken } =
+      req.body;
 
     if (provider !== 'google') {
       throw new ValidationError('Fournisseur de connexion non supporté');
@@ -306,6 +307,7 @@ export const socialLogin = async (
     //  - mobile : idToken JWT transmis dans providerId
     let verified: GoogleUserInfo | null = null;
     if (accessToken) {
+      // Web : vérification de l'accessToken via tokeninfo (aud = client Web)
       verified = await verifyGoogleAccessToken(accessToken);
       if (!verified) {
         throw new ApiError(
@@ -313,10 +315,15 @@ export const socialLogin = async (
           'Connexion Google impossible : token invalide ou expiré. Veuillez réessayer.'
         );
       }
+    } else if (typeof idToken === 'string' && idToken.split('.').length === 3) {
+      // Mobile : vérification de l'idToken JWT (son aud = serverClientId,
+      // c'est-à-dire le client ID Web)
+      verified = decodeGoogleIdToken(idToken);
     } else if (
       typeof providerId === 'string' &&
       providerId.split('.').length === 3
     ) {
+      // Anciens clients mobiles : providerId contenait directement l'idToken
       verified = decodeGoogleIdToken(providerId);
     }
 

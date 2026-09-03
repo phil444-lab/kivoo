@@ -162,7 +162,12 @@ class AuthProvider extends ChangeNotifier {
         email: googleResult.email,
         name: googleResult.name,
         photo: googleResult.photoUrl,
-        accessToken: googleResult.accessToken,
+        // Web : accessToken vérifié par le backend via tokeninfo Google.
+        // Mobile : on transmet l'idToken JWT à la place — l'accessToken
+        // mobile est émis pour le client OAuth Android (aud différent du
+        // client Web) et serait rejeté par la vérification serveur.
+        accessToken: kIsWeb ? googleResult.accessToken : null,
+        idToken: googleResult.idToken,
       );
 
       _token = response.token;
