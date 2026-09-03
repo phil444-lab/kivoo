@@ -1,15 +1,31 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 
 class GoogleAuthService {
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
-    serverClientId: '329144921089-3lkhb9dv7umhbtnolfjitd1fvaar0q1t.apps.googleusercontent.com',
+    // Web : le plugin google_sign_in_web ne supporte pas serverClientId
+    // (assert explicite) et lit le client ID web depuis le meta tag
+    // <meta name="google-signin-client_id"> de web/index.html.
+    // Mobile : serverClientId (client « Application Web ») est requis pour
+    // obtenir un idToken accepté par le backend.
+    serverClientId: kIsWeb
+        ? null
+        : '329144921089-3lkhb9dv7umhbtnolfjitd1fvaar0q1t.apps.googleusercontent.com',
   );
 
   /// Déclenche la connexion Google et retourne l'idToken et les infos utilisateur
   Future<GoogleSignInResult?> signIn() async {
     try {
-      final account = await _googleSignIn.signIn();
+      GoogleSignInAccount? account;
+
+      // Sur web : tenter d'abord le flux « One Tap » (signInSilently), seul
+      // flux qui renvoie un idToken. Le popup classique (signIn) renvoie un
+      // profil synthétisé via People API SANS idToken.
+      if (kIsWeb) {
+        account = await _googleSignIn.signInSilently();
+      }
+      account ??= await _googleSignIn.signIn();
 
       if (account == null) {
         // L'utilisateur a annulé la connexion
@@ -22,7 +38,12 @@ class GoogleAuthService {
       final idToken = auth.idToken;
 
       if (idToken == null) {
-        throw Exception('Impossible d\'obtenir le token Google');
+        throw Exception(
+          kIsWeb
+              ? "Le panneau de connexion Google n'a pas fourni de jeton "
+                  "d'identification. Veuillez réessayer."
+              : 'Impossible d\'obtenir le token Google',
+        );
       }
 
       return GoogleSignInResult(
