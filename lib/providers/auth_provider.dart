@@ -177,11 +177,6 @@ class AuthProvider extends ChangeNotifier {
       unawaited(loadFavorites());
 
       return true;
-    } on GoogleSignInCanceledException {
-      // L'utilisateur a annulé (popup fermée...) : ce n'est pas une erreur.
-      _isLoading = false;
-      notifyListeners();
-      return false;
     } catch (e) {
       _isLoading = false;
       notifyListeners();
