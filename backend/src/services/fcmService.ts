@@ -119,6 +119,16 @@ export async function sendPushNotification(
           sound: 'default',
         },
       },
+      // Web (PWA) : icône « K » noir + ouverture de l'app au clic
+      webpush: {
+        notification: {
+          icon: `${config.webAppUrl}/icons/ic-notification.png`,
+          badge: `${config.webAppUrl}/icons/ic-notification.png`,
+        },
+        fcmOptions: {
+          link: config.webAppUrl,
+        },
+      },
       data: data || {},
       tokens: registrationTokens,
     };

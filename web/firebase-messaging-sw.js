@@ -25,10 +25,15 @@ try {
   // Notification affichée quand l'app est en arrière-plan / fermée.
   messaging.onBackgroundMessage((payload) => {
     const title = (payload.notification && payload.notification.title) || 'Kivoo';
+    // Icône « K » noir (ic_notification) : celle du payload backend (URL
+    // absolue) en priorité, sinon le fichier local.
+    const icon =
+      (payload.notification && payload.notification.icon) ||
+      '/icons/ic-notification.png';
     const options = {
       body: (payload.notification && payload.notification.body) || '',
-      icon: '/icons/Icon-192.png',
-      badge: '/icons/Icon-192.png',
+      icon: icon,
+      badge: icon,
       tag: payload.messageId || undefined,
       data: payload.data || {},
     };
