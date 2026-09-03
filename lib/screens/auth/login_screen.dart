@@ -419,7 +419,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        _errorMessage = _cleanError(e);
       });
     }
   }
@@ -466,10 +466,24 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        _errorMessage = _cleanError(e);
         _isLoading = false;
       });
     }
+  }
+
+  /// Nettoie une exception pour l'affichage : jamais de détail technique
+  /// (JSON, stacktrace, code interne) sur les écrans de connexion.
+  String _cleanError(Object e) {
+    final raw = e.toString().replaceAll('Exception: ', '').trim();
+    final looksTechnical = raw.contains('{') ||
+        raw.contains('PlatformException') ||
+        raw.contains('FormatException') ||
+        raw.length > 160;
+    if (looksTechnical) {
+      return 'Une erreur est survenue. Veuillez réessayer.';
+    }
+    return raw;
   }
 
   @override

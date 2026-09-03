@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class GoogleAuthService {
@@ -6,18 +7,22 @@ class GoogleAuthService {
     serverClientId: '329144921089-3lkhb9dv7umhbtnolfjitd1fvaar0q1t.apps.googleusercontent.com',
   );
 
-  /// Déclenche la connexion Google et retourne l'idToken et les infos utilisateur
+  /// Déclenche la connexion Google et retourne l'idToken et les infos
+  /// utilisateur.
+  ///
+  /// Retourne `null` si l'utilisateur annule (popup fermée, consentement
+  /// refusé, etc.) : dans ce cas aucun message d'erreur ne doit s'afficher
+  /// dans les écrans de connexion / inscription.
   Future<GoogleSignInResult?> signIn() async {
     try {
       final account = await _googleSignIn.signIn();
 
       if (account == null) {
-        // L'utilisateur a annulé la connexion
+        // L'utilisateur a annulé la connexion (comportement mobile)
         return null;
       }
 
-      final auth =
-          await account.authentication;
+      final auth = await account.authentication;
 
       final idToken = auth.idToken;
 
@@ -32,13 +37,78 @@ class GoogleAuthService {
         photoUrl: account.photoUrl,
       );
     } catch (e) {
-      throw Exception('Erreur lors de la connexion Google: ${e.toString().replaceAll('Exception: ', '')}');
+      // Sur le web (Google Identity Services), fermer la popup lève une
+      // exception (`popup_closed`, `sign_in_canceled`...) au lieu de
+      // retourner null comme sur mobile. On la traite comme une annulation
+      // → silence total, aucun message affiché.
+      if (isUserCancellation(e)) {
+        if (kDebugMode) {
+          debugPrint('Google Sign-In : annulé par l\'utilisateur');
+        }
+        return null;
+      }
+
+      if (kDebugMode) {
+        debugPrint('Google Sign-In error: $e');
+      }
+
+      // Message court et compréhensible — jamais de détail technique
+      // (JSON brut, code interne, stacktrace) sur les écrans d'auth.
+      throw Exception(friendlyGoogleError(e));
     }
   }
 
   /// Déconnexion Google
   Future<void> signOut() async {
     await _googleSignIn.signOut();
+  }
+
+  /// Détecte les erreurs qui correspondent à une annulation utilisateur.
+  ///
+  /// Couvre tous les libellés connus selon la plateforme :
+  ///  - web (Google Identity Services) : `popup_closed`, `popup_closed_by_user`,
+  ///    `sign_in_canceled`, `access_denied`
+  ///  - Android : code 12501 (SIGN_IN_CANCELLED)
+  ///  - iOS : `sign_in_canceled`
+  static bool isUserCancellation(Object error) {
+    final text = error.toString().toLowerCase();
+    const hints = [
+      'popup_closed',
+      'sign_in_canceled',
+      'sign_in_cancelled',
+      'access_denied',
+      'canceled',
+      'cancelled',
+      '12501', // Android : SIGN_IN_CANCELLED
+    ];
+    return hints.any(text.contains);
+  }
+
+  /// Convertit une erreur Google en message utilisateur court et clair.
+  static String friendlyGoogleError(Object error) {
+    final text = error.toString().toLowerCase();
+
+    // People API désactivée sur le projet Google Cloud, OAuth mal configuré,
+    // origine non autorisée, etc.
+    if (text.contains('people api') ||
+        text.contains('people.googleapis') ||
+        text.contains('permission_denied') ||
+        text.contains('idpiframe') ||
+        (text.contains('origin') && text.contains('not allowed'))) {
+      return 'Connexion Google temporairement indisponible. '
+          'Veuillez réessayer dans quelques minutes.';
+    }
+
+    if (text.contains('clientexception') ||
+        text.contains('socketexception') ||
+        text.contains('failed host lookup') ||
+        text.contains('network')) {
+      return 'Impossible de se connecter à Google. '
+          'Vérifiez votre connexion internet.';
+    }
+
+    return 'Une erreur est survenue lors de la connexion avec Google. '
+        'Veuillez réessayer.';
   }
 }
 
