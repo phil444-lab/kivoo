@@ -95,6 +95,16 @@ class GoogleAuthService {
   static String friendlyGoogleError(Object error) {
     final text = error.toString().toLowerCase();
 
+    // Fenêtre Google bloquée par le navigateur (bloqueur de pop-ups)
+    if (text.contains('popup_failed_to_open') ||
+        text.contains('failed to open popup') ||
+        text.contains('blocked by the browser') ||
+        text.contains('maybe blocked')) {
+      return 'Impossible d\'ouvrir la fenêtre de connexion Google : '
+          'votre navigateur bloque les pop-ups. Autorisez-les pour ce site '
+          '(icône en bout de barre d\'adresse), puis réessayez.';
+    }
+
     // People API désactivée sur le projet Google Cloud, OAuth mal configuré,
     // origine non autorisée, etc.
     if (text.contains('people api') ||
