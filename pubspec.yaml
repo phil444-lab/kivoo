@@ -47,7 +47,9 @@ flutter_native_splash:
     color: "#ffffff"
   android: true
   ios: true
-  web: false
+  # true : régénère web/splash/img + le style dans index.html
+  # (l'app web affiche ce splash via <picture id="splash">)
+  web: true
 
 flutter_launcher_icons:
   android: true
@@ -57,3 +59,5 @@ flutter_launcher_icons:
   image_path: "assets/logo-icon.png"
   adaptive_icon_background: "#2563EB"
   adaptive_icon_foreground: "assets/logo-icon.png"
+  # App Store : rejette les icônes avec canal alpha -> l'aplatir en opaque
+  remove_alpha_ios: true

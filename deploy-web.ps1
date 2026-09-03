@@ -26,7 +26,12 @@ if (-not (Get-Command vercel -ErrorAction SilentlyContinue)) {
 # 1. Build Flutter web + service worker PWA
 if (-not $SkipBuild) {
   Write-Host '🔨 Build web (release)...' -ForegroundColor Cyan
-  flutter build web --release --no-wasm-dry-run
+  # --no-tree-shake-icons : OBLIGATOIRE avec font_awesome_flutter >= 11.
+  # Le package déclare ses icônes en `const FaIconData(...)` (sous-classe de
+  # IconData) que le tree-shaker de Flutter ne détecte pas -> il ne garde que
+  # quelques glyphes dans les polices subsetées -> icônes en carrés/tofu sur
+  # le web en release. On embarde donc les polices complètes (ok : brotli+SW).
+  flutter build web --release --no-wasm-dry-run --no-tree-shake-icons
   if ($LASTEXITCODE -ne 0) { Write-Host '❌ Échec du build Flutter.' -ForegroundColor Red; exit 1 }
   # Flutter 3.44 génère un service worker vide (déprécié) -> on met le nôtre
   Copy-Item (Join-Path $root 'web\sw.js') (Join-Path $build 'flutter_service_worker.js') -Force
