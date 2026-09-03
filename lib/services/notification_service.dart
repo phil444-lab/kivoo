@@ -103,9 +103,13 @@ class NotificationService {
     }
   }
 
-  /// Web (PWA) : demande la permission et prépare le token FCM si une clé
-  /// VAPID est configurée. Les notifications in-app (via l'API) restent
-  /// fonctionnelles même sans configuration Firebase web.
+  /// Callback déclenchée quand un message FCM arrive pendant que l'app web
+  /// est au premier plan (permet de rafraîchir le badge / la liste in-app).
+  static void Function()? webForegroundMessageCallback;
+
+  /// Web (PWA) : demande la permission navigateur, puis (si une clé VAPID est
+  /// configurée) prépare la réception des messages. Les notifications in-app
+  /// (via l'API) restent fonctionnelles même sans configuration Firebase web.
   Future<void> _initializeWeb() async {
     try {
       await _firebaseMessaging.requestPermission(
@@ -113,10 +117,26 @@ class NotificationService {
         badge: true,
         sound: true,
       );
+
       if (AppConstants.fcmVapidKey.isEmpty) {
         print('ℹ️ Web: clé VAPID non configurée (AppConstants.fcmVapidKey) — '
             'notifications push web désactivées.');
+        return;
       }
+
+      // Message reçu pendant que la PWA est au premier plan : on rafraîchit
+      // les notifications in-app (la notification système hors de l'app est
+      // gérée par web/firebase-messaging-sw.js).
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        print(
+            '📨 Notification web (premier plan): ${message.notification?.title}');
+        webForegroundMessageCallback?.call();
+      });
+
+      final token = await getToken();
+      print(token != null
+          ? '✅ Web: notifications push activées (token FCM obtenu)'
+          : '⚠️ Web: token FCM non obtenu (vérifiez la config Firebase web)');
     } catch (e) {
       print('⚠️ Web: Firebase Messaging non disponible: $e');
     }

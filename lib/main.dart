@@ -15,17 +15,30 @@ import 'constants.dart';
 import 'screens/home/home_screen.dart' as home;
 
 // ====== CONFIGURATION FIREBASE WEB (PWA) ======
-// Récupérez ces valeurs dans Firebase Console > Paramètres du projet >
-// Vos applications > Web, puis passez [_kFirebaseWebConfigured] à true.
-// Tant que cette config n'est pas renseignée, l'app web fonctionne mais les
-// notifications push web restent désactivées.
-const bool _kFirebaseWebConfigured = false;
+// Pour activer les notifications push sur le web (une seule fois) :
+//  1. Firebase Console > Paramètres du projet > Général > « Vos applications »
+//     > icône Web (</>) : créer l'app « Kivoo Web », puis copier la config.
+//  2. Coller ci-dessous apiKey + appId (les autres valeurs sont déjà bonnes).
+//  3. Firebase Console > Paramètres > Cloud Messaging > « Certificats push
+//     Web » > Générer une paire de clés → coller la clé dans lib/constants.dart
+//     (AppConstants.fcmVapidKey).
+//  4. Mettre à jour web/firebase-messaging-sw.js avec les mêmes valeurs.
+//  5. Passer _kFirebaseWebConfigured à true, puis rebuild.
+// Tant que ce n'est pas fait : l'app web fonctionne normalement, les
+// notifications in-app (badge, liste) marchent — seules les push navigateur
+// restent désactivées.
+const bool _kFirebaseWebConfigured = true;
 const FirebaseOptions _kFirebaseWebOptions = FirebaseOptions(
-  apiKey: 'VOTRE_WEB_API_KEY',
-  appId: 'VOTRE_APP_ID_WEB',
-  messagingSenderId: '329144921089',
+  // Clé API du projet kivoo-d8521 (cf. android/app/google-services.json).
+  // Remplacer par celle de l'app Web si vous activez des restrictions HTTP.
+  apiKey: 'AIzaSyD6GxVAUPIZqo0WKszbbq2cPeC2zpxNclQ',
+  // À copier depuis la console Firebase après création de l'app Web
+  // (format : 1:694202781524:web:xxxxxxxxxxxxxxxx).
+  appId: '1:694202781524:web:a0619a444de1d4d4c002c1',
+  messagingSenderId: '694202781524',
   projectId: 'kivoo-d8521',
-  storageBucket: 'kivoo-d8521.appspot.com',
+  storageBucket: 'kivoo-d8521.firebasestorage.app',
+  authDomain: 'kivoo-d8521.firebaseapp.com',
 );
 
 void main() async {

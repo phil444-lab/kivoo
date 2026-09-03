@@ -20,6 +20,10 @@ class NotificationProvider extends ChangeNotifier {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
+    // Sur le web : rafraîchir la liste / le badge quand une notification
+    // arrive pendant que la PWA est au premier plan.
+    NotificationService.webForegroundMessageCallback = loadNotifications;
+
     await _notificationService.initialize();
     _fcmToken = await _notificationService.getTokenAndRegister();
     await loadNotifications();

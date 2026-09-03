@@ -100,7 +100,7 @@ class AppConstants {
   // Clé VAPID pour les notifications push FCM sur le web (Firebase Console >
   // Paramètres du projet > Cloud Messaging > Certificats push Web).
   // Laisser vide désactive le push web sans casser l'application.
-  static const String fcmVapidKey = '';
+  static const String fcmVapidKey = 'BF8XnvA13hx_Gmb75Rrj34g2Y3keuGAiQMAb2K2WzGLHfBCYeHG2K62QwZ8iYVdY0VdUVnXfrVr9_2QtTc50QSI';
 
   // PWA : largeur maximale (px) du contenu sur grand écran. Sur desktop, la
   // web app garde une mise en page "mobile" centrée, identique à la native.
