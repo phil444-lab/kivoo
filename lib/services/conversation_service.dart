@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'authed_http_client.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import '../constants.dart';
@@ -11,7 +12,7 @@ class ConversationService {
   /// Récupère toutes les conversations de l'utilisateur connecté
   Future<List<Conversation>> getConversations({required String token}) async {
     try {
-      final response = await http.get(
+      final response = await AuthedHttpClient.instance.get(
         Uri.parse('${AppConstants.baseUrl}/conversations'),
         headers: {
           'Content-Type': 'application/json',
@@ -45,7 +46,7 @@ class ConversationService {
         queryParameters: {'page': page.toString(), 'limit': limit.toString()},
       );
 
-      final response = await http.get(
+      final response = await AuthedHttpClient.instance.get(
         uri,
         headers: {
           'Content-Type': 'application/json',
@@ -71,7 +72,7 @@ class ConversationService {
     String? message,
   }) async {
     try {
-      final response = await http.post(
+      final response = await AuthedHttpClient.instance.post(
         Uri.parse('${AppConstants.baseUrl}/conversations'),
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +113,7 @@ class ConversationService {
         body['attachments'] = attachments;
       }
 
-      final response = await http.post(
+      final response = await AuthedHttpClient.instance.post(
         Uri.parse('${AppConstants.baseUrl}/conversations/$conversationId/messages'),
         headers: {
           'Content-Type': 'application/json',
@@ -156,7 +157,7 @@ class ConversationService {
         ),
       );
 
-      final streamedResponse = await request.send();
+      final streamedResponse = await AuthedHttpClient.instance.send(request);
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 201) {
@@ -177,7 +178,7 @@ class ConversationService {
     required String conversationId,
   }) async {
     try {
-      final response = await http.put(
+      final response = await AuthedHttpClient.instance.put(
         Uri.parse('${AppConstants.baseUrl}/conversations/$conversationId/read'),
         headers: {
           'Content-Type': 'application/json',

@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'authed_http_client.dart';
 import '../constants.dart';
 import '../models/item_model.dart';
 
@@ -11,7 +11,7 @@ class ItemService {
       final uri = Uri.parse('${AppConstants.baseUrl}/items/mine').replace(
         queryParameters: {'page': page.toString(), 'limit': limit.toString()},
       );
-      final response = await http.get(
+      final response = await AuthedHttpClient.instance.get(
         uri,
         headers: {
           'Content-Type': 'application/json',
@@ -40,7 +40,7 @@ class ItemService {
   /// Récupère un article par son ID (avec tous les détails)
   Future<ItemModel?> getItemById(String id) async {
     try {
-      final response = await http.get(
+      final response = await AuthedHttpClient.instance.get(
         Uri.parse('${AppConstants.baseUrl}/items/$id'),
         headers: {'Content-Type': 'application/json'},
       );
@@ -62,7 +62,7 @@ class ItemService {
       final uri = Uri.parse('${AppConstants.baseUrl}/items/trending').replace(
         queryParameters: {'page': page.toString(), 'limit': limit.toString()},
       );
-      final response = await http.get(
+      final response = await AuthedHttpClient.instance.get(
         uri,
         headers: {'Content-Type': 'application/json'},
       );
@@ -152,7 +152,7 @@ class ItemService {
       }
 
       final uri = Uri.parse('${AppConstants.baseUrl}/items').replace(queryParameters: queryParams);
-      final response = await http.get(
+      final response = await AuthedHttpClient.instance.get(
         uri,
         headers: {'Content-Type': 'application/json'},
       );
@@ -211,7 +211,7 @@ class ItemService {
       if (featureId != null) body['featureId'] = featureId;
       if (images != null && images.isNotEmpty) body['images'] = images;
 
-      final response = await http.put(
+      final response = await AuthedHttpClient.instance.put(
         uri,
         headers: {
           'Content-Type': 'application/json',
@@ -235,7 +235,7 @@ class ItemService {
   /// Désactive une annonce (passe le statut de 'active' à 'pending')
   Future<bool> deactivateItem({required String token, required String itemId}) async {
     try {
-      final response = await http.patch(
+      final response = await AuthedHttpClient.instance.patch(
         Uri.parse('${AppConstants.baseUrl}/items/$itemId/deactivate'),
         headers: {
           'Content-Type': 'application/json',
@@ -257,7 +257,7 @@ class ItemService {
   /// Réactive une annonce (passe le statut de 'pending' à 'active')
   Future<bool> activateItem({required String token, required String itemId}) async {
     try {
-      final response = await http.patch(
+      final response = await AuthedHttpClient.instance.patch(
         Uri.parse('${AppConstants.baseUrl}/items/$itemId/activate'),
         headers: {
           'Content-Type': 'application/json',
@@ -278,7 +278,7 @@ class ItemService {
   /// Supprime une annonce et tous les éléments associés (conversations, avis, favoris)
   Future<bool> deleteItem({required String token, required String itemId}) async {
     try {
-      final response = await http.delete(
+      final response = await AuthedHttpClient.instance.delete(
         Uri.parse('${AppConstants.baseUrl}/items/$itemId'),
         headers: {
           'Content-Type': 'application/json',
@@ -339,7 +339,7 @@ class ItemService {
       if (districtId != null) body['districtId'] = districtId;
       if (featureId != null) body['featureId'] = featureId;
 
-      final response = await http.post(
+      final response = await AuthedHttpClient.instance.post(
         uri,
         headers: {
           'Content-Type': 'application/json',

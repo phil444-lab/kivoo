@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'authed_http_client.dart';
 import '../constants.dart';
 
 class UserSearchService {
@@ -23,7 +23,7 @@ class UserSearchService {
       final uri = Uri.parse('${AppConstants.baseUrl}/users/sellers/search')
           .replace(queryParameters: queryParams);
 
-      final response = await http.get(
+      final response = await AuthedHttpClient.instance.get(
         uri,
         headers: {
           'Content-Type': 'application/json',

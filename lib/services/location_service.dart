@@ -1,12 +1,12 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'authed_http_client.dart';
 import '../constants.dart';
 import '../models/location_model.dart';
 
 class LocationService {
   Future<List<Country>> getCountries() async {
     try {
-      final response = await http.get(
+      final response = await AuthedHttpClient.instance.get(
         Uri.parse('${AppConstants.baseUrl}/locations/countries'),
         headers: {'Content-Type': 'application/json'},
       );
@@ -27,7 +27,7 @@ class LocationService {
 
   Future<List<Department>> getDepartments(String countryId) async {
     try {
-      final response = await http.get(
+      final response = await AuthedHttpClient.instance.get(
         Uri.parse('${AppConstants.baseUrl}/locations/countries/$countryId/departments'),
         headers: {'Content-Type': 'application/json'},
       );
@@ -48,7 +48,7 @@ class LocationService {
 
   Future<List<City>> getCities(String departmentId) async {
     try {
-      final response = await http.get(
+      final response = await AuthedHttpClient.instance.get(
         Uri.parse('${AppConstants.baseUrl}/locations/departments/$departmentId/cities'),
         headers: {'Content-Type': 'application/json'},
       );
@@ -69,7 +69,7 @@ class LocationService {
 
   Future<List<District>> getDistricts(String cityId) async {
     try {
-      final response = await http.get(
+      final response = await AuthedHttpClient.instance.get(
         Uri.parse('${AppConstants.baseUrl}/locations/cities/$cityId/districts'),
         headers: {'Content-Type': 'application/json'},
       );

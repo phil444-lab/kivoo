@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:math';
 import 'package:http/http.dart' as http;
+import 'authed_http_client.dart';
 import '../constants.dart';
 import '../models/user_model.dart';
 
@@ -22,7 +23,7 @@ class TokenPair {
 class AuthService {
   /// [client] permet d'injecter un client HTTP en test
   /// (`MockClient` de `package:http/testing.dart`).
-  AuthService({http.Client? client}) : _client = client ?? http.Client();
+  AuthService({http.Client? client}) : _client = client ?? AuthedHttpClient.instance;
 
   final http.Client _client;
 
@@ -253,7 +254,7 @@ class AuthService {
         http.MultipartFile.fromBytes('photo', bytes, filename: fileName),
       );
 
-      final streamedResponse = await _client.send(request);
+      final streamedResponse = await AuthedHttpClient.instance.send(request);
       final response = await http.Response.fromStream(streamedResponse);
       final responseData = jsonDecode(response.body);
 

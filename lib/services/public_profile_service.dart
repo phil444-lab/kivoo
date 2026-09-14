@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'authed_http_client.dart';
 import '../constants.dart';
 import '../models/item_model.dart';
 
@@ -85,7 +85,7 @@ class PublicProfileService {
   /// Récupère le profil public d'un vendeur
   Future<PublicSellerProfile?> getSellerProfile(String userId) async {
     try {
-      final response = await http.get(
+      final response = await AuthedHttpClient.instance.get(
         Uri.parse('${AppConstants.baseUrl}/users/$userId'),
         headers: {'Content-Type': 'application/json'},
       );
@@ -110,7 +110,7 @@ class PublicProfileService {
           'status': 'active',
         },
       );
-      final response = await http.get(
+      final response = await AuthedHttpClient.instance.get(
         uri,
         headers: {'Content-Type': 'application/json'},
       );

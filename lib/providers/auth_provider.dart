@@ -5,20 +5,29 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../models/item_model.dart';
 import '../services/auth_service.dart';
+import '../services/authed_http_client.dart';
 import '../services/google_auth_service.dart';
 import '../services/favorite_service.dart';
 import '../services/notification_service.dart';
 import '../utils/picked_image.dart';
 
-class AuthProvider extends ChangeNotifier {
+class AuthProvider extends ChangeNotifier implements AuthSessionDelegate {
 
   AuthProvider({
     AuthService? authService,
     FavoriteService? favoriteService,
   })  : _authService = authService ?? AuthService(),
         _favoriteService = favoriteService ?? FavoriteService() {
+    // Exposer la session au client HTTP central : refresh automatique du
+    // token + retry unique sur 401 pour TOUS les services (items,
+    // conversations, notifications…), pas seulement les favoris.
+    AuthedHttpClient.delegate = this;
     _loadStoredAuth();
   }
+
+  /// Token courant — requis par [AuthSessionDelegate].
+  @override
+  String? get accessToken => _token;
   final AuthService _authService;
   final FavoriteService _favoriteService;
   final GoogleAuthService _googleAuthService = GoogleAuthService();

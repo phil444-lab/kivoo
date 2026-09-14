@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'authed_http_client.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import '../constants.dart';
@@ -47,7 +48,7 @@ class CloudinaryService {
     String? publicId,
   }) async {
     try {
-      final response = await http.post(
+      final response = await AuthedHttpClient.instance.post(
         Uri.parse('${AppConstants.baseUrl}/uploads/signature'),
         headers: {
           'Content-Type': 'application/json',
@@ -174,7 +175,7 @@ class CloudinaryService {
         ),
       );
 
-      final streamedResponse = await request.send();
+      final streamedResponse = await AuthedHttpClient.instance.send(request);
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {

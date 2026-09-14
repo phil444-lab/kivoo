@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'authed_http_client.dart';
 import '../constants.dart';
 import '../models/item_model.dart';
 
@@ -49,7 +50,7 @@ const int _noResponseStatusCode = -1;
 class FavoriteService {
   /// [client] permet d'injecter un client HTTP en test
   /// (`MockClient` de `package:http/testing.dart`).
-  FavoriteService({http.Client? client}) : _client = client ?? http.Client();
+  FavoriteService({http.Client? client}) : _client = client ?? AuthedHttpClient.instance;
 
   final http.Client _client;
 

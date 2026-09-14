@@ -1,12 +1,12 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'authed_http_client.dart';
 import '../constants.dart';
 import '../models/category_model.dart';
 
 class CategoryService {
   Future<List<CategoryModel>> getSubCategories(String parentId) async {
     try {
-      final response = await http.get(
+      final response = await AuthedHttpClient.instance.get(
         Uri.parse('${AppConstants.baseUrl}/categories/$parentId/subcategories'),
         headers: {'Content-Type': 'application/json'},
       );
@@ -26,7 +26,7 @@ class CategoryService {
 
   Future<List<CategoryModel>> getParentCategories() async {
     try {
-      final response = await http.get(
+      final response = await AuthedHttpClient.instance.get(
         Uri.parse('${AppConstants.baseUrl}/categories'),
         headers: {'Content-Type': 'application/json'},
       );

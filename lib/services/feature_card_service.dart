@@ -1,12 +1,12 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'authed_http_client.dart';
 import '../constants.dart';
 import '../models/feature_card_model.dart';
 
 class FeatureCardService {
   Future<List<FeatureCardModel>> getFeaturedOptions() async {
     try {
-      final response = await http.get(
+      final response = await AuthedHttpClient.instance.get(
         Uri.parse('${AppConstants.baseUrl}/featured'),
         headers: {'Content-Type': 'application/json'},
       );

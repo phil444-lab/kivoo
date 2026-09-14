@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:http/http.dart' as http;
+import 'authed_http_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart';
 
@@ -274,7 +274,7 @@ class NotificationService {
       final uri = Uri.parse('${AppConstants.baseUrl}/notifications/push-token');
       print('📤 POST $uri');
 
-      final response = await http.post(
+      final response = await AuthedHttpClient.instance.post(
         uri,
         headers: {
           'Content-Type': 'application/json',
@@ -300,7 +300,7 @@ class NotificationService {
       final authToken = await _getStoredToken();
       if (authToken == null) return false;
 
-      final response = await http.delete(
+      final response = await AuthedHttpClient.instance.delete(
         Uri.parse('${AppConstants.baseUrl}/notifications/push-token'),
         headers: {
           'Content-Type': 'application/json',
@@ -329,7 +329,7 @@ class NotificationService {
         queryParameters: {'page': page.toString(), 'limit': limit.toString()},
       );
 
-      final response = await http.get(
+      final response = await AuthedHttpClient.instance.get(
         uri,
         headers: {
           'Content-Type': 'application/json',
@@ -354,7 +354,7 @@ class NotificationService {
       final token = await _getStoredToken();
       if (token == null) return false;
 
-      final response = await http.put(
+      final response = await AuthedHttpClient.instance.put(
         Uri.parse('${AppConstants.baseUrl}/notifications/$notificationId/read'),
         headers: {
           'Content-Type': 'application/json',
@@ -375,7 +375,7 @@ class NotificationService {
       final token = await _getStoredToken();
       if (token == null) return false;
 
-      final response = await http.put(
+      final response = await AuthedHttpClient.instance.put(
         Uri.parse('${AppConstants.baseUrl}/notifications/read-all'),
         headers: {
           'Content-Type': 'application/json',
