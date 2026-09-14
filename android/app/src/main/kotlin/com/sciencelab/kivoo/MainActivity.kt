@@ -1,4 +1,4 @@
-package com.example.kivoo
+package com.sciencelab.kivoo
 
 import io.flutter.embedding.android.FlutterActivity
 

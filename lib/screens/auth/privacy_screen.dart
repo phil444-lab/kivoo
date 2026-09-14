@@ -52,37 +52,37 @@ class PrivacyScreen extends StatelessWidget {
               const SizedBox(height: 24),
               Text(
                 '''1. Données Personnelles Collectées
-Dans le cadre de l'utilisation de Kivoo, nous sommes amenés à collecter les données suivantes :
-- Informations de profil : Nom, prénom, adresse e-mail, photo de profil, numéro de téléphone.
-- Données d'authentification tierce : Lorsque vous vous connectez via Google ou Facebook, nous collectons votre identifiant unique d'utilisateur ainsi que votre e-mail et nom associés à ce profil.
-- Contenus publiés : Annonces, photos, descriptions, localisation approximative liée aux annonces.
-- Données d'utilisation : Logs de connexion, type d'appareil, version de l'application.
+                  Dans le cadre de l'utilisation de Kivoo, nous sommes amenés à collecter les données suivantes :
+                  - Informations de profil : Nom, prénom, adresse e-mail, photo de profil, numéro de téléphone.
+                  - Données d'authentification tierce : Lorsque vous vous connectez via Google, nous collectons votre identifiant unique d'utilisateur ainsi que votre e-mail, nom et photo associés à ce profil.
+                  - Contenus publiés : Annonces, photos, descriptions, localisation approximative liée aux annonces.
+                  - Données d'utilisation : Logs de connexion, type d'appareil, version de l'application.
 
-2. Utilisation des Données
-Vos données sont collectées pour :
-- Permettre la création et la gestion de votre compte Utilisateur.
-- Assurer le fonctionnement de la plateforme (affichage des annonces, messagerie instantanée).
-- Sécuriser l'application et lutter contre le spam ou la fraude.
-- Vous adresser des notifications liées à vos annonces ou messages.
+                  2. Utilisation des Données
+                  Vos données sont collectées pour :
+                  - Permettre la création et la gestion de votre compte Utilisateur.
+                  - Assurer le fonctionnement de la plateforme (affichage des annonces, messagerie).
+                  - Sécuriser l'application et lutter contre le spam ou la fraude.
+                  - Vous adresser des notifications liées à vos annonces ou messages.
 
-3. Partage des Données
-Vos données personnelles ne sont jamais vendues à des tiers. Elles peuvent être partagées uniquement dans les cas suivants :
-- Autres utilisateurs : Les données publiques de votre profil (prénom, photo, annonces) sont visibles sur l'application.
-- Prestataires de services : Nos hébergeurs web et services d'authentification (Google, Meta/Facebook, services de base de données).
-- Obligations légales : Si la loi ou une autorité judiciaire l'exige.
+                  3. Partage des Données
+                  Vos données personnelles ne sont jamais vendues à des tiers. Elles peuvent être partagées uniquement dans les cas suivants :
+                  - Autres utilisateurs : Les données publiques de votre profil (prénom, photo, annonces) sont visibles sur l'application.
+                  - Prestataires de services : Nos hébergeurs web et services d'authentification (Google, Vercel, Cloudinary, TiDB Cloud).
+                  - Obligations légales : Si la loi ou une autorité judiciaire l'exige.
 
-4. Durée de Conservation
-Vos données sont conservées tant que votre compte est actif. Vous pouvez demander la suppression complète de votre compte et de vos données personnelles à tout moment.
+                  4. Durée de Conservation
+                  Vos données sont conservées tant que votre compte est actif. Vous pouvez effectuer la suppression complète de votre compte et de vos données personnelles à tout moment.
 
-5. Vos Droits
-Conformément à la réglementation sur la protection des données, vous disposez des droits suivants :
-- Droit d'accès et de rectification de vos données.
-- Droit à l'effacement (droit à l'oubli).
-- Droit de retirer votre consentement pour la connexion via des services tiers (Google, Facebook).
+                  5. Vos Droits
+                  Conformément à la réglementation sur la protection des données, vous disposez des droits suivants :
+                  - Droit d'accès et de rectification de vos données.
+                  - Droit à l'effacement (droit à l'oubli).
+                  - Droit de retirer votre consentement pour la connexion via des services tiers (Google).
 
-6. Contact et Demande de Suppression
-Pour toute question concernant cette politique ou pour exercer vos droits (suppression de compte / données), vous pouvez nous contacter à l'adresse e-mail suivante :
-📧 support@kivoo.app''',
+                  6. Contact et Demande de Suppression
+                  Pour toute question concernant cette politique ou pour exercer vos droits (suppression de compte / données), vous pouvez nous contacter à l'adresse e-mail suivante :
+                  📧 sergefrancis808@gmail.com''',
                 style: TextStyle(
                   color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                   fontSize: Responsive.fontSize(context, 14),

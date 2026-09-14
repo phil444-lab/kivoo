@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { AuthRequest } from '../middleware/auth.js';
-import { NotFoundError, ValidationError } from '../utils/ApiError.js';
+import { NotFoundError } from '../utils/ApiError.js';
 
 export const getFavorites = async (
   req: AuthRequest,
@@ -95,8 +95,17 @@ export const addFavorite = async (
       where: { userId_itemId: { userId: req.user.id, itemId } },
     });
 
+    // Idempotent : si l'annonce est déjà en favoris, on répond succès (200)
+    // au lieu d'une erreur. Le client peut ainsi resynchroniser son état
+    // (cœur rouge) même lorsque sa liste locale était obsolète (session
+    // rechargée, page non chargée, etc.) — sans provoquer d'échec visible.
     if (existing) {
-      throw new ValidationError('Cette annonce est déjà dans vos favoris');
+      res.status(200).json({
+        success: true,
+        message: 'Annonce déjà dans vos favoris',
+        data: { isFavorite: true },
+      });
+      return;
     }
 
     await prisma.favorite.create({
@@ -111,6 +120,7 @@ export const addFavorite = async (
     res.status(201).json({
       success: true,
       message: 'Annonce ajoutée aux favoris',
+      data: { isFavorite: true },
     });
   } catch (error) {
     next(error);
@@ -129,22 +139,35 @@ export const removeFavorite = async (
       where: { userId_itemId: { userId: req.user.id, itemId } },
     });
 
+    // Idempotent : si l'annonce n'est plus en favoris, on répond succès (200)
+    // pour que le client puisse synchroniser son état (cœur gris).
     if (!favorite) {
-      throw new NotFoundError('Favorite');
+      res.status(200).json({
+        success: true,
+        message: 'Annonce déjà retirée des favoris',
+        data: { isFavorite: false },
+      });
+      return;
     }
 
     await prisma.favorite.delete({
       where: { userId_itemId: { userId: req.user.id, itemId } },
     });
 
-    await prisma.item.update({
-      where: { id: itemId },
-      data: { likes: { increment: -1 } },
-    });
+    // Décrémenter le compteur de likes sans jamais passer sous zéro
+    // (données historiques potentiellement désynchronisées).
+    const item = await prisma.item.findUnique({ where: { id: itemId } });
+    if (item && item.likes > 0) {
+      await prisma.item.update({
+        where: { id: itemId },
+        data: { likes: { decrement: 1 } },
+      });
+    }
 
     res.status(200).json({
       success: true,
       message: 'Annonce retirée des favoris',
+      data: { isFavorite: false },
     });
   } catch (error) {
     next(error);

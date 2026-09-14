@@ -5,7 +5,27 @@ import 'package:http/http.dart' as http;
 import '../constants.dart';
 import '../models/user_model.dart';
 
+/// Nouvelle paire de jetons renvoyée par `/auth/refresh-token`.
+///
+/// ⚠️ Le serveur ne renvoie **pas** d'utilisateur lors d'un rafraîchissement :
+/// on ne peut donc pas construire un [AuthResponse] (dont `user` est requis).
+/// Utiliser un `User.fromJson({})` faisait échouer **tous** les
+/// rafraîchissements (`type 'Null' is not a subtype of type 'String'`), ce qui
+/// effaçait la session et cassait les fonctionnalités authentifiées (favoris).
+class TokenPair {
+  const TokenPair({required this.token, required this.refreshToken});
+
+  final String token;
+  final String refreshToken;
+}
+
 class AuthService {
+  /// [client] permet d'injecter un client HTTP en test
+  /// (`MockClient` de `package:http/testing.dart`).
+  AuthService({http.Client? client}) : _client = client ?? http.Client();
+
+  final http.Client _client;
+
   Future<AuthResponse> socialLogin({
     required String provider,
     required String providerId,
@@ -16,7 +36,7 @@ class AuthService {
     String? idToken,
   }) async {
     try {
-      final response = await http.post(
+      final response = await _client.post(
         Uri.parse('${AppConstants.baseUrl}${AppConstants.socialLoginEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
@@ -48,7 +68,7 @@ class AuthService {
 
   Future<void> logout(String token) async {
     try {
-      await http.post(
+      await _client.post(
         Uri.parse('${AppConstants.baseUrl}${AppConstants.logoutEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
@@ -60,9 +80,9 @@ class AuthService {
     }
   }
 
-  Future<AuthResponse> refreshToken(String refreshToken) async {
+  Future<TokenPair> refreshToken(String refreshToken) async {
     try {
-      final response = await http.post(
+      final response = await _client.post(
         Uri.parse('${AppConstants.baseUrl}${AppConstants.refreshTokenEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
@@ -73,11 +93,10 @@ class AuthService {
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200 && responseData['success'] == true) {
-        return AuthResponse(
-          success: true,
-          user: User.fromJson({}),
-          token: responseData['data']['token'] as String,
-          refreshToken: responseData['data']['refreshToken'] as String,
+        final data = responseData['data'] as Map<String, dynamic>;
+        return TokenPair(
+          token: data['token'] as String,
+          refreshToken: data['refreshToken'] as String,
         );
       } else {
         throw Exception(responseData['message'] ?? 'Token refresh failed');
@@ -96,7 +115,7 @@ class AuthService {
     required String password,
   }) async {
     try {
-      final response = await http.post(
+      final response = await _client.post(
         Uri.parse('${AppConstants.baseUrl}${AppConstants.registerEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
@@ -128,7 +147,7 @@ class AuthService {
     required String password,
   }) async {
     try {
-      final response = await http.post(
+      final response = await _client.post(
         Uri.parse('${AppConstants.baseUrl}${AppConstants.loginEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
@@ -181,7 +200,7 @@ class AuthService {
       print('Body: ${jsonEncode(body)}');
       print('Token: $token');
 
-      final response = await http.put(
+      final response = await _client.put(
         Uri.parse('${AppConstants.baseUrl}/users/me'),
         headers: {
           'Content-Type': 'application/json',
@@ -234,7 +253,7 @@ class AuthService {
         http.MultipartFile.fromBytes('photo', bytes, filename: fileName),
       );
 
-      final streamedResponse = await request.send();
+      final streamedResponse = await _client.send(request);
       final response = await http.Response.fromStream(streamedResponse);
       final responseData = jsonDecode(response.body);
 
@@ -252,7 +271,7 @@ class AuthService {
 
   Future<Map<String, dynamic>> deleteAccount(String token) async {
     try {
-      final response = await http.delete(
+      final response = await _client.delete(
         Uri.parse('${AppConstants.baseUrl}/users/me'),
         headers: {
           'Content-Type': 'application/json',

@@ -12,10 +12,15 @@ import '../utils/picked_image.dart';
 
 class AuthProvider extends ChangeNotifier {
 
-  AuthProvider() {
+  AuthProvider({
+    AuthService? authService,
+    FavoriteService? favoriteService,
+  })  : _authService = authService ?? AuthService(),
+        _favoriteService = favoriteService ?? FavoriteService() {
     _loadStoredAuth();
   }
-  final AuthService _authService = AuthService();
+  final AuthService _authService;
+  final FavoriteService _favoriteService;
   final GoogleAuthService _googleAuthService = GoogleAuthService();
 
   User? _user;
@@ -23,10 +28,13 @@ class AuthProvider extends ChangeNotifier {
   String? _refreshToken;
   bool _isLoading = false;
   bool _isInitialized = false;
-  final FavoriteService _favoriteService = FavoriteService();
   final Set<String> _favoriteItemIds = {};
   List<ItemModel> _favoriteItems = [];
   bool _isLoadingFavorites = false;
+
+  /// Rafraîchissement de token en cours : partagé par les appels simultanés
+  /// (favoris, notifications…) pour ne pas invalider deux sessions à la fois.
+  Future<bool>? _refreshInFlight;
 
   User? get user => _user;
   String? get token => _token;
@@ -49,9 +57,11 @@ class AuthProvider extends ChangeNotifier {
         _token = token;
         _refreshToken = refreshToken;
         _user = User.fromJson(jsonDecode(userJson) as Map<String, dynamic>);
-        // Charger les favoris dès la restauration de session
-        // pour que les boutons favoris soient à jour partout
-        unawaited(loadFavorites());
+        // Restaurer la session : le JWT ne dure que 15 min, or la PWA web
+        // restaure le token depuis le stockage local à chaque rechargement.
+        // On le rafraîchit donc si besoin, puis on charge les favoris pour
+        // que les cœurs soient à jour dès l'ouverture de l'app.
+        unawaited(_restoreSession());
       }
     } catch (e) {
       debugPrint('Error loading stored auth: $e');
@@ -266,6 +276,97 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Restaure la session au démarrage : rafraîchit le token s'il est expiré
+  /// puis charge les favoris (l'état local est vide au lancement).
+  Future<void> _restoreSession() async {
+    await ensureValidToken();
+    if (_token != null) {
+      await loadFavorites();
+    }
+  }
+
+  /// Décode localement la date d'expiration (`exp`) d'un JWT.
+  /// Retourne null si le token n'est pas un JWT décodable.
+  DateTime? _tokenExpiry(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+      final payload =
+          utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+      final map = jsonDecode(payload) as Map<String, dynamic>;
+      final exp = map['exp'];
+      if (exp is int) {
+        return DateTime.fromMillisecondsSinceEpoch(exp * 1000, isUtc: true);
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Garantit qu'un token d'accès utilisable est disponible, en le rafraîchissant
+  /// s'il est expiré (ou expire dans moins de 60 secondes).
+  ///
+  /// ⚠️ Indispensable sur le web : le JWT ne dure que 15 minutes et la PWA
+  /// restaure le token depuis le stockage local à chaque rechargement. Sans
+  /// rafraîchissement, tous les appels authentifiés (dont les favoris) échouent
+  /// en 401 alors que l'UI se croit encore connectée (cœurs gris, actions
+  /// silencieusement ignorées).
+  ///
+  /// Retourne true si un token (valide ou indécodable) est disponible.
+  Future<bool> ensureValidToken() async {
+    final token = _token;
+    if (token == null) return false;
+
+    final expiry = _tokenExpiry(token);
+    // Token illisible : on laisse le serveur trancher (retry sur 401).
+    if (expiry == null) return true;
+
+    final now = DateTime.now().toUtc();
+    if (expiry.isAfter(now.add(const Duration(seconds: 60)))) return true;
+
+    return _refreshTokensOnce();
+  }
+
+  /// Rafraîchissement sérialisé : plusieurs appels simultanés (favoris,
+  /// notifications…) partagent le même rafraîchissement. Deux refresh en
+  /// parallèle désactiveraient mutuellement leur session côté serveur.
+  Future<bool> _refreshTokensOnce() {
+    final inFlight = _refreshInFlight;
+    if (inFlight != null) return inFlight;
+
+    final future = refreshTokens().whenComplete(() => _refreshInFlight = null);
+    _refreshInFlight = future;
+    return future;
+  }
+
+  /// Exécute une requête authentifiée : rafraîchit le token si nécessaire puis
+  /// réessaie une fois après un 401 (session expirée malgré tout).
+  Future<T> _withAuthRetry<T>(
+    Future<T> Function(String token) request,
+    bool Function(T result) shouldRetry,
+  ) async {
+    if (_token == null) {
+      throw StateError('Utilisateur non authentifié');
+    }
+
+    await ensureValidToken();
+
+    final token = _token;
+    if (token == null) {
+      throw StateError('Session expirée');
+    }
+
+    final result = await request(token);
+    if (!shouldRetry(result)) return result;
+
+    final refreshed = await _refreshTokensOnce();
+    final newToken = _token;
+    if (!refreshed || newToken == null) return result;
+
+    return request(newToken);
+  }
+
   Future<bool> updateProfile({
     String? name,
     String? email,
@@ -341,7 +442,10 @@ class AuthProvider extends ChangeNotifier {
   /// Vérifie si un article est dans les favoris
   bool isFavorite(String itemId) => _favoriteItemIds.contains(itemId);
 
-  /// Ajoute un article aux favoris
+  /// Ajoute un article aux favoris.
+  ///
+  /// L'état local (cœur rouge) n'est marqué qu'après confirmation du serveur.
+  /// En cas de 401, le token est rafraîchi puis la requête rejouée.
   Future<bool> addToFavorites(String itemId) async {
     if (_token == null) return false;
 
@@ -349,19 +453,19 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final success = await _favoriteService.addFavorite(
-        token: _token!,
-        itemId: itemId,
+      final result = await _withAuthRetry(
+        (token) => _favoriteService.addFavorite(token: token, itemId: itemId),
+        (r) => r.isUnauthorized,
       );
 
-      if (success) {
+      if (result.success) {
         _favoriteItemIds.add(itemId);
         notifyListeners();
       }
 
       _isLoadingFavorites = false;
       notifyListeners();
-      return success;
+      return result.success;
     } catch (e) {
       _isLoadingFavorites = false;
       notifyListeners();
@@ -369,7 +473,9 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Retire un article des favoris
+  /// Retire un article des favoris.
+  ///
+  /// En cas de 401, le token est rafraîchi puis la requête rejouée.
   Future<bool> removeFromFavorites(String itemId) async {
     if (_token == null) return false;
 
@@ -377,12 +483,13 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final success = await _favoriteService.removeFavorite(
-        token: _token!,
-        itemId: itemId,
+      final result = await _withAuthRetry(
+        (token) =>
+            _favoriteService.removeFavorite(token: token, itemId: itemId),
+        (r) => r.isUnauthorized,
       );
 
-      if (success) {
+      if (result.success) {
         _favoriteItemIds.remove(itemId);
         _favoriteItems.removeWhere((item) => item.id == itemId);
         notifyListeners();
@@ -390,7 +497,7 @@ class AuthProvider extends ChangeNotifier {
 
       _isLoadingFavorites = false;
       notifyListeners();
-      return success;
+      return result.success;
     } catch (e) {
       _isLoadingFavorites = false;
       notifyListeners();
@@ -415,12 +522,17 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await _favoriteService.getFavorites(token: _token!);
-      if (result != null) {
-        final favorites = result['items'] as List<ItemModel>;
+      final result = await _withAuthRetry(
+        (token) => _favoriteService.getFavorites(token: token),
+        (r) => r.isUnauthorized,
+      );
+
+      // On ne vide l'état local que si la liste a réellement été récupérée,
+      // sinon une erreur réseau effacerait les cœurs rouges déjà affichés.
+      if (result.success) {
         _favoriteItemIds.clear();
         _favoriteItems = [];
-        for (final item in favorites) {
+        for (final item in result.items!) {
           _favoriteItemIds.add(item.id);
           _favoriteItems.add(item);
         }
@@ -439,22 +551,24 @@ class AuthProvider extends ChangeNotifier {
     if (_token == null) return null;
 
     try {
-      final result = await _favoriteService.getFavorites(
-        token: _token!,
-        page: page,
-        limit: 20,
+      final result = await _withAuthRetry(
+        (token) => _favoriteService.getFavorites(
+          token: token,
+          page: page,
+          limit: 20,
+        ),
+        (r) => r.isUnauthorized,
       );
-      if (result != null) {
-        final favorites = result['items'] as List<ItemModel>;
-        final pagination = result['pagination'] as Map<String, dynamic>;
-        for (final item in favorites) {
+
+      if (result.success) {
+        for (final item in result.items!) {
           if (!_favoriteItemIds.contains(item.id)) {
             _favoriteItemIds.add(item.id);
             _favoriteItems.add(item);
           }
         }
         notifyListeners();
-        return pagination;
+        return result.pagination;
       }
       return null;
     } catch (e) {
@@ -468,16 +582,20 @@ class AuthProvider extends ChangeNotifier {
     if (_token == null) return false;
 
     try {
-      final isFav = await _favoriteService.isFavorite(
-        token: _token!,
-        itemId: itemId,
+      final result = await _withAuthRetry(
+        (token) => _favoriteService.isFavorite(token: token, itemId: itemId),
+        (r) => r.isUnauthorized,
       );
 
+      if (!result.success) return false;
+
+      final isFav = result.isFavorite ?? false;
       if (isFav) {
         _favoriteItemIds.add(itemId);
-        notifyListeners();
+      } else {
+        _favoriteItemIds.remove(itemId);
       }
-
+      notifyListeners();
       return isFav;
     } catch (e) {
       return false;

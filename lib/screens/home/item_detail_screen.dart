@@ -119,23 +119,41 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                 return;
                               }
 
-                              final wasFavorite = isFav;
-                              await authProvider.toggleFavorite(item.id);
+                              final success =
+                                  await authProvider.toggleFavorite(item.id);
 
-                              if (context.mounted) {
+                              if (!context.mounted) return;
+
+                              // Signaler un échec réel (session expirée,
+                              // réseau) au lieu d'annoncer un faux succès.
+                              if (!success) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
+                                  const SnackBar(
                                     content: Text(
-                                      !wasFavorite
-                                          ? 'Ajouté aux favoris'
-                                          : 'Retiré des favoris',
+                                      'Impossible de mettre à jour les favoris. Réessayez.',
                                     ),
-                                    backgroundColor: Colors.green,
+                                    backgroundColor: Colors.orange,
                                     behavior: SnackBarBehavior.floating,
-                                    duration: const Duration(seconds: 2),
+                                    duration: Duration(seconds: 2),
                                   ),
                                 );
+                                return;
                               }
+
+                              final isNowFavorite =
+                                  authProvider.isFavorite(item.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    isNowFavorite
+                                        ? 'Ajouté aux favoris'
+                                        : 'Retiré des favoris',
+                                  ),
+                                  backgroundColor: Colors.green,
+                                  behavior: SnackBarBehavior.floating,
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
                             },
                           ),
                         );

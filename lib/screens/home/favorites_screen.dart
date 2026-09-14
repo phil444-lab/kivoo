@@ -246,18 +246,35 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               );
             },
             onFavoriteToggle: () async {
+              // Récupéré avant l'await : évite d'utiliser le contexte après
+              // une interruption asynchrone.
+              final messenger = ScaffoldMessenger.of(context);
               final success = await authProvider.removeFromFavorites(item.id);
-              if (success && mounted) {
-                setState(() {});
-                ScaffoldMessenger.of(context).showSnackBar(
+              if (!mounted) return;
+
+              if (!success) {
+                messenger.showSnackBar(
                   const SnackBar(
-                    content: Text('Retiré des favoris'),
-                    backgroundColor: Colors.green,
+                    content: Text(
+                      'Impossible de retirer ce favori. Réessayez.',
+                    ),
+                    backgroundColor: Colors.orange,
                     behavior: SnackBarBehavior.floating,
                     duration: Duration(seconds: 2),
                   ),
                 );
+                return;
               }
+
+              setState(() {});
+              messenger.showSnackBar(
+                const SnackBar(
+                  content: Text('Retiré des favoris'),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                  duration: Duration(seconds: 2),
+                ),
+              );
             },
           ),
         );

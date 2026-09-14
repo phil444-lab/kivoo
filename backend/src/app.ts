@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import prisma from './lib/prisma.js';
-import config from './config/index.js';
+import { corsOriginHandler } from './middleware/cors.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -30,23 +30,10 @@ export function createApp(): Express {
   app.use(helmet());
   app.use(
     cors({
-      // Autorise plusieurs origines (front de production + ports dev du dashboard)
-      origin(origin: string | undefined, cb) {
-        if (
-          !origin || // requêtes d'origine absence (curl, scripts, cron)
-          config.frontendUrls.includes(origin)
-        ) {
-          return cb(null, true);
-        }
-        // En développement : autoriser les ports locaux (Vite, Flutter web/PWA…)
-        if (
-          config.nodeEnv !== 'production' &&
-          /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
-        ) {
-          return cb(null, true);
-        }
-        return cb(new Error('Non autorisé par CORS'));
-      },
+      // Autorise plusieurs origines : front web, PWA Flutter et ports de dev.
+      // Une origine non autorisée est privée d'en-têtes CORS (`cb(null,false)`)
+      // au lieu de lever une erreur (qui faisait échouer le préflight en 500).
+      origin: corsOriginHandler,
       credentials: true,
     })
   );

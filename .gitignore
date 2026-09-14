@@ -43,6 +43,14 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 /android/build/
+# Android signing — ne jamais committer la clé privée ni les mots de passe
+android/key.properties
+android/app/*.jks
+android/app/*.keystore
+android/*.jks
+android/*.keystore
+*.jks
+*.keystore
 
 # Firebase Google Services (contient des clÃ©s API â€” Ã  tÃ©lÃ©charger depuis Firebase Console)
 android/app/google-services.json

@@ -114,29 +114,50 @@ class ItemCard extends StatelessWidget {
                       right: 8,
                       child: GestureDetector(
                         onTap: () async {
-                          final wasFavorite = isFav;
+                          // Toggle géré par l'écran parent (ex. écran Favoris) :
+                          // il affiche lui-même son propre retour utilisateur.
                           if (onFavoriteToggle != null) {
                             onFavoriteToggle!();
-                          } else {
-                            await authProvider.toggleFavorite(item.id);
+                            return;
                           }
-                          
-                          // Show snackbar
-                          if (context.mounted) {
-                            final newState = !wasFavorite;
+
+                          final success =
+                              await authProvider.toggleFavorite(item.id);
+
+                          if (!context.mounted) return;
+
+                          // Ne jamais annoncer un succès si l'appel a échoué
+                          // (session expirée, réseau…) : le cœur resterait gris.
+                          if (!success) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
+                              const SnackBar(
                                 content: Text(
-                                  newState
-                                      ? 'Ajouté aux favoris'
-                                      : 'Retiré des favoris',
+                                  'Impossible de mettre à jour les favoris. Réessayez.',
                                 ),
-                                backgroundColor: Colors.green,
+                                backgroundColor: Colors.orange,
                                 behavior: SnackBarBehavior.floating,
-                                duration: const Duration(seconds: 2),
+                                duration: Duration(seconds: 2),
                               ),
                             );
+                            return;
                           }
+
+                          // L'état réel vient du provider (source de vérité),
+                          // pas d'une supposition sur l'état précédent.
+                          final isNowFavorite =
+                              authProvider.isFavorite(item.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                isNowFavorite
+                                    ? 'Ajouté aux favoris'
+                                    : 'Retiré des favoris',
+                              ),
+                              backgroundColor: Colors.green,
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
                         },
                         child: Container(
                           width: 32,

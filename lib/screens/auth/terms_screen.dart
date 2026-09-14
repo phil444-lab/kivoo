@@ -52,30 +52,31 @@ class TermsScreen extends StatelessWidget {
               const SizedBox(height: 24),
               Text(
                 '''1. Présentation de l'Application
-L'application Kivoo (ci-après « l'Application ») est une plateforme de petites annonces et de mise en relation permettant à des utilisateurs (ci-après « les Utilisateurs ») de publier, consulter et répondre à des annonces d'achat, de vente et de services.
+                  L'application Kivoo est une plateforme de petites annonces et de mise en relation permettant à des utilisateurs résidents sur le territoire Béninois, de publier, consulter et répondre à des annonces d'achat, de vente et de services.
 
-2. Acceptation des CGU
-L'accès et l'utilisation de l'Application sont soumis à l'acceptation inconditionnelle des présentes CGU. En créant un compte ou en utilisant Kivoo, l'Utilisateur reconnaît avoir lu, compris et accepté l'ensemble de ces termes.
+                  2. Acceptation des CGU
+                  L'accès et l'utilisation de l'Application sont soumis à l'acceptation inconditionnelle des présentes CGU. En créant un compte ou en utilisant Kivoo, l'Utilisateur reconnaît avoir lu, compris et accepté l'ensemble de ces termes.
 
-3. Inscription et Sécurité du Compte
-Pour accéder à l'ensemble des fonctionnalités (publication d'annonces, messagerie, etc.), l'Utilisateur doit créer un compte.
-L'inscription peut s'effectuer par e-mail ou via des services d'authentification tiers (Google, Facebook).
-L'Utilisateur est seul responsable de la confidentialité de ses identifiants et des activités effectuées depuis son compte.
+                  3. Inscription et Sécurité du Compte
+                  Pour accéder à l'ensemble des fonctionnalités (publication d'annonces, messagerie, etc.), l'Utilisateur doit créer un compte.
+                  L'inscription peut s'effectuer par e-mail ou via le service d'authentification tiers Google.
+                  L'Utilisateur est seul responsable de la confidentialité de ses identifiants et des activités effectuées depuis son compte.
 
-4. Règles de Publication d'Annonces
-L'Utilisateur s'engage à ne pas publier de contenus :
-- Illicites, frauduleux, diffamatoires, violents ou haineux.
-- Portant sur des produits ou services interdits par la loi en vigueur.
-- Comportant des informations fausses ou trompeuses.
-Kivoo se réserve le droit de supprimer sans préavis ni indemnité toute annonce ne respectant pas ces règles.
+                  4. Règles de Publication d'Annonces
+                  L'Utilisateur s'engage à ne pas publier de contenus :
+                  - Illicites, frauduleux, diffamatoires, violents ou haineux.
+                  - Portant sur des produits ou services interdits par la loi en vigueur.
+                  - Comportant des informations fausses ou trompeuses.
+                  Kivoo se réserve le droit de supprimer sans préavis ni indemnité toute annonce ne respectant pas ces règles.
 
-5. Responsabilité et Mise en Relation
-Kivoo agit en qualité d'hébergeur et d'intermédiaire technique.
-Kivoo ne garantit pas la qualité, la sécurité ou la conformité des biens et services vendus entre Utilisateurs.
-Les transactions, paiements et remises en main propre s'effectuent sous la seule responsabilité des parties concernées.
+                  5. Responsabilité et Mise en Relation
+                  Kivoo agit en qualité d'hébergeur et d'intermédiaire technique.
+                  Kivoo ne garantit pas la qualité, la sécurité ou la conformité des biens et services vendus entre Utilisateurs. 
+                  Kivoo recommande de n'effectuer aucun paiement ou remise en main propre qu'après avoir vérifié l'identité et la fiabilité de l'autre partie.
+                  Les transactions, paiements et remises en main propre s'effectuent sous la seule responsabilité des parties concernées.
 
-6. Suspension et Résiliation
-Kivoo se réserve le droit de suspendre ou de supprimer le compte de tout Utilisateur en cas de violation répétée ou grave des présentes CGU.''',
+                  6. Suspension et Résiliation
+                  Kivoo se réserve le droit de suspendre ou de supprimer le compte de tout Utilisateur en cas de violation répétée ou grave des présentes CGU.''',
                 style: TextStyle(
                   color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
                   fontSize: Responsive.fontSize(context, 14),

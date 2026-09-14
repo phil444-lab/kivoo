@@ -39,12 +39,32 @@ const config = {
   // URL de la web app (PWA) — utilisée pour les icônes/liens des push web
   webAppUrl: process.env.WEB_APP_URL || 'https://kivoo-web.vercel.app',
 
-  // Liste des origines autorisées par CORS (front de production + ports dev)
+  // Liste des origines autorisées par CORS (front de production + ports dev).
+  // Les motifs contenant « * » sont acceptés, ex:
+  //   https://kivoo-web-*.vercel.app  (URL de préversion Vercel)
   frontendUrls: (process.env.FRONTEND_URLS ||
-    'http://localhost:5173,http://localhost:5174,https://localhost:5173,https://localhost:5174')
+    [
+      // Dashboard / front web en développement
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'https://localhost:5173',
+      'https://localhost:5174',
+      // PWA Flutter web déployée sur Vercel (+ préversions)
+      'https://kivoo.vercel.app',
+      'https://kivoo-web.vercel.app',
+      'https://kivoo-web-*.vercel.app',
+      'https://kivoo-*-web.vercel.app',
+    ].join(','))
     .split(',')
     .map((u) => u.trim())
     .filter(Boolean),
+
+  // Autoriser les origines localhost/127.0.0.1 même en production.
+  // Indispensable pour tester la PWA Flutter web en local
+  // (`flutter run -d chrome`) contre l'API déployée : sans cela, le préflight
+  // CORS est refusé et les favoris (entre autres) ne partent jamais.
+  // Mettre CORS_ALLOW_LOCALHOST=false pour désactiver.
+  corsAllowLocalhost: process.env.CORS_ALLOW_LOCALHOST !== 'false',
   
   smtp: {
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
