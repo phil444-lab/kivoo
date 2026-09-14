@@ -23,11 +23,42 @@ if (-not (Get-Command vercel -ErrorAction SilentlyContinue)) {
   exit 1
 }
 
+# Éviter le prompt interactif « Would you like to upgrade now? » de la CLI
+# (il casse les scripts automatiques ; le CLI teste NO_UPDATE_NOTIFIER).
+$env:NO_UPDATE_NOTIFIER = '1'
+$env:VERCEL_TELEMETRY_DISABLED = '1'
+
 # 0bis. Pré-requis : CLI authentifiée.
 # Sans session, `vercel deploy` échoue par « Error: Not authorized » APRÈS un
 # build de ~1 min : on le détecte donc AVANT de builder pour gagner du temps.
-$authFile = Join-Path $env:APPDATA 'com.vercel.cli\auth.json'
-if ([string]::IsNullOrWhiteSpace($env:VERCEL_TOKEN) -and -not (Test-Path $authFile)) {
+#
+# On interroge la CLI (`vercel whoami`) plutôt que de chercher son fichier
+# d'authentification : son emplacement change selon la version et la plateforme
+# (ex. CLI 59 sur Windows l'écrit dans %APPDATA%\xdg.data\com.vercel.cli\
+# au lieu de %APPDATA%\com.vercel.cli\ -> un Test-Path rendait un faux négatif).
+function Test-VercelAuth {
+  # Un token d'environnement (CI) suffit : pas besoin de session locale.
+  if (-not [string]::IsNullOrWhiteSpace($env:VERCEL_TOKEN)) { return $true }
+
+  # `vercel whoami` écrit sa bannière sur stderr. PowerShell 5.1 transforme ce
+  # stderr en erreur terminante dès que $ErrorActionPreference = 'Stop' : on le
+  # neutralise le temps de l'appel, sinon la CLI paraîtrait « non authentifiée ».
+  $previousErrorAction = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try {
+    $account = (& vercel whoami 2>$null | Out-String).Trim()
+    $exitCode = $LASTEXITCODE
+  } catch {
+    $account = ''
+    $exitCode = 1
+  } finally {
+    $ErrorActionPreference = $previousErrorAction
+  }
+
+  return ($exitCode -eq 0 -and -not [string]::IsNullOrWhiteSpace($account))
+}
+
+if (-not (Test-VercelAuth)) {
   Write-Host '❌ CLI Vercel non authentifiée (erreur « Not authorized »).' -ForegroundColor Red
   Write-Host '   Choisissez UNE des deux méthodes :' -ForegroundColor Yellow
   Write-Host '   1) vercel login' -ForegroundColor Yellow
@@ -39,10 +70,6 @@ if ([string]::IsNullOrWhiteSpace($env:VERCEL_TOKEN) -and -not (Test-Path $authFi
   Write-Host '   Le build est déjà fait : relancez ensuite avec  .\deploy-web.ps1 -SkipBuild' -ForegroundColor Cyan
   exit 1
 }
-
-# Éviter le prompt interactif « Would you like to upgrade now? » de la CLI
-# (il casse les scripts automatiques ; le CLI teste NO_UPDATE_NOTIFIER).
-$env:NO_UPDATE_NOTIFIER = '1'
 
 # 1. Build Flutter web + service worker PWA
 if (-not $SkipBuild) {
