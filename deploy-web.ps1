@@ -23,6 +23,27 @@ if (-not (Get-Command vercel -ErrorAction SilentlyContinue)) {
   exit 1
 }
 
+# 0bis. Pré-requis : CLI authentifiée.
+# Sans session, `vercel deploy` échoue par « Error: Not authorized » APRÈS un
+# build de ~1 min : on le détecte donc AVANT de builder pour gagner du temps.
+$authFile = Join-Path $env:APPDATA 'com.vercel.cli\auth.json'
+if ([string]::IsNullOrWhiteSpace($env:VERCEL_TOKEN) -and -not (Test-Path $authFile)) {
+  Write-Host '❌ CLI Vercel non authentifiée (erreur « Not authorized »).' -ForegroundColor Red
+  Write-Host '   Choisissez UNE des deux méthodes :' -ForegroundColor Yellow
+  Write-Host '   1) vercel login' -ForegroundColor Yellow
+  Write-Host '      (ouvre le navigateur ; une seule fois par machine)' -ForegroundColor DarkGray
+  Write-Host '   2) $env:VERCEL_TOKEN = "<votre-token>"' -ForegroundColor Yellow
+  Write-Host '      token à créer sur https://vercel.com/account/tokens' -ForegroundColor DarkGray
+  Write-Host '      (permet aussi un déploiement automatisé / CI)' -ForegroundColor DarkGray
+  Write-Host ''
+  Write-Host '   Le build est déjà fait : relancez ensuite avec  .\deploy-web.ps1 -SkipBuild' -ForegroundColor Cyan
+  exit 1
+}
+
+# Éviter le prompt interactif « Would you like to upgrade now? » de la CLI
+# (il casse les scripts automatiques ; le CLI teste NO_UPDATE_NOTIFIER).
+$env:NO_UPDATE_NOTIFIER = '1'
+
 # 1. Build Flutter web + service worker PWA
 if (-not $SkipBuild) {
   Write-Host '🔨 Build web (release)...' -ForegroundColor Cyan
