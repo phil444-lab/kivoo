@@ -542,11 +542,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                         imageUrl: item.sellerPhoto,
                         fit: BoxFit.cover,
                         placeholder: (context, url) =>
-                            _buildDefaultAvatar(isDark),
+                            _buildDefaultAvatar(item.sellerName),
                         errorWidget: (context, url, error) =>
-                            _buildDefaultAvatar(isDark),
+                            _buildDefaultAvatar(item.sellerName),
                       )
-                    : _buildDefaultAvatar(isDark),
+                    : _buildDefaultAvatar(item.sellerName),
               ),
               const SizedBox(width: 12),
               // Nom + vérifié
@@ -688,12 +688,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
-  Widget _buildDefaultAvatar(bool isDark) => Container(
-      color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
-      child: FaIcon(
-        FontAwesomeIcons.user,
-        size: 24,
-        color: isDark ? AppTheme.darkTextMuted : AppTheme.lightTextMuted,
+  /// Avatar par défaut : initiale du vendeur sur fond bleu (même convention
+  /// que les autres écrans), utilisé quand la photo de profil est absente,
+  /// en cours de chargement ou illisible.
+  Widget _buildDefaultAvatar(String name) => Container(
+      color: AppTheme.primaryBlue,
+      alignment: Alignment.center,
+      child: Text(
+        name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : '?',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: Responsive.fontSize(context, 18),
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
 
